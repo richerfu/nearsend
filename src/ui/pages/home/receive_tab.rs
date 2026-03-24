@@ -150,52 +150,58 @@ pub fn render_receive_content(
                 .w_full()
                 .overflow_y_scrollbar()
                 .child(
-                    div().w_full().max_w(px(600.)).p(px(30.)).h_full().child(
-                        v_flex()
-                            .flex_1()
-                            .items_center()
-                            .justify_center()
-                            .gap(spacing::MD)
-                            .child(
-                                div()
-                                    .w(px(200.))
-                                    .h(px(200.))
-                                    .flex_none()
-                                    .flex()
-                                    .items_center()
-                                    .justify_center()
-                                    .child(
-                                        Logo::default()
-                                            .size(200.)
-                                            .spinning(server_running && animations)
-                                            .duration(15),
-                                    ),
-                            )
-                            .child(
-                                div()
-                                    .w_full()
-                                    .max_w(px(520.))
-                                    .overflow_hidden()
-                                    .truncate()
-                                    .text_3xl()
-                                    .font_bold()
-                                    .text_color(cx.theme().foreground)
-                                    .text_center()
-                                    .child(server_alias.clone()),
-                            )
-                            .child(
-                                div()
-                                    .max_w(px(520.))
-                                    .text_xl()
-                                    .text_color(cx.theme().muted_foreground)
-                                    .text_center()
-                                    .child(if server_running && !server_ips.is_empty() {
-                                        format_visual_ip_ids(&server_ips)
-                                    } else {
-                                        "Offline".to_string()
-                                    }),
-                            ),
-                    ),
+                    div()
+                        .w_full()
+                        .max_w(px(600.))
+                        .mx_auto()
+                        .p(px(30.))
+                        .h_full()
+                        .child(
+                            v_flex()
+                                .flex_1()
+                                .items_center()
+                                .justify_center()
+                                .gap(spacing::MD)
+                                .child(
+                                    div()
+                                        .w(px(200.))
+                                        .h(px(200.))
+                                        .flex_none()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .child(
+                                            Logo::default()
+                                                .size(200.)
+                                                .spinning(server_running && animations)
+                                                .duration(15),
+                                        ),
+                                )
+                                .child(
+                                    div()
+                                        .w_full()
+                                        .max_w(px(520.))
+                                        .overflow_hidden()
+                                        .truncate()
+                                        .text_3xl()
+                                        .font_bold()
+                                        .text_color(cx.theme().foreground)
+                                        .text_center()
+                                        .child(server_alias.clone()),
+                                )
+                                .child(
+                                    div()
+                                        .max_w(px(520.))
+                                        .text_xl()
+                                        .text_color(cx.theme().muted_foreground)
+                                        .text_center()
+                                        .child(if server_running && !server_ips.is_empty() {
+                                            format_visual_ip_ids(&server_ips)
+                                        } else {
+                                            "Offline".to_string()
+                                        }),
+                                ),
+                        ),
                 ),
         )
         // Bottom: Quick Save selector
