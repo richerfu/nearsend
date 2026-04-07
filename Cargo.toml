@@ -31,6 +31,7 @@ localsend = { git = "https://github.com/localsend/localsend.git", features = [
 
 # Network dependencies (still needed for some utilities)
 tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["io"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 anyhow = "1.0"

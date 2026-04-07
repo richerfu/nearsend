@@ -5,9 +5,10 @@ use crate::core::receive_events::{
 };
 use base64::Engine as _;
 use bytes::Bytes;
-use http_body_util::{BodyExt, Full};
-use hyper::body::Incoming;
-use hyper::http::header::{CONTENT_DISPOSITION, CONTENT_TYPE};
+use futures_util::TryStreamExt;
+use http_body_util::{combinators::BoxBody, BodyExt, Full, StreamBody};
+use hyper::body::{Frame, Incoming};
+use hyper::http::header::{CONTENT_DISPOSITION, CONTENT_LENGTH, CONTENT_TYPE};
 use hyper::service::service_fn;
 use hyper::{Method, Request, Response, StatusCode};
 use hyper_util::rt::{TokioExecutor, TokioIo};
@@ -21,10 +22,17 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration as StdDuration, Instant};
+use tokio::io::AsyncWriteExt;
 use tokio::runtime::Handle;
 use tokio::sync::{oneshot, Mutex};
 use tokio::time::{timeout, Duration};
 use tokio_rustls::TlsAcceptor;
+use tokio_util::io::ReaderStream;
+
+type BoxError = Box<dyn std::error::Error + Send + Sync>;
+type ResponseBody = BoxBody<Bytes, BoxError>;
+
+const MAX_CAPTURED_TEXT_BYTES: u64 = 256 * 1024;
 
 #[derive(Clone)]
 enum TlsMode {
@@ -59,6 +67,7 @@ struct PinAttemptInfo {
 struct IncomingSessionFile {
     file_name: String,
     file_type: String,
+    size: u64,
     token: Option<String>,
     received: bool,
 }
@@ -411,7 +420,7 @@ async fn handle_request(
     req: Request<Incoming>,
     state: ServerState,
     remote_ip: IpAddr,
-) -> Result<Response<Full<Bytes>>, Infallible> {
+) -> Result<Response<ResponseBody>, Infallible> {
     let response = match handle_request_inner(req, state, remote_ip).await {
         Ok(resp) => resp,
         Err((status, message)) => json_response(status, &ErrorResponse { message }),
@@ -423,7 +432,7 @@ async fn handle_request_inner(
     req: Request<Incoming>,
     state: ServerState,
     remote_ip: IpAddr,
-) -> Result<Response<Full<Bytes>>, (StatusCode, String)> {
+) -> Result<Response<ResponseBody>, (StatusCode, String)> {
     let path = req.uri().path().to_string();
     let method = req.method().clone();
 
@@ -472,7 +481,7 @@ async fn handle_info(
     req: Request<Incoming>,
     state: ServerState,
     remote_ip: IpAddr,
-) -> Result<Response<Full<Bytes>>, (StatusCode, String)> {
+) -> Result<Response<ResponseBody>, (StatusCode, String)> {
     let info = state.info.lock().await.clone();
     let own_fingerprint = info.token.clone();
     let query = parse_query(req.uri().query().unwrap_or_default());
@@ -550,7 +559,7 @@ async fn handle_register(
     req: Request<Incoming>,
     state: ServerState,
     remote_ip: IpAddr,
-) -> Result<Response<Full<Bytes>>, (StatusCode, String)> {
+) -> Result<Response<ResponseBody>, (StatusCode, String)> {
     match parse_json_body::<WireRegisterRequest>(req.into_body()).await {
         Ok(peer) => {
             let token = peer.fingerprint.or(peer.token).unwrap_or_default();
@@ -606,7 +615,7 @@ async fn handle_register(
 
 async fn handle_nonce(
     req: Request<Incoming>,
-) -> Result<Response<Full<Bytes>>, (StatusCode, String)> {
+) -> Result<Response<ResponseBody>, (StatusCode, String)> {
     let _payload: NonceRequest = parse_json_body(req.into_body()).await?;
     let nonce = base64::engine::general_purpose::STANDARD.encode(uuid::Uuid::new_v4().as_bytes());
     Ok(json_response(StatusCode::OK, &NonceResponse { nonce }))
@@ -617,7 +626,7 @@ async fn handle_prepare_upload(
     state: ServerState,
     remote_ip: IpAddr,
     v2: bool,
-) -> Result<Response<Full<Bytes>>, (StatusCode, String)> {
+) -> Result<Response<ResponseBody>, (StatusCode, String)> {
     const DECISION_WAIT_TIMEOUT_SECS: u64 = 300;
     let query = parse_query(req.uri().query().unwrap_or_default());
 
@@ -732,6 +741,7 @@ async fn handle_prepare_upload(
             IncomingSessionFile {
                 file_name: f.file_name,
                 file_type: normalize_file_type(&f.file_type),
+                size: f.size,
                 token: None,
                 received: false,
             },
@@ -832,7 +842,7 @@ async fn handle_upload(
     state: ServerState,
     remote_ip: IpAddr,
     v2: bool,
-) -> Result<Response<Full<Bytes>>, (StatusCode, String)> {
+) -> Result<Response<ResponseBody>, (StatusCode, String)> {
     let query = parse_query(req.uri().query().unwrap_or_default());
     let file_id = query_first(&query, &["fileId", "fileID", "file_id", "id"])
         .cloned()
@@ -844,13 +854,6 @@ async fn handle_upload(
     if v2 && session_id_query.is_none() {
         return Err((StatusCode::BAD_REQUEST, "missing sessionId".to_string()));
     }
-
-    let body = req
-        .into_body()
-        .collect()
-        .await
-        .map_err(|e| (StatusCode::BAD_REQUEST, format!("read body failed: {}", e)))?
-        .to_bytes();
 
     let session_id = {
         let mut sessions = state.sessions.lock().await;
@@ -885,19 +888,7 @@ async fn handle_upload(
         sid.clone()
     };
 
-    let file_name_for_save = {
-        let sessions = state.sessions.lock().await;
-        let session = sessions
-            .get(&session_id)
-            .ok_or((StatusCode::FORBIDDEN, "Invalid session id".to_string()))?;
-        session
-            .files
-            .get(&file_id)
-            .map(|f| f.file_name.clone())
-            .ok_or((StatusCode::FORBIDDEN, "Invalid token".to_string()))?
-    };
-
-    let text_content: Option<String> = {
+    let (file_name_for_save, capture_text_content) = {
         let sessions = state.sessions.lock().await;
         let session = sessions
             .get(&session_id)
@@ -906,34 +897,71 @@ async fn handle_upload(
             .files
             .get(&file_id)
             .ok_or((StatusCode::FORBIDDEN, "Invalid token".to_string()))?;
-        Ok(if is_text_type(&file.file_type) {
-            String::from_utf8(body.to_vec()).ok()
-        } else {
-            None
-        })
+        Ok((
+            file.file_name.clone(),
+            is_text_type(&file.file_type) && file.size <= MAX_CAPTURED_TEXT_BYTES,
+        ))
     }?;
 
-    let saved_location = match crate::platform::save_file::save_incoming_file(
-        &session_id,
-        &file_name_for_save,
-        &body,
-    )
-    .await
-    {
-        Ok(p) => p,
-        Err(err) => {
-            let msg = format!("save incoming file failed: {}", err);
-            log::warn!("{}", msg);
-            if let Some(mut session) = state.sessions.lock().await.remove(&session_id) {
-                session.status = IncomingSessionStatus::Cancelled;
-                push_incoming_event(IncomingTransferEvent::Cancelled {
-                    session_id: session_id.clone(),
-                    reason: Some(msg.clone()),
-                });
+    let (saved_location, mut output_file) =
+        match crate::platform::save_file::create_incoming_file(&session_id, &file_name_for_save)
+            .await
+        {
+            Ok(target) => target,
+            Err(err) => {
+                let msg = format!("save incoming file failed: {}", err);
+                cancel_incoming_session(&state, &session_id, msg.clone()).await;
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
             }
+        };
+
+    let mut body = req.into_body();
+    let mut captured_text = capture_text_content.then(Vec::new);
+
+    while let Some(frame) = match body.frame().await {
+        Some(Ok(frame)) => Some(frame),
+        Some(Err(err)) => {
+            let msg = format!("read body failed: {}", err);
+            let _ = tokio::fs::remove_file(&saved_location.native_path).await;
+            cancel_incoming_session(&state, &session_id, msg.clone()).await;
+            return Err((StatusCode::BAD_REQUEST, msg));
+        }
+        None => None,
+    } {
+        let Ok(chunk) = frame.into_data() else {
+            continue;
+        };
+
+        if let Some(buffer) = captured_text.as_mut() {
+            let remaining = MAX_CAPTURED_TEXT_BYTES.saturating_sub(buffer.len() as u64) as usize;
+            if remaining > 0 {
+                let take = remaining.min(chunk.len());
+                buffer.extend_from_slice(&chunk[..take]);
+            }
+        }
+
+        if let Err(err) = output_file.write_all(&chunk).await {
+            let msg = format!("save incoming file failed: {}", err);
+            let _ = tokio::fs::remove_file(&saved_location.native_path).await;
+            cancel_incoming_session(&state, &session_id, msg.clone()).await;
             return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
         }
-    };
+    }
+
+    if let Err(err) = output_file.flush().await {
+        let msg = format!("save incoming file failed: {}", err);
+        let _ = tokio::fs::remove_file(&saved_location.native_path).await;
+        cancel_incoming_session(&state, &session_id, msg.clone()).await;
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
+    }
+
+    let text_content = captured_text.and_then(|bytes| {
+        if bytes.is_empty() {
+            None
+        } else {
+            Some(String::from_utf8_lossy(&bytes).into_owned())
+        }
+    });
 
     let (saved_path, saved_uri, completed_now) = {
         let mut sessions = state.sessions.lock().await;
@@ -977,7 +1005,7 @@ async fn handle_cancel(
     req: Request<Incoming>,
     state: ServerState,
     v2: bool,
-) -> Result<Response<Full<Bytes>>, (StatusCode, String)> {
+) -> Result<Response<ResponseBody>, (StatusCode, String)> {
     let query = parse_query(req.uri().query().unwrap_or_default());
     let session_id_query = query_first(&query, &["sessionId", "session_id", "sid"]).cloned();
     let session_id = if let Some(session_id) = session_id_query {
@@ -1026,7 +1054,7 @@ async fn handle_share_link(
     req: Request<Incoming>,
     state: ServerState,
     remote_ip: IpAddr,
-) -> Result<Response<Full<Bytes>>, (StatusCode, String)> {
+) -> Result<Response<ResponseBody>, (StatusCode, String)> {
     let path = req.uri().path().trim_matches('/');
     let query = parse_query(req.uri().query().unwrap_or_default());
     check_pin(&state, remote_ip, query.get("pin").map(|v| v.as_str())).await?;
@@ -1080,14 +1108,16 @@ async fn handle_share_link(
                 path,
                 file_type,
             } => {
-                let bytes = tokio::fs::read(path)
+                let file = tokio::fs::File::open(path)
                     .await
                     .map_err(|_| (StatusCode::NOT_FOUND, "File no longer exists".to_string()))?;
-                return Ok(binary_response(
+                let content_length = file.metadata().await.ok().map(|meta| meta.len());
+                return Ok(stream_file_response(
                     StatusCode::OK,
                     file_type,
                     name,
-                    Bytes::from(bytes),
+                    file,
+                    content_length,
                 ));
             }
         }
@@ -1231,26 +1261,26 @@ fn map_wire_device_type(value: Option<&str>) -> Option<localsend::model::discove
     }
 }
 
-fn json_response<T: serde::Serialize>(status: StatusCode, body: &T) -> Response<Full<Bytes>> {
-    let mut response = Response::new(Full::new(Bytes::new()));
+fn json_response<T: serde::Serialize>(status: StatusCode, body: &T) -> Response<ResponseBody> {
+    let mut response = Response::new(full_body(Bytes::new()));
     *response.status_mut() = status;
     response.headers_mut().insert(
         CONTENT_TYPE,
         hyper::http::HeaderValue::from_static("application/json"),
     );
     let payload = serde_json::to_vec(body).unwrap_or_else(|_| b"{}".to_vec());
-    *response.body_mut() = Full::new(Bytes::from(payload));
+    *response.body_mut() = full_body(Bytes::from(payload));
     response
 }
 
-fn html_response(status: StatusCode, html: String) -> Response<Full<Bytes>> {
-    let mut response = Response::new(Full::new(Bytes::new()));
+fn html_response(status: StatusCode, html: String) -> Response<ResponseBody> {
+    let mut response = Response::new(full_body(Bytes::new()));
     *response.status_mut() = status;
     response.headers_mut().insert(
         CONTENT_TYPE,
         hyper::http::HeaderValue::from_static("text/html; charset=utf-8"),
     );
-    *response.body_mut() = Full::new(Bytes::from(html));
+    *response.body_mut() = full_body(Bytes::from(html));
     response
 }
 
@@ -1259,8 +1289,8 @@ fn binary_response(
     content_type: &str,
     file_name: &str,
     bytes: Bytes,
-) -> Response<Full<Bytes>> {
-    let mut response = Response::new(Full::new(Bytes::new()));
+) -> Response<ResponseBody> {
+    let mut response = Response::new(full_body(Bytes::new()));
     *response.status_mut() = status;
     if let Ok(v) = hyper::http::HeaderValue::from_str(content_type) {
         response.headers_mut().insert(CONTENT_TYPE, v);
@@ -1275,14 +1305,65 @@ fn binary_response(
     {
         response.headers_mut().insert(CONTENT_DISPOSITION, v);
     }
-    *response.body_mut() = Full::new(bytes);
+    if let Ok(v) = hyper::http::HeaderValue::from_str(&bytes.len().to_string()) {
+        response.headers_mut().insert(CONTENT_LENGTH, v);
+    }
+    *response.body_mut() = full_body(bytes);
     response
 }
 
-fn no_content() -> Response<Full<Bytes>> {
-    let mut response = Response::new(Full::new(Bytes::new()));
+fn stream_file_response(
+    status: StatusCode,
+    content_type: &str,
+    file_name: &str,
+    file: tokio::fs::File,
+    content_length: Option<u64>,
+) -> Response<ResponseBody> {
+    let stream = ReaderStream::new(file).map_ok(Frame::data);
+    let body =
+        BodyExt::map_err(StreamBody::new(stream), |err| -> BoxError { Box::new(err) }).boxed();
+    let mut response = Response::new(body);
+    *response.status_mut() = status;
+    if let Ok(v) = hyper::http::HeaderValue::from_str(content_type) {
+        response.headers_mut().insert(CONTENT_TYPE, v);
+    } else {
+        response.headers_mut().insert(
+            CONTENT_TYPE,
+            hyper::http::HeaderValue::from_static("application/octet-stream"),
+        );
+    }
+    let safe = file_name.replace('"', "");
+    if let Ok(v) = hyper::http::HeaderValue::from_str(&format!("attachment; filename=\"{}\"", safe))
+    {
+        response.headers_mut().insert(CONTENT_DISPOSITION, v);
+    }
+    if let Some(len) = content_length {
+        if let Ok(v) = hyper::http::HeaderValue::from_str(&len.to_string()) {
+            response.headers_mut().insert(CONTENT_LENGTH, v);
+        }
+    }
+    response
+}
+
+fn no_content() -> Response<ResponseBody> {
+    let mut response = Response::new(full_body(Bytes::new()));
     *response.status_mut() = StatusCode::NO_CONTENT;
     response
+}
+
+fn full_body(bytes: Bytes) -> ResponseBody {
+    Full::new(bytes).map_err(|never| match never {}).boxed()
+}
+
+async fn cancel_incoming_session(state: &ServerState, session_id: &str, reason: String) {
+    log::warn!("{}", reason);
+    if let Some(mut session) = state.sessions.lock().await.remove(session_id) {
+        session.status = IncomingSessionStatus::Cancelled;
+        push_incoming_event(IncomingTransferEvent::Cancelled {
+            session_id: session_id.to_string(),
+            reason: Some(reason),
+        });
+    }
 }
 
 fn html_escape(input: &str) -> String {

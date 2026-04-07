@@ -1,5 +1,5 @@
-use bytes::Bytes;
 use std::path::{Component, PathBuf};
+use tokio::fs::File;
 
 #[derive(Debug, Clone)]
 pub struct SavedFileLocation {
@@ -7,20 +7,18 @@ pub struct SavedFileLocation {
     pub original_uri: Option<String>,
 }
 
-pub async fn save_incoming_file(
+pub async fn create_incoming_file(
     session_id: &str,
     wire_file_name: &str,
-    bytes: &Bytes,
-) -> std::io::Result<SavedFileLocation> {
-    save_incoming_file_impl(session_id, wire_file_name, bytes).await
+) -> std::io::Result<(SavedFileLocation, File)> {
+    create_incoming_file_impl(session_id, wire_file_name).await
 }
 
 #[cfg(target_env = "ohos")]
-async fn save_incoming_file_impl(
+async fn create_incoming_file_impl(
     _session_id: &str,
     wire_file_name: &str,
-    bytes: &Bytes,
-) -> std::io::Result<SavedFileLocation> {
+) -> std::io::Result<(SavedFileLocation, File)> {
     let suggested_name = suggested_file_name(wire_file_name);
     let (save_uri, save_path) = crate::platform::file_picker::pick_save_file(suggested_name)
         .await
@@ -29,19 +27,21 @@ async fn save_incoming_file_impl(
     if let Some(parent) = save_path.parent() {
         tokio::fs::create_dir_all(parent).await?;
     }
-    tokio::fs::write(&save_path, bytes).await?;
-    Ok(SavedFileLocation {
-        native_path: save_path,
-        original_uri: Some(save_uri),
-    })
+    let file = File::create(&save_path).await?;
+    Ok((
+        SavedFileLocation {
+            native_path: save_path,
+            original_uri: Some(save_uri),
+        },
+        file,
+    ))
 }
 
 #[cfg(not(target_env = "ohos"))]
-async fn save_incoming_file_impl(
+async fn create_incoming_file_impl(
     session_id: &str,
     wire_file_name: &str,
-    bytes: &Bytes,
-) -> std::io::Result<SavedFileLocation> {
+) -> std::io::Result<(SavedFileLocation, File)> {
     let base = crate::platform::preferences_path::get_preferences_path()
         .join("near-send-received")
         .join(session_id);
@@ -50,11 +50,14 @@ async fn save_incoming_file_impl(
     if let Some(parent) = file_path.parent() {
         tokio::fs::create_dir_all(parent).await?;
     }
-    tokio::fs::write(&file_path, bytes).await?;
-    Ok(SavedFileLocation {
-        native_path: file_path,
-        original_uri: None,
-    })
+    let file = File::create(&file_path).await?;
+    Ok((
+        SavedFileLocation {
+            native_path: file_path,
+            original_uri: None,
+        },
+        file,
+    ))
 }
 
 fn sanitize_relative_file_path(name: &str) -> PathBuf {
