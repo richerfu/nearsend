@@ -3920,6 +3920,7 @@ dependencies = [
  "socket2",
  "tokio",
  "tokio-rustls",
+ "tokio-util",
  "urlencoding",
  "uuid",
 ]
