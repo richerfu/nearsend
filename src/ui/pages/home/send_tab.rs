@@ -93,7 +93,8 @@ fn render_action_button(
     let icon_path = icon_path.into();
     let icon = Icon::default()
         .path(icon_path.clone())
-        .with_size(Size::Small);
+        .with_size(Size::Small)
+        .text_color(cx.theme().foreground);
 
     let icon_element = if spinning && animations {
         icon.with_animation(

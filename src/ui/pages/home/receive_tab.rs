@@ -77,6 +77,8 @@ pub fn render_receive_content(
                             Button::new("receive-info")
                                 .custom(
                                     ButtonCustomVariant::new(cx)
+                                        .color(cx.theme().transparent)
+                                        .foreground(cx.theme().foreground)
                                         .hover(cx.theme().transparent)
                                         .active(cx.theme().transparent),
                                 )
@@ -101,7 +103,8 @@ pub fn render_receive_content(
                                         .child(
                                             Icon::default()
                                                 .path("icons/info.svg")
-                                                .with_size(Size::Medium),
+                                                .with_size(Size::Medium)
+                                                .text_color(cx.theme().foreground),
                                         ),
                                 ),
                         )
@@ -517,7 +520,12 @@ fn render_circle_button(
                 .flex()
                 .items_center()
                 .justify_center()
-                .child(Icon::default().path(icon_path).with_size(Size::Medium)),
+                .child(
+                    Icon::default()
+                        .path(icon_path)
+                        .with_size(Size::Medium)
+                        .text_color(cx.theme().foreground),
+                ),
         )
         .on_click(cx.listener(on_click))
 }

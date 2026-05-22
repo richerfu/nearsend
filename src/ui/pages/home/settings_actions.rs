@@ -532,9 +532,10 @@ impl HomePage {
                                     });
                                 })
                                 .child(
-                                    Icon::default()
-                                        .path("icons/plus.svg")
-                                        .with_size(Size::Small),
+                                Icon::default()
+                                    .path("icons/plus.svg")
+                                    .with_size(Size::Small)
+                                    .text_color(_cx.theme().foreground),
                                 ),
                         )
                         .child(
@@ -565,10 +566,11 @@ impl HomePage {
                                     });
                                 })
                                 .child(
-                                    Icon::default()
-                                        .path("icons/trash.svg")
-                                        .with_size(Size::Small),
-                                ),
+                                Icon::default()
+                                    .path("icons/trash.svg")
+                                    .with_size(Size::Small)
+                                    .text_color(_cx.theme().muted_foreground),
+                            ),
                         )
                         .into_any_element()
                 })
