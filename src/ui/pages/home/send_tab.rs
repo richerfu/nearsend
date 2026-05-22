@@ -39,7 +39,9 @@ fn render_content_type_button(
     on_click: impl Fn(&mut HomePage, &mut Window, &mut Context<HomePage>) + 'static,
 ) -> AnyElement {
     let icon_path = icon_path.into();
-    let bg = cx.theme().muted;
+    let bg = cx.theme().foreground.opacity(0.08);
+    let hover_bg = cx.theme().foreground.opacity(0.10);
+    let active_bg = cx.theme().foreground.opacity(0.12);
     let fg = cx.theme().foreground;
 
     Button::new(id)
@@ -48,8 +50,8 @@ fn render_content_type_button(
             ButtonCustomVariant::new(cx)
                 .color(bg)
                 .foreground(fg)
-                .hover(bg)
-                .active(bg),
+                .hover(hover_bg)
+                .active(active_bg),
         )
         .w(px(CONTENT_BTN_WIDTH))
         .h(px(CONTENT_BTN_HEIGHT))
@@ -470,8 +472,15 @@ pub fn render_send_content(
                                                     .trigger(
                                                         Button::new("send-mode")
                                                             .ghost()
+                                                            .custom(
+                                                                ButtonCustomVariant::new(cx)
+                                                                    .color(cx.theme().transparent)
+                                                                    .foreground(cx.theme().foreground)
+                                                                    .hover(cx.theme().transparent)
+                                                                    .active(cx.theme().transparent),
+                                                            )
                                                             .rounded_full()
-                                                            .p(px(6.))
+                                                            .p(px(4.))
                                                             .child(
                                                                 div()
                                                                     .shadow(vec![gpui_component::box_shadow(
@@ -491,7 +500,8 @@ pub fn render_send_content(
                                                                     .child(
                                                                         Icon::default()
                                                                             .path("icons/settings.svg")
-                                                                            .with_size(Size::Small),
+                                                                            .with_size(Size::Small)
+                                                                            .text_color(cx.theme().foreground),
                                                                     ),
                                                             ),
                                                     )

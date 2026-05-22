@@ -555,6 +555,8 @@ fn open_history_entry(
             file_name: entry.file_name.clone(),
             file_type: "text/plain".to_string(),
             size: entry.file_size,
+            bytes_received: entry.file_size,
+            speed_bytes_per_sec: 0,
             saved_path: None,
             saved_uri: None,
             text_content: Some(content),
@@ -569,6 +571,7 @@ fn open_history_entry(
                 items: vec![item],
                 completed: true,
                 cancelled: false,
+                decision_submitted: true,
                 is_message_only: true,
                 selected_file_ids: Vec::new(),
             });
