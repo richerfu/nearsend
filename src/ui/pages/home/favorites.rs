@@ -106,7 +106,8 @@ impl HomePage {
                                                     .child(
                                                         Icon::default()
                                                             .path("icons/send-horizontal.svg")
-                                                            .with_size(gpui_component::Size::Small),
+                                                            .with_size(gpui_component::Size::Small)
+                                                            .text_color(_cx.theme().foreground),
                                                     ),
                                             )
                                             .child(
@@ -130,7 +131,8 @@ impl HomePage {
                                                     .child(
                                                         Icon::default()
                                                             .path("icons/settings.svg")
-                                                            .with_size(gpui_component::Size::Small),
+                                                            .with_size(gpui_component::Size::Small)
+                                                            .text_color(_cx.theme().foreground),
                                                     ),
                                             )
                                             .child(
@@ -158,7 +160,8 @@ impl HomePage {
                                                     .child(
                                                         Icon::default()
                                                             .path("icons/trash.svg")
-                                                            .with_size(gpui_component::Size::Small),
+                                                            .with_size(gpui_component::Size::Small)
+                                                            .text_color(_cx.theme().danger),
                                                     ),
                                             ),
                                     )

@@ -1,4 +1,4 @@
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::{Mutex, OnceLock};
 use tokio::sync::Notify;
 
@@ -27,6 +27,13 @@ pub enum IncomingTransferEvent {
         saved_uri: Option<String>,
         text_content: Option<String>,
     },
+    FileProgress {
+        session_id: String,
+        file_id: String,
+        bytes_received: u64,
+        total_bytes: u64,
+        speed_bytes_per_sec: u64,
+    },
     Completed {
         session_id: String,
     },
@@ -46,6 +53,7 @@ pub enum IncomingTransferDecision {
 
 static EVENT_QUEUE: OnceLock<Mutex<VecDeque<IncomingTransferEvent>>> = OnceLock::new();
 static DECISION_MAP: OnceLock<Mutex<HashMap<String, IncomingTransferDecision>>> = OnceLock::new();
+static CANCELLED_SESSIONS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
 static DECISION_NOTIFY: OnceLock<Notify> = OnceLock::new();
 static EVENT_NOTIFY: OnceLock<Notify> = OnceLock::new();
 
@@ -55,6 +63,10 @@ fn queue() -> &'static Mutex<VecDeque<IncomingTransferEvent>> {
 
 fn decision_map() -> &'static Mutex<HashMap<String, IncomingTransferDecision>> {
     DECISION_MAP.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn cancelled_sessions() -> &'static Mutex<HashSet<String>> {
+    CANCELLED_SESSIONS.get_or_init(|| Mutex::new(HashSet::new()))
 }
 
 fn decision_notify() -> &'static Notify {
@@ -85,6 +97,31 @@ pub fn submit_incoming_decision(session_id: impl Into<String>, decision: Incomin
         map.insert(session_id.into(), decision);
     }
     decision_notify().notify_one();
+}
+
+pub fn request_incoming_cancel(session_id: impl Into<String>) {
+    let session_id = session_id.into();
+    if session_id.is_empty() {
+        return;
+    }
+    if let Ok(mut sessions) = cancelled_sessions().lock() {
+        sessions.insert(session_id.clone());
+    }
+    submit_incoming_decision(session_id, IncomingTransferDecision::Decline);
+}
+
+pub fn is_incoming_cancel_requested(session_id: &str) -> bool {
+    if let Ok(sessions) = cancelled_sessions().lock() {
+        sessions.contains(session_id)
+    } else {
+        false
+    }
+}
+
+pub fn clear_incoming_cancel(session_id: &str) {
+    if let Ok(mut sessions) = cancelled_sessions().lock() {
+        sessions.remove(session_id);
+    }
 }
 
 pub async fn wait_incoming_decision(session_id: &str) -> IncomingTransferDecision {

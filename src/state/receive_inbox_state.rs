@@ -7,6 +7,8 @@ pub struct ReceiveItem {
     pub file_name: String,
     pub file_type: String,
     pub size: u64,
+    pub bytes_received: u64,
+    pub speed_bytes_per_sec: u64,
     pub saved_path: Option<String>,
     pub saved_uri: Option<String>,
     pub text_content: Option<String>,
@@ -22,6 +24,7 @@ pub struct ReceiveSession {
     pub items: Vec<ReceiveItem>,
     pub completed: bool,
     pub cancelled: bool,
+    pub decision_submitted: bool,
     pub is_message_only: bool,
     pub selected_file_ids: Vec<String>,
 }
@@ -37,6 +40,7 @@ impl Default for ReceiveSession {
             items: Vec::new(),
             completed: false,
             cancelled: false,
+            decision_submitted: false,
             is_message_only: false,
             selected_file_ids: Vec::new(),
         }
@@ -74,6 +78,8 @@ impl ReceiveInboxState {
                         file_name: f.file_name,
                         file_type: f.file_type,
                         size: f.size,
+                        bytes_received: 0,
+                        speed_bytes_per_sec: 0,
                         saved_path: None,
                         saved_uri: None,
                         text_content: f.preview,
@@ -89,6 +95,7 @@ impl ReceiveInboxState {
                     items,
                     completed: false,
                     cancelled: false,
+                    decision_submitted: false,
                     is_message_only,
                 });
             }
@@ -103,7 +110,10 @@ impl ReceiveInboxState {
                     if active.session_id != session_id {
                         return;
                     }
+                    active.decision_submitted = true;
                     if let Some(item) = active.items.iter_mut().find(|x| x.file_id == file_id) {
+                        item.bytes_received = item.size;
+                        item.speed_bytes_per_sec = 0;
                         item.saved_path = saved_path;
                         item.saved_uri = saved_uri;
                         if text_content.is_some() {
@@ -112,10 +122,36 @@ impl ReceiveInboxState {
                     }
                 }
             }
+            IncomingTransferEvent::FileProgress {
+                session_id,
+                file_id,
+                bytes_received,
+                total_bytes,
+                speed_bytes_per_sec,
+            } => {
+                if let Some(active) = self.active.as_mut() {
+                    if active.session_id != session_id {
+                        return;
+                    }
+                    active.decision_submitted = true;
+                    if let Some(item) = active.items.iter_mut().find(|x| x.file_id == file_id) {
+                        if total_bytes > 0 {
+                            item.size = total_bytes;
+                        }
+                        item.bytes_received = bytes_received.min(item.size);
+                        item.speed_bytes_per_sec = speed_bytes_per_sec;
+                    }
+                }
+            }
             IncomingTransferEvent::Completed { session_id } => {
                 if let Some(active) = self.active.as_mut() {
                     if active.session_id == session_id {
+                        active.decision_submitted = true;
                         active.completed = true;
+                        for item in &mut active.items {
+                            item.bytes_received = item.size;
+                            item.speed_bytes_per_sec = 0;
+                        }
                     }
                 }
             }
@@ -137,10 +173,19 @@ impl ReceiveInboxState {
         let Some(active) = self.active.as_mut() else {
             return;
         };
+        if active.decision_submitted {
+            return;
+        }
         if let Some(idx) = active.selected_file_ids.iter().position(|id| id == file_id) {
             active.selected_file_ids.remove(idx);
         } else if active.items.iter().any(|item| item.file_id == file_id) {
             active.selected_file_ids.push(file_id.to_string());
+        }
+    }
+
+    pub fn mark_decision_submitted(&mut self) {
+        if let Some(active) = self.active.as_mut() {
+            active.decision_submitted = true;
         }
     }
 

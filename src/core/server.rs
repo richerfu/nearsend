@@ -1,7 +1,8 @@
 use crate::core::cert::CertPair;
 use crate::core::receive_events::{
-    push_incoming_event, submit_incoming_decision, wait_incoming_decision, IncomingFileMeta,
-    IncomingTransferDecision, IncomingTransferEvent,
+    clear_incoming_cancel, is_incoming_cancel_requested, push_incoming_event,
+    request_incoming_cancel, wait_incoming_decision, IncomingFileMeta, IncomingTransferDecision,
+    IncomingTransferEvent,
 };
 use base64::Engine as _;
 use bytes::Bytes;
@@ -773,6 +774,7 @@ async fn handle_prepare_upload(
     match decision {
         IncomingTransferDecision::Decline => {
             state.sessions.lock().await.remove(&session_id);
+            clear_incoming_cancel(&session_id);
             push_incoming_event(IncomingTransferEvent::Cancelled {
                 session_id: session_id.clone(),
                 reason: Some("declined by recipient".to_string()),
@@ -800,6 +802,7 @@ async fn handle_prepare_upload(
                 selected_ids.into_iter().collect();
             if selected_set.is_empty() {
                 state.sessions.lock().await.remove(&session_id);
+                clear_incoming_cancel(&session_id);
                 push_incoming_event(IncomingTransferEvent::Cancelled {
                     session_id: session_id.clone(),
                     reason: Some("accepted with empty selection".to_string()),
@@ -814,10 +817,11 @@ async fn handle_prepare_upload(
                         let token = uuid::Uuid::new_v4().to_string();
                         accepted_files.insert(file_id.clone(), token.clone());
                         file.token = Some(token);
-                    } else {
-                        file.token = None;
                     }
                 }
+                session
+                    .files
+                    .retain(|file_id, _| selected_set.contains(file_id));
             } else {
                 return Err((StatusCode::CONFLICT, "No session".to_string()));
             }
@@ -855,7 +859,13 @@ async fn handle_upload(
         return Err((StatusCode::BAD_REQUEST, "missing sessionId".to_string()));
     }
 
-    let session_id = {
+    let content_length = req
+        .headers()
+        .get(CONTENT_LENGTH)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<u64>().ok());
+
+    let (session_id, file_name_for_save, file_type, expected_size) = {
         let mut sessions = state.sessions.lock().await;
         let sid = if let Some(sid) = session_id_query.clone() {
             sid
@@ -885,23 +895,22 @@ async fn handle_upload(
         if file.token.as_deref() != Some(token.as_str()) {
             return Err((StatusCode::FORBIDDEN, "Invalid token".to_string()));
         }
-        sid.clone()
+        (
+            sid.clone(),
+            file.file_name.clone(),
+            file.file_type.clone(),
+            content_length.unwrap_or(file.size),
+        )
     };
 
-    let (file_name_for_save, capture_text_content) = {
-        let sessions = state.sessions.lock().await;
-        let session = sessions
-            .get(&session_id)
-            .ok_or((StatusCode::FORBIDDEN, "Invalid session id".to_string()))?;
-        let file = session
-            .files
-            .get(&file_id)
-            .ok_or((StatusCode::FORBIDDEN, "Invalid token".to_string()))?;
-        Ok((
-            file.file_name.clone(),
-            is_text_type(&file.file_type) && file.size <= MAX_CAPTURED_TEXT_BYTES,
-        ))
-    }?;
+    if is_incoming_cancel_requested(&session_id) {
+        state.sessions.lock().await.remove(&session_id);
+        push_incoming_event(IncomingTransferEvent::Cancelled {
+            session_id: session_id.clone(),
+            reason: Some("cancelled by recipient".to_string()),
+        });
+        return Err((StatusCode::CONFLICT, "Transfer cancelled".to_string()));
+    }
 
     let (saved_location, mut output_file) =
         match crate::platform::save_file::create_incoming_file(&session_id, &file_name_for_save)
@@ -916,9 +925,30 @@ async fn handle_upload(
         };
 
     let mut body = req.into_body();
-    let mut captured_text = capture_text_content.then(Vec::new);
+    let mut captured_text =
+        (is_text_type(&file_type) && expected_size <= MAX_CAPTURED_TEXT_BYTES).then(Vec::new);
+    let started_at = Instant::now();
+    let mut last_emit_at = Instant::now();
+    let mut bytes_received = 0_u64;
+
+    push_incoming_event(IncomingTransferEvent::FileProgress {
+        session_id: session_id.clone(),
+        file_id: file_id.clone(),
+        bytes_received,
+        total_bytes: expected_size,
+        speed_bytes_per_sec: 0,
+    });
 
     while let Some(frame) = match body.frame().await {
+        _ if is_incoming_cancel_requested(&session_id) => {
+            let _ = tokio::fs::remove_file(&saved_location.native_path).await;
+            state.sessions.lock().await.remove(&session_id);
+            push_incoming_event(IncomingTransferEvent::Cancelled {
+                session_id: session_id.clone(),
+                reason: Some("cancelled by recipient".to_string()),
+            });
+            return Err((StatusCode::CONFLICT, "Transfer cancelled".to_string()));
+        }
         Some(Ok(frame)) => Some(frame),
         Some(Err(err)) => {
             let msg = format!("read body failed: {}", err);
@@ -931,6 +961,7 @@ async fn handle_upload(
         let Ok(chunk) = frame.into_data() else {
             continue;
         };
+        bytes_received = bytes_received.saturating_add(chunk.len() as u64);
 
         if let Some(buffer) = captured_text.as_mut() {
             let remaining = MAX_CAPTURED_TEXT_BYTES.saturating_sub(buffer.len() as u64) as usize;
@@ -946,7 +977,38 @@ async fn handle_upload(
             cancel_incoming_session(&state, &session_id, msg.clone()).await;
             return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
         }
+
+        if is_incoming_cancel_requested(&session_id) {
+            let _ = tokio::fs::remove_file(&saved_location.native_path).await;
+            state.sessions.lock().await.remove(&session_id);
+            push_incoming_event(IncomingTransferEvent::Cancelled {
+                session_id: session_id.clone(),
+                reason: Some("cancelled by recipient".to_string()),
+            });
+            return Err((StatusCode::CONFLICT, "Transfer cancelled".to_string()));
+        }
+
+        if last_emit_at.elapsed() >= StdDuration::from_millis(100)
+            || (expected_size > 0 && bytes_received >= expected_size)
+        {
+            push_incoming_event(IncomingTransferEvent::FileProgress {
+                session_id: session_id.clone(),
+                file_id: file_id.clone(),
+                bytes_received,
+                total_bytes: expected_size,
+                speed_bytes_per_sec: average_speed(bytes_received, started_at),
+            });
+            last_emit_at = Instant::now();
+        }
     }
+
+    push_incoming_event(IncomingTransferEvent::FileProgress {
+        session_id: session_id.clone(),
+        file_id: file_id.clone(),
+        bytes_received,
+        total_bytes: expected_size,
+        speed_bytes_per_sec: average_speed(bytes_received, started_at),
+    });
 
     if let Err(err) = output_file.flush().await {
         let msg = format!("save incoming file failed: {}", err);
@@ -996,9 +1058,19 @@ async fn handle_upload(
             session_id: session_id.clone(),
         });
         state.sessions.lock().await.remove(&session_id);
+        clear_incoming_cancel(&session_id);
     }
 
     Ok(json_response(StatusCode::OK, &serde_json::json!({})))
+}
+
+fn average_speed(bytes_received: u64, started_at: Instant) -> u64 {
+    let elapsed = started_at.elapsed().as_secs_f64();
+    if elapsed > 0.0 {
+        (bytes_received as f64 / elapsed) as u64
+    } else {
+        0
+    }
 }
 
 async fn handle_cancel(
@@ -1044,7 +1116,7 @@ async fn handle_cancel(
                 session_id: session_id.clone(),
                 reason: Some(format!("cancelled by {}", session.sender_fingerprint)),
             });
-            submit_incoming_decision(session_id, IncomingTransferDecision::Decline);
+            request_incoming_cancel(session_id);
         }
     }
     Ok(json_response(StatusCode::OK, &serde_json::json!({})))

@@ -9,11 +9,11 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-gpui = { git = "https://github.com/richerfu/zed.git", rev = "a2bc1a018a831ef236657fb15bcc985f0e375d76" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", rev = "a2bc1a018a831ef236657fb15bcc985f0e375d76" }
-gpui-component = { git = "https://github.com/longbridge/gpui-component.git" }
+gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "1c1d008920706640663a9bb6c2870a6e6148f650" }
 gpui-router = { version = "0.3" }
-gpui-component-assets = { git = "https://github.com/longbridge/gpui-component.git" }
+gpui-component-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "1c1d008920706640663a9bb6c2870a6e6148f650" }
 openharmony-ability = { git = "https://github.com/harmony-contrib/openharmony-ability.git" }
 openharmony-ability-derive = { git = "https://github.com/harmony-contrib/openharmony-ability.git" }
 
@@ -67,15 +67,18 @@ ohos-fileshare-binding = "0.1"
 napi-build-ohos = { version = "=1.1.6" }
 
 
-# 强制 patch 所有来源的依赖，确保统一使用本地路径
+# 强制 patch 所有来源的依赖，确保统一使用 richerfu/zed 的 ohos 分支
 [patch.crates-io]
-gpui = { git = "https://github.com/richerfu/zed.git", rev = "a2bc1a018a831ef236657fb15bcc985f0e375d76" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", rev = "a2bc1a018a831ef236657fb15bcc985f0e375d76" }
+gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui_macros = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
 
 [patch."https://github.com/zed-industries/zed.git"]
-gpui = { git = "https://github.com/richerfu/zed.git", rev = "a2bc1a018a831ef236657fb15bcc985f0e375d76" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", rev = "a2bc1a018a831ef236657fb15bcc985f0e375d76" }
+gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui_macros = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
 
 [patch."https://github.com/zed-industries/zed"]
-gpui = { git = "https://github.com/richerfu/zed.git", rev = "a2bc1a018a831ef236657fb15bcc985f0e375d76" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", rev = "a2bc1a018a831ef236657fb15bcc985f0e375d76" }
+gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui_macros = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
