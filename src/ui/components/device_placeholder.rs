@@ -1,48 +1,46 @@
-use crate::ui::theme::{sizing, spacing};
+use crate::ui::icons::{app_icon, paths};
+use crate::ui::theme::{radius, sizing, spacing};
 use gpui::{div, prelude::*, px, Animation, AnimationExt as _, IntoElement, Window};
-use gpui_component::{h_flex, v_flex, ActiveTheme as _, Icon, Sizable as _, Size};
+use gpui_component::{h_flex, v_flex, ActiveTheme as _, Size};
 use std::time::Duration;
 
-/// Device icon paths that cycle through (matching LocalSend's DeviceType rotation).
 const DEVICE_ICONS: &[&str] = &[
-    "icons/smartphone.svg",
-    "icons/monitor.svg",
-    "icons/globe.svg",
-    "icons/server.svg",
+    paths::SMARTPHONE,
+    paths::MONITOR,
+    paths::GLOBE,
+    paths::SERVER,
 ];
 
-/// Device placeholder component matching LocalSend's DevicePlaceholderListTile.
-/// Shows a single card with rotating device type icons and skeleton badges.
+/// Empty nearby-device placeholder with rotating device icons.
 #[derive(Clone, Copy, IntoElement)]
 pub struct DevicePlaceholder;
 
 impl gpui::RenderOnce for DevicePlaceholder {
     fn render(self, _window: &mut Window, cx: &mut gpui::App) -> impl IntoElement {
         let muted = cx.theme().muted;
-        let skeleton = cx.theme().muted_foreground.opacity(0.22);
+        let skeleton = cx.theme().muted_foreground.opacity(0.18);
         let icon_count = DEVICE_ICONS.len();
         let cycle_ms: u64 = 3000 * icon_count as u64;
+        let icon_color = cx.theme().muted_foreground;
 
         div()
             .relative()
-            .bg(cx.theme().secondary)
+            .bg(cx.theme().background)
             .border_1()
-            .border_color(cx.theme().border)
-            .rounded_lg()
+            .border_color(cx.theme().border.opacity(0.8))
+            .rounded(radius::LG)
             .p(sizing::CARD_PADDING)
-            .mb(spacing::MD)
             .child(
                 h_flex()
                     .gap(spacing::MD)
-                    .items_start()
+                    .items_center()
                     .w_full()
                     .child(
-                        // Rotating device icon
                         div()
-                            .w(px(46.))
-                            .h(px(46.))
+                            .w(px(42.))
+                            .h(px(42.))
                             .bg(muted)
-                            .rounded_md()
+                            .rounded(radius::MD)
                             .flex()
                             .items_center()
                             .justify_center()
@@ -56,7 +54,6 @@ impl gpui::RenderOnce for DevicePlaceholder {
                                     if idx >= icon_count {
                                         idx = icon_count - 1;
                                     }
-                                    // Fade in/out
                                     let local = elapsed - (idx as f32 * per_icon_ms);
                                     let fade = 300.0_f32;
                                     let alpha = if local < fade {
@@ -66,11 +63,11 @@ impl gpui::RenderOnce for DevicePlaceholder {
                                     } else {
                                         1.0
                                     };
-                                    this.opacity(alpha.clamp(0.0, 1.0)).child(
-                                        Icon::default()
-                                            .path(DEVICE_ICONS[idx])
-                                            .with_size(Size::Large),
-                                    )
+                                    this.opacity(alpha.clamp(0.0, 1.0)).child(app_icon(
+                                        DEVICE_ICONS[idx],
+                                        Size::Small,
+                                        icon_color,
+                                    ))
                                 },
                             ),
                     )
@@ -78,16 +75,13 @@ impl gpui::RenderOnce for DevicePlaceholder {
                         v_flex()
                             .gap(px(8.))
                             .flex_1()
-                            .child(
-                                // Name placeholder bar
-                                div().w(px(100.)).h(px(14.)).bg(skeleton).rounded(px(4.)),
-                            )
+                            .child(div().w(px(100.)).h(px(12.)).bg(skeleton).rounded(px(6.)))
                             .child(
                                 h_flex()
-                                    .gap(px(10.))
-                                    .child(div().w(px(52.)).h(px(20.)).bg(skeleton).rounded(px(6.)))
+                                    .gap(px(8.))
+                                    .child(div().w(px(52.)).h(px(18.)).bg(skeleton).rounded(px(9.)))
                                     .child(
-                                        div().w(px(120.)).h(px(20.)).bg(skeleton).rounded(px(6.)),
+                                        div().w(px(88.)).h(px(18.)).bg(skeleton).rounded(px(9.)),
                                     ),
                             ),
                     ),
@@ -95,10 +89,10 @@ impl gpui::RenderOnce for DevicePlaceholder {
             .child(
                 div()
                     .absolute()
-                    .right(px(14.))
+                    .right(px(12.))
                     .top(px(14.))
-                    .w(px(24.))
-                    .h(px(24.))
+                    .w(px(22.))
+                    .h(px(22.))
                     .rounded_full()
                     .bg(muted),
             )

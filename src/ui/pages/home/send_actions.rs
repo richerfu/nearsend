@@ -185,12 +185,12 @@ impl HomePage {
             let home_text = home_entity.clone();
             let home_clipboard = home_entity.clone();
             let variant = ButtonCustomVariant::new(_cx)
-                .color(_cx.theme().secondary)
+                .color(_cx.theme().foreground.opacity(0.08))
                 .foreground(_cx.theme().foreground)
-                .hover(_cx.theme().secondary)
-                .active(_cx.theme().secondary);
+                .hover(_cx.theme().foreground.opacity(0.12))
+                .active(_cx.theme().foreground.opacity(0.16));
             dialog
-                .title("你想加入什么文件？")
+                .title(dialog_title("你想加入什么文件？"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -205,6 +205,8 @@ impl HomePage {
                                 .w(px(90.))
                                 .h(px(65.))
                                 .rounded_md()
+                                .border_1()
+                                .border_color(_cx.theme().border)
                                 .on_click(move |_event, window, cx| {
                                     window.close_dialog(cx);
                                     home_file.update(cx, |this, cx| {
@@ -217,10 +219,11 @@ impl HomePage {
                                         .justify_between()
                                         .gap(px(4.))
                                         .child(
-                                            Icon::default()
-                                                .path("icons/file.svg")
-                                                .with_size(gpui_component::Size::Medium)
-                                                .text_color(_cx.theme().foreground),
+                                            app_icon(
+                                                paths::FILE,
+                                                Size::Medium,
+                                                _cx.theme().foreground,
+                                            ),
                                         )
                                         .child(div().text_sm().text_center().child("文件")),
                                 ),
@@ -231,6 +234,8 @@ impl HomePage {
                                 .w(px(90.))
                                 .h(px(65.))
                                 .rounded_md()
+                                .border_1()
+                                .border_color(_cx.theme().border)
                                 .on_click(move |_event, window, cx| {
                                     window.close_dialog(cx);
                                     home_folder.update(cx, |this, cx| {
@@ -247,10 +252,11 @@ impl HomePage {
                                         .justify_between()
                                         .gap(px(4.))
                                         .child(
-                                            Icon::default()
-                                                .path("icons/folder.svg")
-                                                .with_size(gpui_component::Size::Medium)
-                                                .text_color(_cx.theme().foreground),
+                                            app_icon(
+                                                paths::FOLDER,
+                                                Size::Medium,
+                                                _cx.theme().foreground,
+                                            ),
                                         )
                                         .child(div().text_sm().text_center().child("文件夹")),
                                 ),
@@ -261,6 +267,8 @@ impl HomePage {
                                 .w(px(90.))
                                 .h(px(65.))
                                 .rounded_md()
+                                .border_1()
+                                .border_color(_cx.theme().border)
                                 .on_click(move |_event, window, cx| {
                                     window.close_dialog(cx);
                                     home_text.update(cx, |this, cx| {
@@ -273,10 +281,11 @@ impl HomePage {
                                         .justify_between()
                                         .gap(px(4.))
                                         .child(
-                                            Icon::default()
-                                                .path("icons/book-open.svg")
-                                                .with_size(gpui_component::Size::Medium)
-                                                .text_color(_cx.theme().foreground),
+                                            app_icon(
+                                                paths::BOOK_OPEN,
+                                                Size::Medium,
+                                                _cx.theme().foreground,
+                                            ),
                                         )
                                         .child(div().text_sm().text_center().child("文本")),
                                 ),
@@ -287,6 +296,8 @@ impl HomePage {
                                 .w(px(90.))
                                 .h(px(65.))
                                 .rounded_md()
+                                .border_1()
+                                .border_color(_cx.theme().border)
                                 .on_click(move |_event, window, cx| {
                                     window.close_dialog(cx);
                                     home_clipboard.update(cx, |this, cx| {
@@ -303,10 +314,11 @@ impl HomePage {
                                         .justify_between()
                                         .gap(px(4.))
                                         .child(
-                                            Icon::default()
-                                                .path("icons/copy.svg")
-                                                .with_size(gpui_component::Size::Medium)
-                                                .text_color(_cx.theme().foreground),
+                                            app_icon(
+                                                paths::COPY,
+                                                Size::Medium,
+                                                _cx.theme().foreground,
+                                            ),
                                         )
                                         .child(div().text_sm().text_center().child("剪贴板")),
                                 ),
@@ -326,7 +338,7 @@ impl HomePage {
             let home_multiple = home_entity.clone();
             let home_link = home_entity.clone();
             dialog
-                .title("发送模式")
+                .title(dialog_title("发送模式"))
                 .overlay(true)
                 .w(px(320.))
                 .child(
@@ -352,14 +364,17 @@ impl HomePage {
                                         .child(div().text_sm().child("单接收者"))
                                         .child(
                                             if matches!(current_mode, SendModeSetting::Single) {
-                                                Icon::default()
-                                                    .path("icons/check.svg")
-                                                    .with_size(Size::Small)
+                                                app_icon(
+                                                    paths::CHECK,
+                                                    Size::Small,
+                                                    _cx.theme().primary,
+                                                )
                                             } else {
-                                                Icon::default()
-                                                    .path("icons/more-horizontal.svg")
-                                                    .with_size(Size::Small)
-                                                    .text_color(_cx.theme().muted_foreground)
+                                                app_icon(
+                                                    paths::MORE,
+                                                    Size::Small,
+                                                    _cx.theme().muted_foreground,
+                                                )
                                             },
                                         ),
                                 ),
@@ -383,14 +398,17 @@ impl HomePage {
                                         .child(div().text_sm().child("多个接收者"))
                                         .child(
                                             if matches!(current_mode, SendModeSetting::Multiple) {
-                                                Icon::default()
-                                                    .path("icons/check.svg")
-                                                    .with_size(Size::Small)
+                                                app_icon(
+                                                    paths::CHECK,
+                                                    Size::Small,
+                                                    _cx.theme().primary,
+                                                )
                                             } else {
-                                                Icon::default()
-                                                    .path("icons/more-horizontal.svg")
-                                                    .with_size(Size::Small)
-                                                    .text_color(_cx.theme().muted_foreground)
+                                                app_icon(
+                                                    paths::MORE,
+                                                    Size::Small,
+                                                    _cx.theme().muted_foreground,
+                                                )
                                             },
                                         ),
                                 ),
@@ -432,14 +450,17 @@ impl HomePage {
                                         .items_center()
                                         .child(div().text_sm().child("通过分享链接发送"))
                                         .child(if matches!(current_mode, SendModeSetting::Link) {
-                                            Icon::default()
-                                                .path("icons/check.svg")
-                                                .with_size(Size::Small)
+                                            app_icon(
+                                                paths::CHECK,
+                                                Size::Small,
+                                                _cx.theme().primary,
+                                            )
                                         } else {
-                                            Icon::default()
-                                                .path("icons/more-horizontal.svg")
-                                                .with_size(Size::Small)
-                                                .text_color(_cx.theme().muted_foreground)
+                                            app_icon(
+                                                paths::MORE,
+                                                Size::Small,
+                                                _cx.theme().muted_foreground,
+                                            )
                                         }),
                                 ),
                         ),
@@ -456,7 +477,7 @@ impl HomePage {
     ) {
         window.open_dialog(cx, move |dialog, _window, _cx| {
             dialog
-                .title("发送模式说明")
+                .title(dialog_title("发送模式说明"))
                 .overlay(true)
                 .w(px(360.))
                 .child(
@@ -582,7 +603,7 @@ impl HomePage {
             let home_for_copy = home_entity.clone();
             let link_for_copy = link.clone();
             dialog
-                .title("分享链接")
+                .title(dialog_title("分享链接"))
                 .overlay(true)
                 .w(px(380.))
                 .child(

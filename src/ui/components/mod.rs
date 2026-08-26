@@ -1,4 +1,5 @@
 pub mod big_button;
+pub mod chrome;
 pub mod device_badge;
 pub mod device_card;
 pub mod device_placeholder;

@@ -34,6 +34,8 @@ use crate::state::{
         FileTransferInfo, TransferDirection, TransferInfo, TransferState, TransferStatus,
     },
 };
+pub(super) use crate::ui::components::chrome::dialog_title;
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
 use gpui::{div, hsla, prelude::*, px, AnyElement, Context, Entity, IntoElement, Window};
 use gpui_component::button::{Button, ButtonCustomVariant, ButtonVariants as _};
@@ -42,8 +44,7 @@ use gpui_component::input::{Input, InputState};
 use gpui_component::notification::Notification;
 use gpui_component::select::{SelectEvent, SelectState};
 use gpui_component::{
-    h_flex, v_flex, ActiveTheme as _, Icon, IndexPath, Sizable as _, Size, StyledExt as _,
-    WindowExt as _,
+    h_flex, v_flex, ActiveTheme as _, IndexPath, Sizable as _, Size, StyledExt as _, WindowExt as _,
 };
 use gpui_router::RouterState;
 use localsend::http::state::ClientInfo;

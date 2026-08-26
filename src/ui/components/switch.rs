@@ -1,8 +1,7 @@
 use gpui::{div, prelude::*, px, IntoElement, Window};
 use gpui_component::ActiveTheme as _;
 
-/// Switch component matching localsend's Switch/toggle design.
-/// Parent should wrap with on_click for state updates.
+/// Compact iOS / shadcn-style switch. Parent should wrap with on_click.
 #[derive(IntoElement)]
 pub struct Switch {
     checked: bool,
@@ -17,40 +16,36 @@ impl Switch {
 impl gpui::RenderOnce for Switch {
     fn render(self, _window: &mut Window, cx: &mut gpui::App) -> impl IntoElement {
         let checked = self.checked;
-
-        let track_color = if checked {
+        let track = if checked {
             cx.theme().primary
         } else {
             cx.theme().muted
         };
-        let thumb_color = if checked {
-            cx.theme().primary_foreground
-        } else {
-            cx.theme().muted_foreground
-        };
 
         div()
             .id("switch")
-            .w(px(50.))
+            .w(px(46.))
             .h(px(28.))
             .rounded_full()
-            .bg(track_color)
-            .border_2()
-            .border_color(if checked {
-                cx.theme().primary
-            } else {
-                cx.theme().muted_foreground
-            })
+            .bg(track)
             .relative()
+            .flex_none()
             .child(
                 div()
                     .absolute()
-                    .top(px(1.))
-                    .left(if checked { px(23.) } else { px(1.) })
-                    .w(px(22.))
-                    .h(px(22.))
+                    .top(px(2.))
+                    .left(if checked { px(20.) } else { px(2.) })
+                    .w(px(24.))
+                    .h(px(24.))
                     .rounded_full()
-                    .bg(thumb_color),
+                    .bg(cx.theme().background)
+                    .shadow(vec![gpui_component::box_shadow(
+                        px(0.),
+                        px(1.),
+                        px(2.),
+                        px(0.),
+                        cx.theme().foreground.opacity(0.18),
+                    )]),
             )
     }
 }

@@ -1,6 +1,8 @@
 //! Bottom navigation rendering for the home page.
 
 use super::*;
+use crate::ui::icons::{app_icon, paths};
+use crate::ui::theme::sizing;
 
 impl HomePage {
     pub(super) fn navigate_to(&self, pathname: &str, cx: &mut Context<Self>) {
@@ -21,14 +23,17 @@ impl HomePage {
 
     pub(super) fn render_bottom_nav(&mut self, cx: &mut Context<Self>) -> AnyElement {
         let items: [(TabType, &'static str, &'static str); 3] = [
-            (TabType::Receive, "接收", "icons/wifi.svg"),
-            (TabType::Send, "发送", "icons/send-horizontal.svg"),
-            (TabType::Settings, "设置", "icons/settings.svg"),
+            (TabType::Receive, "接收", paths::WIFI),
+            (TabType::Send, "发送", paths::SEND),
+            (TabType::Settings, "设置", paths::SETTINGS),
         ];
 
         h_flex()
             .w_full()
             .items_center()
+            .border_t_1()
+            .border_color(cx.theme().border.opacity(0.7))
+            .bg(cx.theme().background)
             .children(items.iter().map(|(tab, label, icon_path)| {
                 div()
                     .flex_1()
@@ -51,15 +56,12 @@ impl HomePage {
         } else {
             cx.theme().muted_foreground
         };
-        let icon_el = Icon::default()
-            .path(icon_path)
-            .text_color(text_color)
-            .with_size(gpui_component::Size::Large);
+        let icon_el = app_icon(icon_path, gpui_component::Size::Small, text_color);
 
         div()
             .id(tab_id)
             .w_full()
-            .h(px(56.))
+            .h(sizing::TAB_BAR_HEIGHT)
             .py(px(6.))
             .flex()
             .items_center()
@@ -70,13 +72,23 @@ impl HomePage {
             .child(
                 v_flex()
                     .items_center()
-                    .gap(px(2.))
+                    .gap(px(3.))
                     .text_color(text_color)
-                    .child(icon_el)
                     .child(
                         div()
-                            .when(selected, |this| this.text_base())
-                            .when(!selected, |this| this.text_sm())
+                            .w(px(48.))
+                            .h(px(28.))
+                            .rounded_full()
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .when(selected, |this| this.bg(cx.theme().primary.opacity(0.12)))
+                            .child(icon_el),
+                    )
+                    .child(
+                        div()
+                            .text_xs()
+                            .when(selected, |this| this.font_semibold())
                             .child(label),
                     ),
             )

@@ -22,7 +22,7 @@ impl HomePage {
             let home_for_ok = home_entity.clone();
 
             dialog
-                .title("发送文本")
+                .title(dialog_title("发送文本"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -77,11 +77,11 @@ impl HomePage {
                 .hover(_cx.theme().secondary)
                 .active(_cx.theme().secondary);
             dialog
-                .title(if show_invalid_pin {
+                .title(dialog_title(if show_invalid_pin {
                     "PIN 错误，请重试"
                 } else {
                     "请输入接收端 PIN"
-                })
+                }))
                 .overlay(true)
                 .w(px(320.))
                 .child(
@@ -148,7 +148,7 @@ impl HomePage {
             let home_for_ok = home_entity.clone();
 
             dialog
-                .title("编辑别名")
+                .title(dialog_title("编辑别名"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -198,7 +198,7 @@ impl HomePage {
             let home_for_ok = home_entity.clone();
 
             dialog
-                .title("编辑端口")
+                .title(dialog_title("编辑端口"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -254,7 +254,7 @@ impl HomePage {
             let home_for_ok = home_entity.clone();
 
             dialog
-                .title("设置接收 PIN")
+                .title(dialog_title("设置接收 PIN"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -355,7 +355,7 @@ impl HomePage {
             let input_for_ok = input_state.clone();
             let home_for_ok = home_entity.clone();
             dialog
-                .title("发现超时")
+                .title(dialog_title("发现超时"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -406,7 +406,7 @@ impl HomePage {
             let input_for_ok = input_state.clone();
             let home_for_ok = home_entity.clone();
             dialog
-                .title("组播地址")
+                .title(dialog_title("组播地址"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -532,10 +532,11 @@ impl HomePage {
                                     });
                                 })
                                 .child(
-                                Icon::default()
-                                    .path("icons/plus.svg")
-                                    .with_size(Size::Small)
-                                    .text_color(_cx.theme().foreground),
+                                app_icon(
+                                    paths::PLUS,
+                                    Size::Small,
+                                    _cx.theme().foreground,
+                                ),
                                 ),
                         )
                         .child(
@@ -566,10 +567,11 @@ impl HomePage {
                                     });
                                 })
                                 .child(
-                                Icon::default()
-                                    .path("icons/trash.svg")
-                                    .with_size(Size::Small)
-                                    .text_color(_cx.theme().muted_foreground),
+                                app_icon(
+                                    paths::TRASH,
+                                    Size::Small,
+                                    _cx.theme().muted_foreground,
+                                ),
                             ),
                         )
                         .into_any_element()
@@ -577,7 +579,7 @@ impl HomePage {
                 .collect();
 
             dialog
-                .title("发现目标网段")
+                .title(dialog_title("发现目标网段"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -720,7 +722,7 @@ impl HomePage {
             let input_for_ok = input_state.clone();
             let home_for_ok = home_entity.clone();
             dialog
-                .title("网络接口过滤规则")
+                .title(dialog_title("网络接口过滤规则"))
                 .overlay(true)
                 .w(px(380.))
                 .child(
@@ -854,7 +856,7 @@ impl HomePage {
             let mode_for_ok = mode;
 
             dialog
-                .title("输入地址")
+                .title(dialog_title("输入地址"))
                 .overlay(true)
                 .w(px(340.))
                 .child(

@@ -1,12 +1,14 @@
 //! Open source licenses page in settings.
 
 use super::data::{get_third_party_libs, ThirdPartyLib};
+use crate::ui::components::chrome::{back_icon_button, page_header, muted_card, surface_card};
 use crate::ui::routes;
+use crate::ui::theme::{radius, spacing};
 use gpui::{div, prelude::*, px, AnyElement, Context, Entity, ScrollHandle, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
-    button::{Button, ButtonCustomVariant, ButtonVariants as _},
-    h_flex, v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _,
+    button::{Button, ButtonVariants as _},
+    h_flex, v_flex, ActiveTheme as _, Sizable as _, Size, StyledExt as _,
 };
 use std::collections::HashSet;
 
@@ -52,86 +54,85 @@ fn render_license_card(
         .read(cx)
         .clone();
 
-    v_flex()
+    surface_card(cx)
         .id(format!("license-card-{lib_name}"))
-        .w_full()
         .min_w(px(0.))
-        .rounded_lg()
-        .border_1()
-        .border_color(cx.theme().border)
-        .bg(cx.theme().secondary)
         .p(px(14.))
-        .gap(px(8.))
         .child(
-            h_flex()
-                .w_full()
-                .items_center()
-                .justify_between()
-                .gap(px(8.))
-                .child(
-                    div().flex_1().min_w(px(0.)).child(
-                        div()
-                            .w_full()
-                            .text_base()
-                            .font_semibold()
-                            .text_color(cx.theme().foreground)
-                            .child(lib_name.clone()),
-                    ),
-                )
-                .child(
-                    Button::new(format!("license-toggle-{lib_name}"))
-                        .with_variant(gpui_component::button::ButtonVariant::Secondary)
-                        .outline()
-                        .with_size(Size::Small)
-                        .on_click(cx.listener(move |this, _event, _window, _cx| {
-                            this.toggle_expanded(&lib_name_for_toggle);
-                        }))
-                        .child(toggle_label),
-                ),
-        )
-        .child(
-            div()
-                .w_full()
-                .text_xs()
-                .line_height(px(18.))
-                .text_color(cx.theme().muted_foreground)
-                .child(format!("License: {}", lib.license)),
-        )
-        .child(
-            div()
-                .w_full()
-                .text_xs()
-                .line_height(px(18.))
-                .text_color(cx.theme().muted_foreground)
-                .child(lib.repository),
-        )
-        .children(is_expanded.then(|| {
             v_flex()
                 .w_full()
-                .rounded_md()
-                .border_1()
-                .border_color(cx.theme().border)
-                .bg(cx.theme().background)
+                .gap(px(8.))
                 .child(
-                    v_flex()
-                        .id(format!("open-source-license-text-scroll-area-{lib_name}"))
+                    h_flex()
                         .w_full()
-                        .min_h(px(0.))
-                        .h(px(LICENSE_TEXT_MAX_HEIGHT))
-                        .overflow_y_scroll()
-                        .track_scroll(&license_text_scroll)
-                        .overflow_x_hidden()
-                        .p(px(10.))
+                        .items_center()
+                        .justify_between()
+                        .gap(px(8.))
                         .child(
-                            div()
-                                .w_full()
-                                .text_xs()
-                                .line_height(px(18.))
-                                .text_color(cx.theme().muted_foreground)
-                                .child(lib.license_text),
+                            div().flex_1().min_w(px(0.)).child(
+                                div()
+                                    .w_full()
+                                    .text_base()
+                                    .font_semibold()
+                                    .text_color(cx.theme().foreground)
+                                    .child(lib_name.clone()),
+                            ),
+                        )
+                        .child(
+                            Button::new(format!("license-toggle-{lib_name}"))
+                                .with_variant(gpui_component::button::ButtonVariant::Secondary)
+                                .outline()
+                                .with_size(Size::Small)
+                                .on_click(cx.listener(move |this, _event, _window, _cx| {
+                                    this.toggle_expanded(&lib_name_for_toggle);
+                                }))
+                                .child(toggle_label),
                         ),
                 )
-        }))
+                .child(
+                    div()
+                        .w_full()
+                        .text_xs()
+                        .line_height(px(18.))
+                        .text_color(cx.theme().muted_foreground)
+                        .child(format!("License: {}", lib.license)),
+                )
+                .child(
+                    div()
+                        .w_full()
+                        .text_xs()
+                        .line_height(px(18.))
+                        .text_color(cx.theme().muted_foreground)
+                        .child(lib.repository),
+                )
+                .children(is_expanded.then(|| {
+                    v_flex()
+                        .w_full()
+                        .rounded(radius::MD)
+                        .border_1()
+                        .border_color(cx.theme().border)
+                        .bg(cx.theme().muted.opacity(0.4))
+                        .child(
+                            v_flex()
+                                .id(format!("open-source-license-text-scroll-area-{lib_name}"))
+                                .w_full()
+                                .min_h(px(0.))
+                                .h(px(LICENSE_TEXT_MAX_HEIGHT))
+                                .overflow_y_scroll()
+                                .track_scroll(&license_text_scroll)
+                                .overflow_x_hidden()
+                                .p(px(10.))
+                                .child(
+                                    div()
+                                        .w_full()
+                                        .text_xs()
+                                        .line_height(px(18.))
+                                        .text_color(cx.theme().muted_foreground)
+                                        .child(lib.license_text),
+                                ),
+                        )
+                })),
+        )
         .into_any_element()
 }
 
@@ -147,55 +148,21 @@ impl gpui::Render for OpenSourceLicensesPage {
             .read(cx)
             .clone();
 
-        let back_button_variant = ButtonCustomVariant::new(cx)
-            .hover(cx.theme().transparent)
-            .active(cx.theme().transparent);
-
         v_flex()
             .size_full()
-            .bg(cx.theme().background)
-            .child(
-                h_flex()
-                    .w_full()
-                    .h(px(56.))
-                    .px(px(16.))
-                    .items_center()
-                    .border_b_1()
-                    .border_color(cx.theme().border)
-                    .child(
-                        h_flex()
-                            .items_center()
-                            .gap(px(8.))
-                            .child(
-                                Button::new("open-source-licenses-back")
-                                    .ghost()
-                                    .custom(back_button_variant)
-                                    .h(px(36.))
-                                    .w(px(36.))
-                                    .p(px(0.))
-                                    .rounded_md()
-                                    .child(
-                                        Icon::default()
-                                            .path("icons/arrow-left.svg")
-                                            .with_size(Size::Small),
-                                    )
-                                    .on_click(cx.listener(|this, _event, _window, cx| {
-                                        if let Some(root) = &this.root {
-                                            let _ = root.update(cx, |root, cx| {
-                                                root.go_back_or_navigate(routes::HOME, cx);
-                                            });
-                                        }
-                                    })),
-                            )
-                            .child(
-                                div()
-                                    .text_lg()
-                                    .font_semibold()
-                                    .text_color(cx.theme().foreground)
-                                    .child("开源协议"),
-                            ),
-                    ),
-            )
+            .bg(cx.theme().muted.opacity(0.45))
+            .child(page_header(
+                "开源协议",
+                back_icon_button("open-source-licenses-back", cx, |this, _window, cx| {
+                    if let Some(root) = &this.root {
+                        let _ = root.update(cx, |root, cx| {
+                            root.go_back_or_navigate(routes::HOME, cx);
+                        });
+                    }
+                }),
+                div(),
+                cx,
+            ))
             .child(
                 div()
                     .flex_1()
@@ -216,17 +183,11 @@ impl gpui::Render for OpenSourceLicensesPage {
                                     .w_full()
                                     .flex_1()
                                     .min_w(px(0.))
-                                    .px(px(15.))
+                                    .px(spacing::PAGE)
                                     .py(px(12.))
                                     .gap(px(12.))
                                     .child(
-                                        div()
-                                            .w_full()
-                                            .rounded_lg()
-                                            .border_1()
-                                            .border_color(cx.theme().border)
-                                            .bg(cx.theme().secondary)
-                                            .p(px(14.))
+                                        muted_card(cx).p(px(14.))
                                             .child(
                                                 div()
                                                     .text_sm()

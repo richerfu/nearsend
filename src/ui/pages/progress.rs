@@ -4,16 +4,20 @@
 use crate::state::transfer_state::{
     TransferDirection, TransferInfo, TransferState, TransferStatus,
 };
+use crate::ui::components::chrome::{
+    back_icon_button, empty_state, header_icon_button, page_header,
+};
 use crate::ui::components::transfer_item::TransferItem;
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
 use crate::ui::theme::spacing;
 use gpui::{div, prelude::*, px, Context, Entity, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
-    button::{Button, ButtonCustomVariant, ButtonVariants as _},
+    button::{Button, ButtonVariants as _},
     h_flex,
     progress::Progress,
-    v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _,
+    v_flex, ActiveTheme as _, Size, StyledExt as _,
 };
 use gpui_router::RouterState;
 
@@ -46,8 +50,8 @@ impl gpui::Render for ProgressPage {
         };
 
         let direction_icon = match self.direction {
-            TransferDirection::Send => "icons/upload.svg",
-            TransferDirection::Receive => "icons/download.svg",
+            TransferDirection::Send => paths::UPLOAD,
+            TransferDirection::Receive => paths::DOWNLOAD,
         };
 
         let transfer = self.transfer_state.as_ref().and_then(|transfer_state| {
@@ -88,113 +92,52 @@ impl gpui::Render for ProgressPage {
             TransferStatus::Completed | TransferStatus::Failed | TransferStatus::Cancelled
         );
 
+        let trailing = if self.direction == TransferDirection::Send
+            && status != TransferStatus::InProgress
+        {
+            header_icon_button("progress-retry", paths::REFRESH, cx, |_this, window, _cx| {
+                crate::core::send_retry_events::request_send_retry();
+                window.refresh();
+            })
+            .into_any_element()
+        } else {
+            div().w(px(40.)).h(px(40.)).into_any_element()
+        };
+
         v_flex()
             .size_full()
             .bg(cx.theme().background)
-            // App bar
-            .child(
+            .child(page_header(
+                direction_label,
+                back_icon_button("progress-back", cx, |this, window, cx| {
+                    if let Some(root) = &this.root {
+                        let _ = root.update(cx, |this, cx| {
+                            this.go_back_or_navigate(routes::HOME, cx);
+                        });
+                    } else if let Some(entry) =
+                        crate::ui::router_history::RouterHistoryState::global_mut(cx)
+                            .history
+                            .go_back()
+                    {
+                        RouterState::global_mut(cx).location.pathname = entry.pathname;
+                    } else {
+                        RouterState::global_mut(cx).location.pathname = routes::HOME.into();
+                    }
+                    window.refresh();
+                }),
                 h_flex()
-                    .w_full()
-                    .h(px(56.))
-                    .px(px(16.))
                     .items_center()
-                    .border_b_1()
-                    .border_color(cx.theme().border)
-                    .child(
-                        h_flex()
-                            .items_center()
-                            .gap(px(8.))
-                            .child(
-                                Button::new("progress-back")
-                                    .ghost()
-                                    .custom(
-                                        ButtonCustomVariant::new(cx)
-                                            .hover(cx.theme().transparent)
-                                            .active(cx.theme().transparent),
-                                    )
-                                    .h(px(36.))
-                                    .w(px(36.))
-                                    .p(px(0.))
-                                    .rounded_md()
-                                    .child(
-                                        Icon::default()
-                                            .path("icons/arrow-left.svg")
-                                            .with_size(Size::Small),
-                                    )
-                                    .on_click(cx.listener(|this, _event, window, cx| {
-                                        if let Some(root) = &this.root {
-                                            let _ = root.update(cx, |this, cx| {
-                                                this.go_back_or_navigate(routes::HOME, cx);
-                                            });
-                                        } else {
-                                            if let Some(entry) =
-                                                crate::ui::router_history::RouterHistoryState::global_mut(
-                                                    cx,
-                                                )
-                                                .history
-                                                .go_back()
-                                            {
-                                                RouterState::global_mut(cx).location.pathname =
-                                                    entry.pathname;
-                                            } else {
-                                                RouterState::global_mut(cx).location.pathname =
-                                                    routes::HOME.into();
-                                            }
-                                        }
-                                        window.refresh();
-                                    })),
-                            )
-                            .child(
-                                Icon::default()
-                                    .path(direction_icon)
-                                    .with_size(Size::Small)
-                                    .text_color(cx.theme().foreground),
-                            )
-                            .child(
-                                div()
-                                    .text_lg()
-                                    .font_semibold()
-                                    .text_color(cx.theme().foreground)
-                                    .child(direction_label),
-                            ),
-                    )
-                    .child(div().flex_1())
-                    .child(
-                        if self.direction == TransferDirection::Send
-                            && status != TransferStatus::InProgress
-                        {
-                            Button::new("progress-retry")
-                                .ghost()
-                                .custom(
-                                    ButtonCustomVariant::new(cx)
-                                        .hover(cx.theme().transparent)
-                                        .active(cx.theme().transparent),
-                                )
-                                .h(px(36.))
-                                .w(px(36.))
-                                .p(px(0.))
-                                .rounded_md()
-                                .on_click(cx.listener(|_this, _event, window, _cx| {
-                                    crate::core::send_retry_events::request_send_retry();
-                                    window.refresh();
-                                }))
-                                .child(
-                                    Icon::default()
-                                        .path("icons/refresh.svg")
-                                        .with_size(Size::Small),
-                                )
-                                .into_any_element()
-                        } else {
-                            div().w(px(36.)).h(px(36.)).into_any_element()
-                        },
-                    ),
-            )
+                    .gap(px(4.))
+                    .child(app_icon(direction_icon, Size::Small, cx.theme().foreground))
+                    .child(trailing),
+                cx,
+            ))
             // Content
             .child(
                 div().flex_1().w_full().overflow_y_scrollbar().child(
                     v_flex()
                         .w_full()
-                        .px(px(15.))
+                        .px(spacing::PAGE)
                         .py(px(20.))
                         .gap(spacing::MD)
                         // Overall progress
@@ -269,21 +212,17 @@ impl gpui::Render for ProgressPage {
                         })
                         // Empty state
                         .when(transfer.is_none(), |this| {
-                            this.child(
-                                div()
-                                    .w_full()
-                                    .py(px(40.))
-                                    .flex()
-                                    .items_center()
-                                    .justify_center()
-                                    .text_color(cx.theme().muted_foreground)
-                                    .child("暂无传输"),
-                            )
+                            this.child(empty_state(
+                                paths::UPLOAD,
+                                "暂无传输",
+                                "开始发送或接收后会在这里显示进度",
+                                cx,
+                            ))
                         }),
                 ),
             )
             // Bottom action button
-            .child(div().w_full().px(px(15.)).py(px(15.)).child(if is_done {
+            .child(div().w_full().px(spacing::PAGE).py(px(15.)).child(if is_done {
                 Button::new("progress-done")
                     .primary()
                     .w_full()

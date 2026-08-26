@@ -5,32 +5,18 @@ use std::borrow::Cow;
 /// Asset source that adds near-send icons on top of gpui-component assets.
 pub struct NearSendAssets(pub ComponentAssets);
 
-const CUSTOM_ICONS: &[&str] = &[
-    "icons/logo.svg",
-    "icons/wifi.svg",
-    "icons/send-horizontal.svg",
-    "icons/history.svg",
-    "icons/x.svg",
-    "icons/download.svg",
-    "icons/upload.svg",
-    "icons/trash.svg",
-    "icons/smartphone.svg",
-    "icons/monitor.svg",
-    "icons/server.svg",
-    "icons/refresh.svg",
-    "icons/qr-code.svg",
-    "icons/image.svg",
-    "icons/target.svg",
-    "icons/more-horizontal.svg",
-];
+#[derive(rust_embed::RustEmbed)]
+#[folder = "assets"]
+#[include = "icons/**/*.svg"]
+struct LocalIcons;
 
 impl AssetSource for NearSendAssets {
     fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
         let candidates = canonical_path_candidates(path);
 
         for candidate in &candidates {
-            if let Some(bytes) = custom_icon_bytes(candidate) {
-                return Ok(Some(Cow::Borrowed(bytes)));
+            if let Some(file) = LocalIcons::get(candidate) {
+                return Ok(Some(file.data));
             }
         }
 
@@ -64,9 +50,10 @@ impl AssetSource for NearSendAssets {
             || normalized_prefix == "icons"
             || normalized_prefix == "icons/";
 
-        for custom_icon in CUSTOM_ICONS {
+        for custom_icon in LocalIcons::iter() {
+            let custom_icon = custom_icon.as_ref();
             if inject_all_custom_icons || custom_icon.starts_with(&normalized_prefix) {
-                let entry: SharedString = (*custom_icon).into();
+                let entry: SharedString = custom_icon.to_string().into();
                 if !list.contains(&entry) {
                     list.push(entry);
                 }
@@ -74,32 +61,6 @@ impl AssetSource for NearSendAssets {
         }
 
         Ok(list)
-    }
-}
-
-fn custom_icon_bytes(path: &str) -> Option<&'static [u8]> {
-    match path {
-        "icons/logo.svg" => Some(include_bytes!("../assets/icons/logo.svg").as_slice()),
-        "icons/wifi.svg" => Some(include_bytes!("../assets/icons/wifi.svg").as_slice()),
-        "icons/send-horizontal.svg" => {
-            Some(include_bytes!("../assets/icons/send-horizontal.svg").as_slice())
-        }
-        "icons/history.svg" => Some(include_bytes!("../assets/icons/history.svg").as_slice()),
-        "icons/x.svg" => Some(include_bytes!("../assets/icons/x.svg").as_slice()),
-        "icons/download.svg" => Some(include_bytes!("../assets/icons/download.svg").as_slice()),
-        "icons/upload.svg" => Some(include_bytes!("../assets/icons/upload.svg").as_slice()),
-        "icons/trash.svg" => Some(include_bytes!("../assets/icons/trash.svg").as_slice()),
-        "icons/smartphone.svg" => Some(include_bytes!("../assets/icons/smartphone.svg").as_slice()),
-        "icons/monitor.svg" => Some(include_bytes!("../assets/icons/monitor.svg").as_slice()),
-        "icons/server.svg" => Some(include_bytes!("../assets/icons/server.svg").as_slice()),
-        "icons/refresh.svg" => Some(include_bytes!("../assets/icons/refresh.svg").as_slice()),
-        "icons/qr-code.svg" => Some(include_bytes!("../assets/icons/qr-code.svg").as_slice()),
-        "icons/image.svg" => Some(include_bytes!("../assets/icons/image.svg").as_slice()),
-        "icons/target.svg" => Some(include_bytes!("../assets/icons/target.svg").as_slice()),
-        "icons/more-horizontal.svg" => {
-            Some(include_bytes!("../assets/icons/more-horizontal.svg").as_slice())
-        }
-        _ => None,
     }
 }
 

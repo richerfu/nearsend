@@ -2,9 +2,11 @@
 
 use super::HomePage;
 use super::QuickSaveMode;
+use crate::ui::components::chrome::{circle_icon_button, dialog_title};
 use crate::ui::components::logo::Logo;
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
-use crate::ui::theme::spacing;
+use crate::ui::theme::{radius, spacing};
 use gpui::{div, prelude::*, px, Anchor, AnyElement, Context, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
@@ -12,7 +14,7 @@ use gpui_component::{
     dialog::{DialogAction, DialogButtonProps, DialogFooter},
     h_flex,
     popover::Popover,
-    v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _, WindowExt as _,
+    v_flex, ActiveTheme as _, Size, StyledExt as _, WindowExt as _,
 };
 
 pub fn render_receive_content(
@@ -44,22 +46,20 @@ pub fn render_receive_content(
         .child(
             h_flex()
                 .w_full()
-                .h(px(56.))
-                .px(px(20.))
+                .h(px(52.))
+                .px(spacing::PAGE)
                 .items_center()
                 .justify_end()
                 .gap(spacing::SM)
-                // History button — always visible
-                .child(render_circle_button(
+                .child(circle_icon_button(
                     "receive-history",
-                    "icons/history.svg",
+                    paths::HISTORY,
                     cx,
                     |this, _event, window, cx| {
                         this.navigate_to(routes::RECEIVE_HISTORY, cx);
                         window.refresh();
                     },
                 ))
-                // Info popover
                 .child(
                     Popover::new("receive-info")
                         .anchor(Anchor::TopRight)
@@ -79,33 +79,25 @@ pub fn render_receive_content(
                                     ButtonCustomVariant::new(cx)
                                         .color(cx.theme().transparent)
                                         .foreground(cx.theme().foreground)
-                                        .hover(cx.theme().transparent)
-                                        .active(cx.theme().transparent),
+                                        .hover(cx.theme().muted)
+                                        .active(cx.theme().muted),
                                 )
                                 .rounded_full()
-                                .p(px(8.))
+                                .p(px(0.))
                                 .child(
                                     div()
-                                        .shadow(vec![gpui_component::box_shadow(
-                                            px(0.),
-                                            px(0.),
-                                            px(0.),
-                                            px(1.),
-                                            cx.theme().foreground.opacity(0.10),
-                                        )])
-                                        .bg(cx.theme().foreground.opacity(0.04))
+                                        .bg(cx.theme().muted)
                                         .rounded_full()
                                         .w(px(44.))
                                         .h(px(44.))
                                         .flex()
                                         .items_center()
                                         .justify_center()
-                                        .child(
-                                            Icon::default()
-                                                .path("icons/info.svg")
-                                                .with_size(Size::Medium)
-                                                .text_color(cx.theme().foreground),
-                                        ),
+                                        .child(app_icon(
+                                            paths::INFO,
+                                            Size::Small,
+                                            cx.theme().foreground,
+                                        )),
                                 ),
                         )
                         .content(move |_state, _window, cx| {
@@ -221,145 +213,77 @@ pub fn render_receive_content(
                             .child("自动保存"),
                     )
                     .child({
-                        let quick_save_track_bg = cx.theme().secondary;
-                        let quick_save_selected_bg = cx.theme().primary.opacity(0.16);
-                        let quick_save_border = cx.theme().border.opacity(0.95);
-                        let quick_save_divider = cx.theme().border.opacity(0.92);
-                        let quick_save_text_color = cx.theme().foreground.opacity(0.95);
+                        let selected_bg = cx.theme().background;
+                        let track_bg = cx.theme().muted;
+                        let selected_fg = cx.theme().foreground;
+                        let idle_fg = cx.theme().muted_foreground;
 
                         h_flex()
                             .id("receive-quick-save")
                             .w_full()
-                            .max_w(px(350.))
-                            .h(px(46.))
-                            .rounded_full()
-                            .overflow_hidden()
-                            .p(px(1.))
-                            .border_1()
-                            .border_color(quick_save_border)
-                            .bg(quick_save_track_bg)
-                            .child(
-                                div()
-                                    .id("quick-save-off")
-                                    .flex_1()
-                                    .h_full()
-                                    .cursor_pointer()
-                                    .bg(if quick_save_selected_index == 0 {
-                                        quick_save_selected_bg
-                                    } else {
-                                        cx.theme().transparent
-                                    })
-                                    .when(quick_save_selected_index == 0, |this| {
-                                        this.rounded_l(px(999.))
-                                    })
-                                    .flex()
-                                    .items_center()
-                                    .justify_center()
-                                    .on_click({
-                                        let home_entity = home_entity.clone();
-                                        move |_event, _window, cx| {
-                                            home_entity.update(cx, |this, _cx| {
-                                                set_quick_save_mode(this, QuickSaveMode::Off);
-                                            });
-                                        }
-                                    })
-                                    .child(
-                                        div()
-                                            .text_lg()
-                                            .font_medium()
-                                            .text_color(quick_save_text_color)
-                                            .child("关"),
-                                    ),
-                            )
-                            .child(
-                                div()
-                                    .flex_1()
-                                    .h_full()
-                                    .flex()
-                                    .items_center()
-                                    .child(div().w(px(1.)).h(px(24.)).bg(quick_save_divider))
-                                    .child(
-                                        div()
-                                            .id("quick-save-favorites")
-                                            .flex_1()
-                                            .h_full()
-                                            .cursor_pointer()
-                                            .bg(if quick_save_selected_index == 1 {
-                                                quick_save_selected_bg
-                                            } else {
-                                                cx.theme().transparent
-                                            })
-                                            .flex()
-                                            .items_center()
-                                            .justify_center()
-                                            .on_click({
-                                                let home_entity = home_entity.clone();
-                                                move |_event, window, cx| {
-                                                    home_entity.update(cx, |this, _cx| {
-                                                        set_quick_save_mode(
-                                                            this,
-                                                            QuickSaveMode::Favorites,
-                                                        );
-                                                    });
-                                                    open_quick_save_notice_dialog(
-                                                        QuickSaveMode::Favorites,
-                                                        window,
-                                                        cx,
-                                                    );
-                                                }
-                                            })
-                                            .child(
-                                                div()
-                                                    .text_lg()
-                                                    .font_medium()
-                                                    .text_color(quick_save_text_color)
-                                                    .child("收藏夹"),
-                                            ),
-                                    ),
-                            )
-                            .child(
-                                div()
-                                    .flex_1()
-                                    .h_full()
-                                    .flex()
-                                    .items_center()
-                                    .child(div().w(px(1.)).h(px(24.)).bg(quick_save_divider))
-                                    .child(
-                                        div()
-                                            .id("quick-save-on")
-                                            .flex_1()
-                                            .h_full()
-                                            .cursor_pointer()
-                                            .bg(if quick_save_selected_index == 2 {
-                                                quick_save_selected_bg
-                                            } else {
-                                                cx.theme().transparent
-                                            })
-                                            .when(quick_save_selected_index == 2, |this| {
-                                                this.rounded_r(px(999.))
-                                            })
-                                            .flex()
-                                            .items_center()
-                                            .justify_center()
-                                            .on_click(move |_event, window, cx| {
-                                                home_entity.update(cx, |this, _cx| {
-                                                    set_quick_save_mode(this, QuickSaveMode::On);
-                                                });
-                                                open_quick_save_notice_dialog(
-                                                    QuickSaveMode::On,
-                                                    window,
-                                                    cx,
-                                                );
-                                            })
-                                            .child(
-                                                div()
-                                                    .text_lg()
-                                                    .font_medium()
-                                                    .text_color(quick_save_text_color)
-                                                    .child("开"),
-                                            ),
-                                    ),
-                            )
+                            .max_w(px(360.))
+                            .h(px(42.))
+                            .rounded(radius::FULL)
+                            .p(px(3.))
+                            .bg(track_bg)
+                            .child(quick_save_chip(
+                                "quick-save-off",
+                                "关",
+                                quick_save_selected_index == 0,
+                                selected_bg,
+                                selected_fg,
+                                idle_fg,
+                                {
+                                    let home_entity = home_entity.clone();
+                                    move |_event, _window, cx| {
+                                        home_entity.update(cx, |this, _cx| {
+                                            set_quick_save_mode(this, QuickSaveMode::Off);
+                                        });
+                                    }
+                                },
+                            ))
+                            .child(quick_save_chip(
+                                "quick-save-favorites",
+                                "收藏夹",
+                                quick_save_selected_index == 1,
+                                selected_bg,
+                                selected_fg,
+                                idle_fg,
+                                {
+                                    let home_entity = home_entity.clone();
+                                    move |_event, window, cx| {
+                                        home_entity.update(cx, |this, _cx| {
+                                            set_quick_save_mode(this, QuickSaveMode::Favorites);
+                                        });
+                                        open_quick_save_notice_dialog(
+                                            QuickSaveMode::Favorites,
+                                            window,
+                                            cx,
+                                        );
+                                    }
+                                },
+                            ))
+                            .child(quick_save_chip(
+                                "quick-save-on",
+                                "开",
+                                quick_save_selected_index == 2,
+                                selected_bg,
+                                selected_fg,
+                                idle_fg,
+                                {
+                                    let home_entity = home_entity.clone();
+                                    move |_event, window, cx| {
+                                        home_entity.update(cx, |this, _cx| {
+                                            set_quick_save_mode(this, QuickSaveMode::On);
+                                        });
+                                        open_quick_save_notice_dialog(
+                                            QuickSaveMode::On,
+                                            window,
+                                            cx,
+                                        );
+                                    }
+                                },
+                            ))
                     }),
             ),
         )
@@ -427,13 +351,7 @@ fn open_quick_save_notice_dialog(mode: QuickSaveMode, window: &mut Window, cx: &
 
     window.open_dialog(cx, move |dialog, _window, _cx| {
         dialog
-            .title(
-                div()
-                    .text_lg()
-                    .font_semibold()
-                    .text_color(_cx.theme().foreground)
-                    .child(title.clone()),
-            )
+            .title(dialog_title(title.clone()))
             .overlay(true)
             .w(px(360.))
             .child(
@@ -491,41 +409,39 @@ fn render_info_row(label: &str, value: &str, cx: &gpui::App) -> impl IntoElement
         )
 }
 
-/// Render a circular icon button (used for history, info, etc.).
-fn render_circle_button(
-    id: &str,
-    icon_path: &str,
-    cx: &Context<HomePage>,
-    on_click: impl Fn(&mut HomePage, &gpui::ClickEvent, &mut Window, &mut Context<HomePage>) + 'static,
+fn quick_save_chip(
+    id: &'static str,
+    label: &'static str,
+    selected: bool,
+    selected_bg: gpui::Hsla,
+    selected_fg: gpui::Hsla,
+    idle_fg: gpui::Hsla,
+    on_click: impl Fn(&gpui::ClickEvent, &mut Window, &mut gpui::App) + 'static,
 ) -> impl IntoElement {
-    let icon_path = icon_path.to_string();
     div()
-        .id(id.to_string())
-        .cursor_default()
-        .rounded_full()
-        .p(px(8.))
+        .id(id)
+        .flex_1()
+        .h_full()
+        .rounded(radius::FULL)
+        .cursor_pointer()
+        .flex()
+        .items_center()
+        .justify_center()
+        .when(selected, |this| {
+            this.bg(selected_bg).shadow(vec![gpui_component::box_shadow(
+                px(0.),
+                px(1.),
+                px(3.),
+                px(0.),
+                gpui::hsla(0.0, 0.0, 0.0, 0.08),
+            )])
+        })
+        .on_click(on_click)
         .child(
             div()
-                .shadow(vec![gpui_component::box_shadow(
-                    px(0.),
-                    px(0.),
-                    px(0.),
-                    px(1.),
-                    cx.theme().foreground.opacity(0.10),
-                )])
-                .bg(cx.theme().foreground.opacity(0.04))
-                .rounded_full()
-                .w(px(44.))
-                .h(px(44.))
-                .flex()
-                .items_center()
-                .justify_center()
-                .child(
-                    Icon::default()
-                        .path(icon_path)
-                        .with_size(Size::Medium)
-                        .text_color(cx.theme().foreground),
-                ),
+                .text_sm()
+                .when(selected, |this| this.font_semibold())
+                .text_color(if selected { selected_fg } else { idle_fg })
+                .child(label),
         )
-        .on_click(cx.listener(on_click))
 }

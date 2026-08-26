@@ -610,7 +610,7 @@ impl HomePage {
         let msg = message.to_string();
         window.open_dialog(cx, move |dialog, _window, _cx| {
             dialog
-                .title("提示")
+                .title(dialog_title("提示"))
                 .overlay(true)
                 .w(px(320.))
                 .child(div().w_full().text_sm().child(msg.clone()))

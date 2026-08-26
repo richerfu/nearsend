@@ -5,17 +5,21 @@ use crate::state::{
     receive_inbox_state::{ReceiveInboxState, ReceiveItem, ReceiveSession},
     transfer_state::TransferDirection,
 };
+use crate::ui::components::chrome::{
+    back_icon_button, dialog_title, empty_state, page_header,
+};
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
-use crate::ui::theme::spacing;
+use crate::ui::theme::{radius, spacing};
 use chrono::{Datelike, Local, TimeZone as _, Timelike};
 use gpui::{div, prelude::*, px, Anchor, Context, Entity, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
-    button::{Button, ButtonCustomVariant, ButtonVariants as _},
+    button::{Button, ButtonVariants as _},
     dialog::{DialogAction, DialogClose, DialogFooter},
     h_flex,
     popover::Popover,
-    v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _, WindowExt as _,
+    v_flex, ActiveTheme as _, Size, StyledExt as _, WindowExt as _,
 };
 use gpui_router::RouterState;
 
@@ -65,69 +69,30 @@ impl gpui::Render for HistoryPage {
         let history_state = self.history_state.clone();
         let receive_inbox_state = self.receive_inbox_state.clone();
         let root = self.root.clone();
-        let back_button_variant = ButtonCustomVariant::new(cx)
-            .hover(cx.theme().transparent)
-            .active(cx.theme().transparent);
-
         v_flex()
             .size_full()
             .bg(cx.theme().background)
-            // App bar
-            .child(
-                h_flex()
-                    .w_full()
-                    .h(px(56.))
-                    .px(px(16.))
-                    .items_center()
-                    .border_b_1()
-                    .border_color(cx.theme().border)
-                    .child(
-                        h_flex()
-                            .items_center()
-                            .gap(px(8.))
-                            .child(
-                                Button::new("history-back")
-                                    .ghost()
-                                    .custom(back_button_variant)
-                                    .h(px(36.))
-                                    .w(px(36.))
-                                    .p(px(0.))
-                                    .rounded_md()
-                                    .child(
-                                        Icon::default()
-                                            .path("icons/arrow-left.svg")
-                                            .with_size(Size::Small),
-                                    )
-                                    .on_click(cx.listener(|this, _event, window, cx| {
-                                        if let Some(root) = &this.root {
-                                            let _ = root.update(cx, |this, cx| {
-                                                this.go_back_or_navigate(routes::HOME, cx);
-                                            });
-                                        } else {
-                                            // Fallback if no root
-                                            if let Some(entry) =
-                                                crate::ui::router_history::RouterHistoryState::global_mut(cx)
-                                                    .history
-                                                    .go_back()
-                                            {
-                                                RouterState::global_mut(cx).location.pathname = entry.pathname;
-                                            } else {
-                                                RouterState::global_mut(cx).location.pathname =
-                                                    routes::HOME.into();
-                                            }
-                                        }
-                                        window.refresh();
-                                    })),
-                            )
-                            .child(
-                                div()
-                                    .text_lg()
-                                    .font_semibold()
-                                    .text_color(cx.theme().foreground)
-                                    .child("历史"),
-                            ),
-                    ),
-            )
+            .child(page_header(
+                "历史",
+                back_icon_button("history-back", cx, |this, window, cx| {
+                    if let Some(root) = &this.root {
+                        let _ = root.update(cx, |this, cx| {
+                            this.go_back_or_navigate(routes::HOME, cx);
+                        });
+                    } else if let Some(entry) =
+                        crate::ui::router_history::RouterHistoryState::global_mut(cx)
+                            .history
+                            .go_back()
+                    {
+                        RouterState::global_mut(cx).location.pathname = entry.pathname;
+                    } else {
+                        RouterState::global_mut(cx).location.pathname = routes::HOME.into();
+                    }
+                    window.refresh();
+                }),
+                div(),
+                cx,
+            ))
             // Content
             .child(
                 div()
@@ -139,7 +104,7 @@ impl gpui::Render for HistoryPage {
                             .w_full()
                             .max_w(px(960.))
                             .mx_auto()
-                            .px(px(15.))
+                            .px(spacing::PAGE)
                             .pt(px(8.))
                             .pb(px(10.))
                             .gap(px(8.))
@@ -165,9 +130,11 @@ impl gpui::Render for HistoryPage {
                                                     .items_center()
                                                     .gap(px(8.))
                                                     .child(
-                                                        Icon::default()
-                                                            .path("icons/folder.svg")
-                                                            .with_size(Size::Small),
+                                                        app_icon(
+                                                            paths::FOLDER,
+                                                            Size::Small,
+                                                            cx.theme().foreground,
+                                                        ),
                                                     )
                                                     .child(
                                                         div()
@@ -191,9 +158,11 @@ impl gpui::Render for HistoryPage {
                                                     .items_center()
                                                     .gap(px(8.))
                                                     .child(
-                                                        Icon::default()
-                                                            .path("icons/trash.svg")
-                                                            .with_size(Size::Small),
+                                                        app_icon(
+                                                            paths::TRASH,
+                                                            Size::Small,
+                                                            cx.theme().danger,
+                                                        ),
                                                     )
                                                     .child(
                                                         div()
@@ -258,19 +227,16 @@ impl gpui::Render for HistoryPage {
                                         div()
                                             .w(px(44.))
                                             .h(px(44.))
-                                            .rounded_md()
-                                            .bg(cx.theme().secondary)
-                                            .border_1()
-                                            .border_color(cx.theme().border)
+                                            .rounded(radius::MD)
+                                            .bg(cx.theme().muted)
                                             .flex()
                                             .items_center()
                                             .justify_center()
-                                            .child(
-                                                Icon::default()
-                                                    .path(icon_for_direction(entry.direction))
-                                                    .with_size(Size::Medium)
-                                                    .text_color(cx.theme().primary),
-                                            ),
+                                            .child(app_icon(
+                                                icon_for_direction(entry.direction),
+                                                Size::Small,
+                                                cx.theme().primary,
+                                            )),
                                     )
                                     .child(
                                         v_flex()
@@ -318,9 +284,11 @@ impl gpui::Render for HistoryPage {
                                                         .rounded_full()
                                                         .p(px(8.))
                                                         .child(
-                                                            Icon::default()
-                                                                .path("icons/more-horizontal.svg")
-                                                                .with_size(Size::Large),
+                                                            app_icon(
+                                                                paths::MORE,
+                                                                Size::Small,
+                                                                cx.theme().muted_foreground,
+                                                            ),
                                                         ),
                                                 )
                                                 .content(move |_state, _window, _cx| {
@@ -456,14 +424,12 @@ impl gpui::Render for HistoryPage {
                             .items_center()
                             .justify_center()
                             .py(px(80.))
-                            .child(
-                                v_flex().items_center().gap(spacing::MD).child(
-                                    div()
-                                        .text_xl()
-                                        .text_color(cx.theme().muted_foreground)
-                                        .child("无历史记录"),
-                                ),
-                            )
+                            .child(empty_state(
+                                paths::HISTORY,
+                                "无历史记录",
+                                "发送或接收文件后会出现在这里",
+                                cx,
+                            ))
                             .into_any_element()
                     }),
             )
@@ -480,7 +446,7 @@ impl HistoryPage {
         window.open_dialog(cx, move |dialog, _window, _cx| {
             let history_state = history_state.clone();
             dialog
-                .title("删除历史")
+                .title(dialog_title("删除历史"))
                 .overlay(true)
                 .w(px(340.))
                 .child(div().w_full().text_sm().child("确定删除所有历史记录吗？"))
@@ -640,8 +606,8 @@ fn open_history_entry(
 
 fn icon_for_direction(direction: TransferDirection) -> &'static str {
     match direction {
-        TransferDirection::Send => "icons/upload.svg",
-        TransferDirection::Receive => "icons/download.svg",
+        TransferDirection::Send => paths::UPLOAD,
+        TransferDirection::Receive => paths::DOWNLOAD,
     }
 }
 
@@ -686,7 +652,7 @@ fn open_entry_info_dialog(
 
     window.open_dialog(cx, move |dialog, _window, _cx| {
         dialog
-            .title("信息")
+            .title(dialog_title("信息"))
             .overlay(true)
             .w(px(360.))
             .child(
@@ -753,7 +719,7 @@ fn open_notice_dialog(message: &str, window: &mut Window, cx: &mut gpui::App) {
     let msg = message.to_string();
     window.open_dialog(cx, move |dialog, _window, _cx| {
         dialog
-            .title("提示")
+            .title(dialog_title("提示"))
             .overlay(true)
             .w(px(320.))
             .child(div().w_full().text_sm().child(msg.clone()))

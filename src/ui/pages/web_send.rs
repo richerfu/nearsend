@@ -1,14 +1,19 @@
 use crate::core::share_links::SharedEntry;
+use crate::ui::components::chrome::{
+    back_icon_button, dialog_title, header_icon_button, page_header,
+};
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::pages::HomePage;
 use crate::ui::routes;
+use crate::ui::theme::spacing;
 use gpui::{div, hsla, prelude::*, px, Context, Entity, Window};
 use gpui_component::input::{Input, InputState};
 use gpui_component::notification::Notification;
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
-    button::{Button, ButtonCustomVariant, ButtonVariants as _},
+    button::{Button, ButtonVariants as _},
     dialog::{DialogAction, DialogClose, DialogFooter},
-    h_flex, v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _, WindowExt as _,
+    h_flex, v_flex, ActiveTheme as _, Sizable as _, Size, StyledExt as _, WindowExt as _,
 };
 use gpui_router::RouterState;
 use qrcode::types::Color;
@@ -179,7 +184,7 @@ impl WebSendPage {
             let input_for_ok = input.clone();
             let page_for_ok = page.clone();
             dialog
-                .title("设置访问 PIN")
+                .title(dialog_title("设置访问 PIN"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -222,7 +227,7 @@ impl WebSendPage {
         let text = msg.to_string();
         window.open_dialog(cx, move |dialog, _window, _cx| {
             dialog
-                .title("提示")
+                .title(dialog_title("提示"))
                 .overlay(true)
                 .w(px(320.))
                 .child(div().w_full().text_sm().child(text.clone()))
@@ -330,7 +335,7 @@ impl WebSendPage {
         let link_text = link.to_string();
         window.open_dialog(cx, move |dialog, _window, _cx| {
             dialog
-                .title("分享链接二维码")
+                .title(dialog_title("分享链接二维码"))
                 .overlay(true)
                 .w(px(360.))
                 .child(
@@ -437,94 +442,37 @@ impl gpui::Render for WebSendPage {
             .share_via_link_auto_accept;
         let require_pin = self.home_entity.read(cx).settings_state.require_pin;
         let pin = self.home_entity.read(cx).settings_state.receive_pin.clone();
-        let nav_button_variant = ButtonCustomVariant::new(cx)
-            .hover(cx.theme().transparent)
-            .active(cx.theme().transparent);
-
         v_flex()
             .size_full()
             .bg(cx.theme().background)
-            .child(
-                h_flex()
-                    .w_full()
-                    .h(px(56.))
-                    .px(px(16.))
-                    .items_center()
-                    .border_b_1()
-                    .border_color(cx.theme().border)
-                    .child(
-                        h_flex()
-                            .items_center()
-                            .gap(px(8.))
-                            .child(
-                                Button::new("web-send-back")
-                                    .ghost()
-                                    .custom(nav_button_variant)
-                                    .h(px(36.))
-                                    .w(px(36.))
-                                    .p(px(0.))
-                                    .rounded_md()
-                                    .child(
-                                        Icon::default()
-                                            .path("icons/arrow-left.svg")
-                                            .with_size(Size::Small),
-                                    )
-                                    .on_click(cx.listener(|this, _event, window, cx| {
-                                        if let Some(root) = &this.root {
-                                            let _ = root.update(cx, |this, cx| {
-                                                this.go_back_or_navigate(routes::HOME, cx);
-                                            });
-                                        } else {
-                                            if let Some(entry) =
-                                                crate::ui::router_history::RouterHistoryState::global_mut(cx)
-                                                    .history
-                                                    .go_back()
-                                            {
-                                                RouterState::global_mut(cx).location.pathname = entry.pathname;
-                                            } else {
-                                                RouterState::global_mut(cx).location.pathname =
-                                                    routes::HOME.into();
-                                            }
-                                        }
-                                        window.refresh();
-                                    })),
-                            )
-                            .child(
-                                div()
-                                    .text_lg()
-                                    .font_semibold()
-                                    .text_color(cx.theme().foreground)
-                                    .child("分享链接"),
-                            ),
-                    )
-                    .child(div().flex_1())
-                    .child(
-                        Button::new("web-send-refresh-link")
-                            .ghost()
-                            .custom(
-                                ButtonCustomVariant::new(cx)
-                                    .hover(cx.theme().transparent)
-                                    .active(cx.theme().transparent),
-                            )
-                            .h(px(36.))
-                            .w(px(36.))
-                            .p(px(0.))
-                            .rounded_md()
-                            .on_click(cx.listener(|this, _event, _window, cx| {
-                                this.regenerate_share_link(cx);
-                            }))
-                            .child(
-                                Icon::default()
-                                    .path("icons/refresh.svg")
-                                    .with_size(Size::Small),
-                            ),
-                    ),
-            )
+            .child(page_header(
+                "分享链接",
+                back_icon_button("web-send-back", cx, |this, window, cx| {
+                    if let Some(root) = &this.root {
+                        let _ = root.update(cx, |this, cx| {
+                            this.go_back_or_navigate(routes::HOME, cx);
+                        });
+                    } else if let Some(entry) =
+                        crate::ui::router_history::RouterHistoryState::global_mut(cx)
+                            .history
+                            .go_back()
+                    {
+                        RouterState::global_mut(cx).location.pathname = entry.pathname;
+                    } else {
+                        RouterState::global_mut(cx).location.pathname = routes::HOME.into();
+                    }
+                    window.refresh();
+                }),
+                header_icon_button("web-send-refresh-link", paths::REFRESH, cx, |this, _window, cx| {
+                    this.regenerate_share_link(cx);
+                }),
+                cx,
+            ))
             .child(
                 div().flex_1().w_full().overflow_y_scrollbar().child(
                     v_flex()
                         .w_full()
-                        .px(px(15.))
+                        .px(spacing::PAGE)
                         .py(px(16.))
                         .gap(px(12.))
                         .when_some(error.clone(), |this, err| {
@@ -589,9 +537,11 @@ impl gpui::Render for WebSendPage {
                                                         },
                                                     ))
                                                     .child(
-                                                        Icon::default()
-                                                            .path("icons/qr-code.svg")
-                                                            .with_size(Size::Small),
+                                                        app_icon(
+                                                            paths::QR_CODE,
+                                                            Size::Small,
+                                                            cx.theme().foreground,
+                                                        ),
                                                     ),
                                             )
                                             .child(
@@ -639,9 +589,11 @@ impl gpui::Render for WebSendPage {
                                                         },
                                                     ))
                                                     .child(
-                                                        Icon::default()
-                                                            .path("icons/copy.svg")
-                                                            .with_size(Size::Small),
+                                                        app_icon(
+                                                            paths::COPY,
+                                                            Size::Small,
+                                                            cx.theme().foreground,
+                                                        ),
                                                     ),
                                             )
                                     }))

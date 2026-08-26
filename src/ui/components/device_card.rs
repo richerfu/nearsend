@@ -1,14 +1,15 @@
 use crate::ui::components::{device_badge::DeviceBadge, progress_bar::ProgressBar};
-use crate::ui::theme::{sizing, spacing};
+use crate::ui::icons::{app_icon, paths};
+use crate::ui::theme::{radius, sizing, spacing};
 use gpui::{div, prelude::*, px, Window};
 use gpui_component::{
     button::{Button, ButtonVariants as _},
-    h_flex, v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _,
+    h_flex, v_flex, ActiveTheme as _, Size, StyledExt as _,
 };
 use localsend::http::state::ClientInfo;
 use localsend::model::discovery::DeviceType;
 
-/// Device card component matching localsend's DeviceListTile design
+/// Device card matching LocalSend's DeviceListTile, styled as a shadcn card.
 #[derive(IntoElement)]
 pub struct DeviceCard {
     device: ClientInfo,
@@ -90,11 +91,11 @@ impl DeviceCard {
 
 fn device_type_icon_path(device_type: &Option<DeviceType>) -> &'static str {
     match device_type {
-        Some(DeviceType::Mobile) => "icons/smartphone.svg",
-        Some(DeviceType::Desktop) => "icons/monitor.svg",
-        Some(DeviceType::Web) => "icons/globe.svg",
-        Some(DeviceType::Server) | Some(DeviceType::Headless) => "icons/server.svg",
-        None => "icons/smartphone.svg",
+        Some(DeviceType::Mobile) => paths::SMARTPHONE,
+        Some(DeviceType::Desktop) => paths::MONITOR,
+        Some(DeviceType::Web) => paths::GLOBE,
+        Some(DeviceType::Server) | Some(DeviceType::Headless) => paths::SERVER,
+        None => paths::SMARTPHONE,
     }
 }
 
@@ -127,64 +128,59 @@ impl gpui::RenderOnce for DeviceCard {
             ProgressBar::new(Some(progress_val)).into_any_element()
         } else {
             h_flex()
-                .gap(px(8.))
+                .gap(px(6.))
                 .flex_wrap()
                 .child(
                     DeviceBadge::new(protocol_badge)
-                        .background_color(cx.theme().primary.opacity(0.30).into())
+                        .background_color(cx.theme().primary.opacity(0.14).into())
                         .foreground_color(cx.theme().primary.into())
-                        .border_color(cx.theme().primary.opacity(0.60).into()),
+                        .border_color(cx.theme().primary.opacity(0.28).into()),
                 )
                 .when_some(ip_suffix_badge, |this, tag| {
                     this.child(
                         DeviceBadge::new(tag)
-                            .background_color(cx.theme().foreground.opacity(0.12).into())
+                            .background_color(cx.theme().muted.into())
                             .foreground_color(cx.theme().foreground.into())
-                            .border_color(cx.theme().foreground.opacity(0.30).into()),
+                            .border_color(cx.theme().border.into()),
                     )
                 })
                 .when(device.device_model.is_some(), |this| {
                     this.child(
                         DeviceBadge::new(device.device_model.clone().unwrap_or_default())
-                            .background_color(cx.theme().primary.opacity(0.18).into())
-                            .foreground_color(cx.theme().primary.into())
-                            .border_color(cx.theme().primary.opacity(0.45).into()),
+                            .background_color(cx.theme().muted.into())
+                            .foreground_color(cx.theme().muted_foreground.into())
+                            .border_color(cx.theme().border.opacity(0.6).into()),
                     )
                 })
                 .into_any_element()
         };
 
         div()
-            .bg(cx.theme().secondary)
+            .bg(cx.theme().background)
             .border_1()
-            .border_color(cx.theme().border)
-            .rounded_lg()
+            .border_color(cx.theme().border.opacity(0.8))
+            .rounded(radius::LG)
             .p(sizing::CARD_PADDING)
-            .mb(spacing::MD)
             .child(
                 h_flex()
-                    .items_start()
+                    .items_center()
                     .gap(spacing::MD)
                     .w_full()
                     .child(
                         div()
-                            .w(px(46.))
-                            .h(px(46.))
-                            .rounded_md()
+                            .w(px(42.))
+                            .h(px(42.))
+                            .rounded(radius::MD)
                             .bg(cx.theme().muted)
                             .flex()
                             .items_center()
                             .justify_center()
-                            .child(
-                                Icon::default()
-                                    .path(icon_path)
-                                    .with_size(Size::Large)
-                                    .text_color(cx.theme().foreground),
-                            ),
+                            .flex_none()
+                            .child(app_icon(icon_path, Size::Small, cx.theme().foreground)),
                     )
                     .child(
                         v_flex()
-                            .gap(px(5.))
+                            .gap(px(4.))
                             .flex_1()
                             .min_w(px(0.))
                             .child(
@@ -192,7 +188,7 @@ impl gpui::RenderOnce for DeviceCard {
                                     .w_full()
                                     .overflow_hidden()
                                     .truncate()
-                                    .text_lg()
+                                    .text_base()
                                     .font_semibold()
                                     .text_color(cx.theme().foreground)
                                     .child(device_name),
@@ -202,6 +198,10 @@ impl gpui::RenderOnce for DeviceCard {
                     .child(if on_favorite_tap.is_some() || on_select.is_some() {
                         Button::new(format!("favorite-{}", device.token))
                             .ghost()
+                            .h(sizing::TOUCH)
+                            .w(sizing::TOUCH)
+                            .p(px(0.))
+                            .rounded_full()
                             .on_click(move |_event, window, cx| {
                                 if let Some(ref handler) = on_favorite_tap {
                                     handler(&device, window, cx);
@@ -209,16 +209,15 @@ impl gpui::RenderOnce for DeviceCard {
                                     handler(&device, window, cx);
                                 }
                             })
-                            .child(
-                                Icon::default()
-                                    .path("icons/heart.svg")
-                                    .with_size(Size::Medium)
-                                    .text_color(if is_favorite {
-                                        cx.theme().danger
-                                    } else {
-                                        cx.theme().muted_foreground
-                                    }),
-                            )
+                            .child(app_icon(
+                                paths::HEART,
+                                Size::Small,
+                                if is_favorite {
+                                    cx.theme().danger
+                                } else {
+                                    cx.theme().muted_foreground
+                                },
+                            ))
                             .into_any_element()
                     } else {
                         Button::new(format!("send-{}", device.token))

@@ -1,12 +1,12 @@
 //! Donate page: support information and contact details.
 
+use crate::ui::components::chrome::{back_icon_button, page_header, surface_card};
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
+use crate::ui::theme::spacing;
 use gpui::{div, prelude::*, px, AnyElement, Context, Entity, Window};
 use gpui_component::scroll::ScrollableElement as _;
-use gpui_component::{
-    button::{Button, ButtonCustomVariant, ButtonVariants as _},
-    h_flex, v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _,
-};
+use gpui_component::{h_flex, v_flex, ActiveTheme as _, Size, StyledExt as _};
 
 const DONATE_EMAIL: &str = "richerfu@qq.com";
 const DONATE_GITHUB: &str = "https://github.com/richerfu";
@@ -29,23 +29,22 @@ fn info_card(
     body: impl IntoElement,
     cx: &mut Context<DonatePage>,
 ) -> impl IntoElement {
-    v_flex()
+    surface_card(cx)
         .id(id.into())
-        .w_full()
-        .rounded_lg()
-        .border_1()
-        .border_color(cx.theme().border)
-        .bg(cx.theme().secondary)
         .p(px(14.))
-        .gap(px(8.))
         .child(
-            div()
-                .text_base()
-                .font_semibold()
-                .text_color(cx.theme().foreground)
-                .child(title),
+            v_flex()
+                .w_full()
+                .gap(px(8.))
+                .child(
+                    div()
+                        .text_base()
+                        .font_semibold()
+                        .text_color(cx.theme().foreground)
+                        .child(title),
+                )
+                .child(body),
         )
-        .child(body)
 }
 
 fn info_item(
@@ -68,7 +67,7 @@ fn info_item(
                 .items_center()
                 .justify_center()
                 .text_color(cx.theme().muted_foreground)
-                .child(Icon::default().path(icon).with_size(Size::Small)),
+                .child(app_icon(icon, Size::Small, cx.theme().muted_foreground)),
         )
         .child(
             v_flex()
@@ -107,81 +106,47 @@ impl gpui::Render for DonatePage {
             .gap(px(12.))
             .child(info_item(
                 "donate-email",
-                "icons/inbox.svg",
+                paths::INBOX,
                 "邮箱",
                 DONATE_EMAIL,
                 cx,
             ))
             .child(info_item(
                 "donate-github",
-                "icons/github.svg",
+                paths::GITHUB,
                 "GitHub",
                 DONATE_GITHUB,
                 cx,
             ))
             .child(info_item(
                 "donate-website",
-                "icons/globe.svg",
+                paths::GLOBE,
                 "个人网站",
                 DONATE_WEBSITE,
                 cx,
             ));
 
-        let back_button_variant = ButtonCustomVariant::new(cx)
-            .hover(cx.theme().transparent)
-            .active(cx.theme().transparent);
-
         v_flex()
             .size_full()
-            .bg(cx.theme().background)
-            .child(
-                h_flex()
-                    .w_full()
-                    .h(px(56.))
-                    .px(px(16.))
-                    .items_center()
-                    .border_b_1()
-                    .border_color(cx.theme().border)
-                    .child(
-                        h_flex()
-                            .items_center()
-                            .gap(px(8.))
-                            .child(
-                                Button::new("donate-back")
-                                    .ghost()
-                                    .custom(back_button_variant)
-                                    .h(px(36.))
-                                    .w(px(36.))
-                                    .p(px(0.))
-                                    .rounded_md()
-                                    .child(
-                                        Icon::default()
-                                            .path("icons/arrow-left.svg")
-                                            .with_size(Size::Small),
-                                    )
-                                    .on_click(cx.listener(|this, _event, _window, cx| {
-                                        if let Some(root) = &this.root {
-                                            let _ = root.update(cx, |root, cx| {
-                                                root.go_back_or_navigate(routes::HOME, cx);
-                                            });
-                                        }
-                                    })),
-                            )
-                            .child(
-                                div()
-                                    .text_lg()
-                                    .font_semibold()
-                                    .text_color(cx.theme().foreground)
-                                    .child("捐赠"),
-                            ),
-                    ),
-            )
+            .bg(cx.theme().muted.opacity(0.45))
+            .child(page_header(
+                "捐赠",
+                back_icon_button("donate-back", cx, |this, _window, cx| {
+                    if let Some(root) = &this.root {
+                        let _ = root.update(cx, |root, cx| {
+                            root.go_back_or_navigate(routes::HOME, cx);
+                        });
+                    }
+                }),
+                div(),
+                cx,
+            ))
             .child(
                 v_flex()
                     .flex_1()
                     .min_h(px(0.))
                     .overflow_y_scrollbar()
-                    .px(px(15.))
+                    .px(spacing::PAGE)
                     .py(px(12.))
                     .gap(px(12.))
                     .child(info_card("donate-intro", "支持项目", intro, cx))

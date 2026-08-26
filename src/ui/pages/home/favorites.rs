@@ -10,7 +10,7 @@ impl HomePage {
         window.open_dialog(cx, move |dialog, _window, _cx| {
             let home_for_add = home_entity.clone();
             dialog
-                .title("收藏夹")
+                .title(dialog_title("收藏夹"))
                 .overlay(true)
                 .w(px(360.))
                 .child(
@@ -104,10 +104,11 @@ impl HomePage {
                                                         });
                                                     })
                                                     .child(
-                                                        Icon::default()
-                                                            .path("icons/send-horizontal.svg")
-                                                            .with_size(gpui_component::Size::Small)
-                                                            .text_color(_cx.theme().foreground),
+                                                        app_icon(
+                                                            paths::SEND,
+                                                            Size::Small,
+                                                            _cx.theme().foreground,
+                                                        ),
                                                     ),
                                             )
                                             .child(
@@ -129,10 +130,11 @@ impl HomePage {
                                                         });
                                                     })
                                                     .child(
-                                                        Icon::default()
-                                                            .path("icons/settings.svg")
-                                                            .with_size(gpui_component::Size::Small)
-                                                            .text_color(_cx.theme().foreground),
+                                                        app_icon(
+                                                            paths::SETTINGS,
+                                                            Size::Small,
+                                                            _cx.theme().foreground,
+                                                        ),
                                                     ),
                                             )
                                             .child(
@@ -158,10 +160,11 @@ impl HomePage {
                                                     });
                                                     })
                                                     .child(
-                                                        Icon::default()
-                                                            .path("icons/trash.svg")
-                                                            .with_size(gpui_component::Size::Small)
-                                                            .text_color(_cx.theme().danger),
+                                                        app_icon(
+                                                            paths::TRASH,
+                                                            Size::Small,
+                                                            _cx.theme().danger,
+                                                        ),
                                                     ),
                                             ),
                                     )
@@ -226,11 +229,11 @@ impl HomePage {
                 .map(|item| item.custom_alias)
                 .unwrap_or(false);
             dialog
-                .title(if preset.is_some() {
+                .title(dialog_title(if preset.is_some() {
                     "编辑收藏设备"
                 } else {
                     "添加收藏设备"
-                })
+                }))
                 .overlay(true)
                 .w(px(360.))
                 .child(
@@ -380,7 +383,7 @@ impl HomePage {
             let home_for_ok = home_entity.clone();
             let token_for_ok = token.clone();
             dialog
-                .title("删除收藏")
+                .title(dialog_title("删除收藏"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -434,7 +437,7 @@ impl HomePage {
             let alias_for_ok = alias_text.clone();
             let ip_for_ok = ip.clone();
             dialog
-                .title("确认添加收藏")
+                .title(dialog_title("确认添加收藏"))
                 .overlay(true)
                 .w(px(360.))
                 .child(

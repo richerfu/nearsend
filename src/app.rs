@@ -338,10 +338,20 @@ impl gpui::Render for AppRoot {
                 move |_window, _cx| home_entity.clone().into_any_element()
             }));
 
+        let insets = crate::ui::safe_area::current(cx);
+
         v_flex()
             .size_full()
             .bg(cx.theme().background)
-            .child(div().size_full().child(routed_page))
+            .child(
+                div()
+                    .size_full()
+                    .pt(insets.top)
+                    .pb(insets.bottom)
+                    .pl(insets.left)
+                    .pr(insets.right)
+                    .child(div().size_full().child(routed_page)),
+            )
             .children(sheet_layer)
             .children(dialog_layer)
             .children(notification_layer)

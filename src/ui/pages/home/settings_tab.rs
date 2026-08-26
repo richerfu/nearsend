@@ -2,8 +2,9 @@
 
 use super::HomePage;
 use crate::ui::components::{logo::Logo, switch::Switch};
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
-use crate::ui::theme::spacing;
+use crate::ui::theme::{radius, spacing};
 use gpui::{
     div, percentage, prelude::*, px, Animation, AnimationExt as _, AnyElement, Context, Entity,
     Transformation, Window,
@@ -13,7 +14,7 @@ use gpui_component::{
     button::{Button, ButtonVariants as _},
     h_flex,
     select::{Select, SelectState},
-    v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _,
+    v_flex, ActiveTheme as _, Sizable as _, Size, StyledExt as _,
 };
 use std::time::Duration;
 
@@ -27,23 +28,40 @@ fn render_settings_section(
     cx: &mut Context<HomePage>,
     children: Vec<AnyElement>,
 ) -> AnyElement {
-    let mut inner = v_flex().gap(px(10.)).child(
-        div()
-            .text_lg()
-            .font_semibold()
-            .text_color(cx.theme().foreground)
-            .child(title.to_string()),
-    );
-    for child in children {
+    let mut inner = v_flex().w_full();
+    for (index, child) in children.into_iter().enumerate() {
+        if index > 0 {
+            inner = inner.child(
+                div()
+                    .h(px(1.))
+                    .ml(px(4.))
+                    .bg(cx.theme().border.opacity(0.7)),
+            );
+        }
         inner = inner.child(child);
     }
-    div()
-        .bg(cx.theme().secondary)
-        .border_1()
-        .border_color(cx.theme().border)
-        .rounded_lg()
-        .p(px(15.))
-        .child(inner)
+    v_flex()
+        .w_full()
+        .gap(px(8.))
+        .child(
+            div()
+                .px(px(4.))
+                .text_sm()
+                .font_semibold()
+                .text_color(cx.theme().muted_foreground)
+                .child(title.to_string()),
+        )
+        .child(
+            div()
+                .w_full()
+                .bg(cx.theme().background)
+                .border_1()
+                .border_color(cx.theme().border.opacity(0.75))
+                .rounded(radius::LG)
+                .px(px(14.))
+                .py(px(4.))
+                .child(inner),
+        )
         .into_any_element()
 }
 
@@ -55,10 +73,11 @@ fn render_select_entry(
     cx: &mut Context<HomePage>,
 ) -> AnyElement {
     div()
-        .pb(px(15.))
+        .py(px(10.))
         .child(
             h_flex()
                 .items_center()
+                .min_h(px(36.))
                 .child(
                     div()
                         .text_sm()
@@ -85,10 +104,11 @@ fn render_boolean_entry(
     on_toggle: impl Fn(&mut HomePage, &mut Context<HomePage>) + 'static,
 ) -> AnyElement {
     div()
-        .pb(px(15.))
+        .py(px(10.))
         .child(
             h_flex()
                 .items_center()
+                .min_h(px(36.))
                 .child(
                     div()
                         .text_sm()
@@ -118,10 +138,11 @@ fn render_clickable_entry(
     on_click: impl Fn(&mut HomePage, &mut Window, &mut Context<HomePage>) + 'static,
 ) -> AnyElement {
     div()
-        .pb(px(15.))
+        .py(px(10.))
         .child(
             h_flex()
                 .items_center()
+                .min_h(px(36.))
                 .child(
                     div()
                         .text_sm()
@@ -153,20 +174,17 @@ fn render_clickable_entry(
 }
 
 fn render_refresh_icon(spinning: bool, animations: bool, cx: &mut Context<HomePage>) -> AnyElement {
-    let icon = Icon::default()
-        .path("icons/refresh.svg")
-        .with_size(Size::Small)
-        .text_color(cx.theme().foreground);
+    let refresh_icon = app_icon(paths::REFRESH, Size::Small, cx.theme().foreground);
 
     if spinning && animations {
-        icon.with_animation(
+        refresh_icon.with_animation(
             "settings-server-refresh-spin",
             Animation::new(Duration::from_millis(900)).repeat(),
             |this, delta| this.transform(Transformation::rotate(percentage(delta))),
         )
         .into_any_element()
     } else {
-        icon.into_any_element()
+        refresh_icon.into_any_element()
     }
 }
 
@@ -332,7 +350,7 @@ pub fn render_settings_content(
     let server_label_text = format!("服务器{}", if server_running { "" } else { " (离线)" });
     let can_pause = server_running && !server_paused;
     let server_controls = div()
-        .pb(px(15.))
+        .py(px(10.))
         .child(
             h_flex()
                 .items_center()
@@ -368,13 +386,11 @@ pub fn render_settings_content(
                                             }
                                         }))
                                         .when(server_paused, |this| {
-                                            this.child(
-                                                div()
-                                                    .text_sm()
-                                                    .font_weight(gpui::FontWeight::BOLD)
-                                                    .text_color(cx.theme().foreground)
-                                                    .child("▶"),
-                                            )
+                                            this.child(app_icon(
+                                                paths::PLAY,
+                                                Size::Small,
+                                                cx.theme().foreground,
+                                            ))
                                         })
                                         .when(!server_paused, |this| {
                                             this.child(render_refresh_icon(
@@ -397,7 +413,9 @@ pub fn render_settings_content(
                                                 },
                                             ))
                                         })
-                                        .child(div().w(px(12.)).h(px(12.)).rounded_sm().bg(
+                                        .child(app_icon(
+                                            paths::PAUSE,
+                                            Size::Small,
                                             if can_pause {
                                                 cx.theme().foreground
                                             } else {
@@ -567,10 +585,11 @@ pub fn render_settings_content(
                                 .justify_center()
                                 .when(advanced, |this| {
                                     this.child(
-                                        Icon::default()
-                                            .path("icons/check.svg")
-                                            .with_size(Size::XSmall)
-                                            .text_color(cx.theme().primary_foreground),
+                                        app_icon(
+                                            paths::CHECK,
+                                            Size::XSmall,
+                                            cx.theme().primary_foreground,
+                                        ),
                                     )
                                 }),
                         ),
@@ -610,8 +629,8 @@ pub fn render_settings_content(
     // -- Assemble page --
     let mut content = v_flex()
         .w_full()
-        .px(px(15.))
-        .pt(px(15.))
+        .px(spacing::PAGE)
+        .pt(px(12.))
         .pb(px(40.))
         .gap(spacing::LG);
 
@@ -627,7 +646,7 @@ pub fn render_settings_content(
     div()
         .size_full()
         .w_full()
-        .bg(cx.theme().background)
+        .bg(cx.theme().muted.opacity(0.45))
         .overflow_y_scrollbar()
         .child(content)
         .into_any_element()
