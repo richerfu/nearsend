@@ -10,6 +10,7 @@ pub mod spacing {
     pub const XS: gpui::Pixels = px(4.);
     pub const SM: gpui::Pixels = px(8.);
     pub const MD: gpui::Pixels = px(16.);
+    #[allow(dead_code)]
     pub const LG: gpui::Pixels = px(24.);
     #[allow(dead_code)]
     pub const XL: gpui::Pixels = px(32.);

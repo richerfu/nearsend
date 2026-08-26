@@ -11,7 +11,6 @@ pub mod paths {
     pub const ARROW_LEFT: &str = "icons/arrow-left.svg";
     pub const BOOK_OPEN: &str = "icons/book-open.svg";
     pub const CHECK: &str = "icons/check.svg";
-    #[allow(dead_code)]
     pub const CHEVRON_RIGHT: &str = "icons/chevron-right.svg";
     pub const COPY: &str = "icons/copy.svg";
     pub const DOWNLOAD: &str = "icons/download.svg";
