@@ -587,17 +587,54 @@ fn open_history_entry(
         return;
     }
 
-    let open_result = if let Some(uri) = entry.file_uri.as_ref().filter(|u| !u.trim().is_empty()) {
-        crate::platform::file_opener::open_saved_uri(uri)
-    } else if entry.file_path.exists() {
-        crate::platform::file_opener::open_saved_file(&entry.file_path)
-    } else {
-        open_notice_dialog("文件不存在或已被移动。", window, cx);
-        return;
-    };
-    if let Err(err) = open_result {
-        log::warn!("failed to open file from history: {}", err);
-        open_notice_dialog("系统打开文件失败。", window, cx);
+    #[cfg(target_env = "ohos")]
+    {
+        enum OpenTarget {
+            Uri(String),
+            Path(std::path::PathBuf),
+        }
+
+        let target = if let Some(uri) = entry.file_uri.as_ref().filter(|u| !u.trim().is_empty()) {
+            OpenTarget::Uri(uri.clone())
+        } else if entry.file_path.exists() {
+            OpenTarget::Path(entry.file_path.clone())
+        } else {
+            open_notice_dialog("文件不存在或已被移动。", window, cx);
+            return;
+        };
+        let window_handle = window.window_handle();
+        cx.spawn(async move |cx| {
+            let open_result = match target {
+                OpenTarget::Uri(uri) => crate::platform::file_opener::open_saved_uri(&uri).await,
+                OpenTarget::Path(path) => {
+                    crate::platform::file_opener::open_saved_file(&path).await
+                }
+            };
+            if let Err(error) = open_result {
+                log::warn!("failed to open file from history: {error}");
+                let _ = window_handle.update(cx, |_, window, cx| {
+                    open_notice_dialog("系统打开文件失败。", window, cx);
+                });
+            }
+        })
+        .detach();
+    }
+
+    #[cfg(not(target_env = "ohos"))]
+    {
+        let open_result =
+            if let Some(uri) = entry.file_uri.as_ref().filter(|u| !u.trim().is_empty()) {
+                crate::platform::file_opener::open_saved_uri(uri)
+            } else if entry.file_path.exists() {
+                crate::platform::file_opener::open_saved_file(&entry.file_path)
+            } else {
+                open_notice_dialog("文件不存在或已被移动。", window, cx);
+                return;
+            };
+        if let Err(err) = open_result {
+            log::warn!("failed to open file from history: {err}");
+            open_notice_dialog("系统打开文件失败。", window, cx);
+        }
     }
 }
 

@@ -4147,6 +4147,7 @@ dependencies = [
  "ohos-hilog-binding",
  "openharmony-ability",
  "openharmony-ability-derive",
+ "openharmony-ability-plugin-files",
  "openharmony-ability-plugin-permission",
  "qrcode",
  "rcgen",
@@ -4870,6 +4871,16 @@ dependencies = [
 
 [[package]]
 name = "openharmony-ability-plugin-app-control"
+version = "1.0.0-beta.1"
+source = "git+https://github.com/harmony-contrib/openharmony-ability.git?rev=e089f5f5e99903d2ad063dc0d535f39f06a1baa5#e089f5f5e99903d2ad063dc0d535f39f06a1baa5"
+dependencies = [
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-files"
 version = "1.0.0-beta.1"
 source = "git+https://github.com/harmony-contrib/openharmony-ability.git?rev=e089f5f5e99903d2ad063dc0d535f39f06a1baa5#e089f5f5e99903d2ad063dc0d535f39f06a1baa5"
 dependencies = [

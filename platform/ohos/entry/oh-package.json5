@@ -8,6 +8,7 @@
   "dependencies": {
     "@ohos-rs/ability": "1.0.0-beta.2",
     "@ohos-rs/ability-plugin-app-control": "1.0.0-beta.1",
+    "@ohos-rs/ability-plugin-files": "1.0.0-beta.1",
     "@ohos-rs/ability-plugin-permission": "1.0.0-beta.1",
     "libnear_send.so": "file:./src/main/ets/types/libnear_send"
   }
