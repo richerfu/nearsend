@@ -11,6 +11,7 @@ use napi_ohos::{
 #[cfg(target_env = "ohos")]
 use ohos_ability_access_control_binding::check_self_permission;
 use openharmony_ability::OpenHarmonyApp;
+use openharmony_ability_plugin_permission::PermissionExt as _;
 use tokio::sync::oneshot;
 
 type ReadClipboardTsfn = ThreadsafeFunction<(), Unknown<'static>, (), Status, false>;

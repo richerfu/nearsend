@@ -5,14 +5,14 @@ use super::QuickSaveMode;
 use crate::ui::components::logo::Logo;
 use crate::ui::routes;
 use crate::ui::theme::spacing;
-use gpui::{div, prelude::*, px, AnyElement, Context, Window};
+use gpui::{div, prelude::*, px, Anchor, AnyElement, Context, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
     button::{Button, ButtonCustomVariant, ButtonVariant, ButtonVariants as _},
     dialog::{DialogAction, DialogButtonProps, DialogFooter},
     h_flex,
     popover::Popover,
-    v_flex, ActiveTheme as _, Anchor, Icon, Sizable as _, Size, StyledExt as _, WindowExt as _,
+    v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _, WindowExt as _,
 };
 
 pub fn render_receive_content(

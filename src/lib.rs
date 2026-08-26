@@ -1,14 +1,15 @@
 use gpui::{
-    hsla, px, size, App, AppContext, Application, Bounds, Global, WindowBounds, WindowOptions,
+    hsla, px, size, Anchor, App, AppContext, Application, Bounds, Global, WindowBounds,
+    WindowOptions,
 };
 use gpui_component::theme::Theme;
-use gpui_component::Anchor;
 use gpui_component::Root;
 use gpui_component_assets::Assets as ComponentAssets;
 
 use log::LevelFilter;
 use ohos_hilog_binding::log::Config;
 use openharmony_ability::OpenHarmonyApp;
+use openharmony_ability_plugin_permission::PermissionBridgePlugin;
 
 mod app;
 mod assets;
@@ -27,6 +28,9 @@ impl Global for GlobalOpenHarmonyApp {}
 #[openharmony_ability_derive::ability]
 pub fn openharmony_app(app: OpenHarmonyApp) {
     ohos_hilog_binding::log::init_once(Config::default().with_max_level(LevelFilter::Debug));
+    if let Err(error) = app.register_plugin(PermissionBridgePlugin) {
+        log::error!("Failed to register OpenHarmony permission plugin: {error}");
+    }
     platform::clipboard::set_ohos_app(app.clone());
 
     let inner_app = app.clone();

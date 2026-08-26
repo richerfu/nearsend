@@ -9,17 +9,18 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "1c1d008920706640663a9bb6c2870a6e6148f650" }
+gpui = { path = "../zed/crates/gpui" }
+gpui_platform = { path = "../zed/crates/gpui_platform" }
+gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "bd28642309b823b2b1f66973a0dbc714d9e7d91c" }
 gpui-router = { version = "0.3" }
-gpui-component-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "1c1d008920706640663a9bb6c2870a6e6148f650" }
-openharmony-ability = { git = "https://github.com/harmony-contrib/openharmony-ability.git" }
-openharmony-ability-derive = { git = "https://github.com/harmony-contrib/openharmony-ability.git" }
+gpui-component-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "bd28642309b823b2b1f66973a0dbc714d9e7d91c" }
+openharmony-ability = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "e089f5f5e99903d2ad063dc0d535f39f06a1baa5" }
+openharmony-ability-derive = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "e089f5f5e99903d2ad063dc0d535f39f06a1baa5" }
+openharmony-ability-plugin-permission = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "e089f5f5e99903d2ad063dc0d535f39f06a1baa5" }
 
-napi-ohos = { version = "=1.1.6" }
-napi-derive-ohos = { version = "=1.1.6" }
-napi-derive-backend-ohos = { version = "=1.1.6" }
+napi-ohos = { version = "=1.2.0" }
+napi-derive-ohos = { version = "=1.2.0" }
+napi-derive-backend-ohos = { version = "=1.2.0" }
 ohos-hilog-binding = { version = "*", features = ["log"] }
 log = { version = "*" }
 
@@ -64,21 +65,21 @@ ohos-fileuri-binding = "0.1"
 ohos-fileshare-binding = "0.1"
 
 [build-dependencies]
-napi-build-ohos = { version = "=1.1.6" }
+napi-build-ohos = { version = "=1.2.0" }
 
 
-# 强制 patch 所有来源的依赖，确保统一使用 richerfu/zed 的 ohos 分支
+# 强制 patch 所有来源的依赖，确保统一使用相邻工作区的 OHOS 实现
 [patch.crates-io]
-gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_macros = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui = { path = "../zed/crates/gpui" }
+gpui_platform = { path = "../zed/crates/gpui_platform" }
+gpui_macros = { path = "../zed/crates/gpui_macros" }
 
 [patch."https://github.com/zed-industries/zed.git"]
-gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_macros = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui = { path = "../zed/crates/gpui" }
+gpui_platform = { path = "../zed/crates/gpui_platform" }
+gpui_macros = { path = "../zed/crates/gpui_macros" }
 
 [patch."https://github.com/zed-industries/zed"]
-gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_macros = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui = { path = "../zed/crates/gpui" }
+gpui_platform = { path = "../zed/crates/gpui_platform" }
+gpui_macros = { path = "../zed/crates/gpui_macros" }

@@ -8,14 +8,14 @@ use crate::state::{
 use crate::ui::routes;
 use crate::ui::theme::spacing;
 use chrono::{Datelike, Local, TimeZone as _, Timelike};
-use gpui::{div, prelude::*, px, Context, Entity, Window};
+use gpui::{div, prelude::*, px, Anchor, Context, Entity, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
     button::{Button, ButtonCustomVariant, ButtonVariants as _},
     dialog::{DialogAction, DialogClose, DialogFooter},
     h_flex,
     popover::Popover,
-    v_flex, ActiveTheme as _, Anchor, Icon, Sizable as _, Size, StyledExt as _, WindowExt as _,
+    v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _, WindowExt as _,
 };
 use gpui_router::RouterState;
 

@@ -9,7 +9,7 @@ use crate::ui::routes;
 use crate::ui::theme::spacing;
 use crate::ui::utils::format_file_size;
 use gpui::{
-    div, percentage, prelude::*, px, Animation, AnimationExt as _, AnyElement, Context,
+    div, percentage, prelude::*, px, Anchor, Animation, AnimationExt as _, AnyElement, Context,
     ScrollHandle, Transformation, Window,
 };
 use gpui_component::scroll::ScrollableElement as _;
@@ -17,7 +17,7 @@ use gpui_component::{
     button::{Button, ButtonCustomVariant, ButtonVariants as _},
     h_flex,
     popover::Popover,
-    v_flex, ActiveTheme as _, Anchor, Icon, Sizable as _, Size, StyledExt as _,
+    v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _,
 };
 use std::time::Duration;
 
