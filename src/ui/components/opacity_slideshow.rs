@@ -1,10 +1,9 @@
+use super::sparse_cycle::{SparseCyclePhase, SparseCycleState};
 use gpui::{div, prelude::*, Animation, AnimationExt as _, IntoElement, Window};
 use gpui_component::ActiveTheme as _;
 use std::time::Duration;
 
 /// Simple slideshow that cycles through text children.
-/// For full animation support, would need timer/cx.spawn integration.
-/// Currently shows first child - can be extended with index state.
 #[derive(IntoElement)]
 pub struct OpacitySlideshow {
     children: Vec<String>,
@@ -40,7 +39,7 @@ impl OpacitySlideshow {
 }
 
 impl gpui::RenderOnce for OpacitySlideshow {
-    fn render(self, _window: &mut Window, cx: &mut gpui::App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut gpui::App) -> impl IntoElement {
         if self.children.is_empty() {
             return div().into_any_element();
         }
@@ -56,33 +55,33 @@ impl gpui::RenderOnce for OpacitySlideshow {
                 .into_any_element();
         }
 
-        let total_duration_ms = self.duration_millis * self.children.len() as u64;
-        let per_slide_ms = self.duration_millis.max(1) as f32;
-        let fade_ms = self.switch_duration_millis.max(1) as f32;
-        let children = self.children;
+        let item_duration = Duration::from_millis(self.duration_millis);
+        let transition_duration = Duration::from_millis(self.switch_duration_millis);
+        let cycle_state = window.use_keyed_state("opacity-slideshow-cycle", cx, |_, cx| {
+            SparseCycleState::new(self.children.len(), item_duration, transition_duration, cx)
+        });
+        let (index, phase, transition_duration) = {
+            let state = cycle_state.read(cx);
+            (state.index(), state.phase(), state.transition_duration())
+        };
+        let text = self.children[index].clone();
 
-        text_style
-            .with_animation(
-                "opacity-slideshow",
-                Animation::new(Duration::from_millis(total_duration_ms)).repeat(),
-                move |this, delta| {
-                    let elapsed = delta * total_duration_ms as f32;
-                    let mut index = (elapsed / per_slide_ms).floor() as usize;
-                    if index >= children.len() {
-                        index = children.len() - 1;
-                    }
-                    let local = elapsed - (index as f32 * per_slide_ms);
-                    let mut alpha = 1.0;
-                    if local < fade_ms {
-                        alpha = local / fade_ms;
-                    } else if local > per_slide_ms - fade_ms {
-                        alpha = (per_slide_ms - local) / fade_ms;
-                    }
-
-                    this.opacity(alpha.clamp(0.0, 1.0))
-                        .child(children[index].clone())
-                },
-            )
-            .into_any_element()
+        match phase {
+            SparseCyclePhase::FadeIn => text_style
+                .with_animation(
+                    format!("opacity-slideshow-fade-in-{index}"),
+                    Animation::new(transition_duration),
+                    move |this, delta| this.opacity(delta).child(text.clone()),
+                )
+                .into_any_element(),
+            SparseCyclePhase::Stable => text_style.child(text).into_any_element(),
+            SparseCyclePhase::FadeOut => text_style
+                .with_animation(
+                    format!("opacity-slideshow-fade-out-{index}"),
+                    Animation::new(transition_duration),
+                    move |this, delta| this.opacity(1.0 - delta).child(text.clone()),
+                )
+                .into_any_element(),
+        }
     }
 }
