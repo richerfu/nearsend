@@ -14,10 +14,10 @@ gpui_platform = { path = "../zed/crates/gpui_platform" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "bd28642309b823b2b1f66973a0dbc714d9e7d91c" }
 gpui-router = { version = "0.3" }
 gpui-component-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "bd28642309b823b2b1f66973a0dbc714d9e7d91c" }
-openharmony-ability = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "e089f5f5e99903d2ad063dc0d535f39f06a1baa5" }
-openharmony-ability-derive = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "e089f5f5e99903d2ad063dc0d535f39f06a1baa5" }
-openharmony-ability-plugin-files = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "e089f5f5e99903d2ad063dc0d535f39f06a1baa5" }
-openharmony-ability-plugin-permission = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "e089f5f5e99903d2ad063dc0d535f39f06a1baa5" }
+openharmony-ability = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "3e9bd7f284bd566d538c01099d1ee63a7369dd3d" }
+openharmony-ability-derive = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "3e9bd7f284bd566d538c01099d1ee63a7369dd3d" }
+openharmony-ability-plugin-files = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "3e9bd7f284bd566d538c01099d1ee63a7369dd3d" }
+openharmony-ability-plugin-permission = { git = "https://github.com/harmony-contrib/openharmony-ability.git", rev = "3e9bd7f284bd566d538c01099d1ee63a7369dd3d" }
 
 napi-ohos = { version = "=1.2.0" }
 napi-derive-ohos = { version = "=1.2.0" }
