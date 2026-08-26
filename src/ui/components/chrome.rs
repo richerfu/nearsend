@@ -3,8 +3,8 @@
 use crate::ui::icons::{app_icon, paths};
 use crate::ui::theme::{radius, sizing, spacing};
 use gpui::{
-    div, prelude::*, px, AnyElement, App, ClickEvent, Context, ElementId, IntoElement, SharedString,
-    Window,
+    div, prelude::*, px, AnyElement, App, ClickEvent, Context, ElementId, IntoElement,
+    SharedString, Window,
 };
 use gpui_component::{
     button::{Button, ButtonCustomVariant, ButtonVariants as _},
@@ -79,7 +79,11 @@ pub fn back_icon_button<V: 'static>(
         .w(sizing::ICON_BUTTON)
         .p(px(0.))
         .rounded_full()
-        .child(app_icon(paths::ARROW_LEFT, Size::Small, cx.theme().foreground))
+        .child(app_icon(
+            paths::ARROW_LEFT,
+            Size::Small,
+            cx.theme().foreground,
+        ))
         .on_click(cx.listener(move |this, _event, window, cx| on_back(this, window, cx)))
 }
 
@@ -152,6 +156,78 @@ pub fn surface_card(cx: &App) -> gpui::Div {
         .bg(cx.theme().background)
 }
 
+/// Content-type tile used in add-file dialogs.
+pub fn content_picker_tile(
+    id: impl Into<ElementId>,
+    icon_path: &'static str,
+    label: impl Into<SharedString>,
+    cx: &App,
+    on_click: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+) -> AnyElement {
+    let fg = cx.theme().foreground;
+    let fill = cx.theme().foreground.opacity(0.06);
+    let label = label.into();
+    div()
+        .id(id)
+        .flex_1()
+        .min_w(px(0.))
+        .h(px(76.))
+        .rounded(radius::LG)
+        .border_1()
+        .border_color(cx.theme().border)
+        .bg(fill)
+        .cursor_pointer()
+        .on_click(on_click)
+        .child(
+            v_flex()
+                .w_full()
+                .h_full()
+                .items_center()
+                .justify_center()
+                .gap(px(8.))
+                .child(
+                    div()
+                        .w(px(32.))
+                        .h(px(32.))
+                        .rounded(radius::MD)
+                        .bg(cx.theme().background.opacity(0.85))
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .child(app_icon(icon_path, Size::Small, fg)),
+                )
+                .child(
+                    div()
+                        .text_xs()
+                        .font_medium()
+                        .text_center()
+                        .text_color(fg)
+                        .child(label),
+                ),
+        )
+        .into_any_element()
+}
+
+/// 2-column wrap for add-content tiles.
+pub fn content_picker_grid(tiles: impl IntoIterator<Item = AnyElement>) -> AnyElement {
+    let tiles: Vec<AnyElement> = tiles.into_iter().collect();
+    let mut rows = v_flex().w_full().gap(px(8.));
+    let mut row = h_flex().w_full().gap(px(8.));
+    let mut count = 0usize;
+    for tile in tiles {
+        row = row.child(tile);
+        count += 1;
+        if count % 2 == 0 {
+            rows = rows.child(row);
+            row = h_flex().w_full().gap(px(8.));
+        }
+    }
+    if count % 2 == 1 {
+        rows = rows.child(row);
+    }
+    rows.into_any_element()
+}
+
 pub fn muted_card(cx: &App) -> gpui::Div {
     div()
         .w_full()
@@ -187,7 +263,11 @@ pub fn empty_state(icon_path: &'static str, title: &str, detail: &str, cx: &App)
                 .flex()
                 .items_center()
                 .justify_center()
-                .child(app_icon(icon_path, Size::Large, cx.theme().muted_foreground)),
+                .child(app_icon(
+                    icon_path,
+                    Size::Large,
+                    cx.theme().muted_foreground,
+                )),
         )
         .child(
             div()
@@ -205,4 +285,3 @@ pub fn empty_state(icon_path: &'static str, title: &str, detail: &str, cx: &App)
         )
         .into_any_element()
 }
-

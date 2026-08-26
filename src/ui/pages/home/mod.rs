@@ -34,7 +34,9 @@ use crate::state::{
         FileTransferInfo, TransferDirection, TransferInfo, TransferState, TransferStatus,
     },
 };
-pub(super) use crate::ui::components::chrome::dialog_title;
+pub(super) use crate::ui::components::chrome::{
+    content_picker_grid, content_picker_tile, dialog_title,
+};
 use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
 use gpui::{div, hsla, prelude::*, px, AnyElement, Context, Entity, IntoElement, Window};
@@ -121,6 +123,13 @@ impl HomePage {
                     .label(ok_text.to_string())
                     .primary(),
             ),
+        )
+    }
+
+    fn build_close_footer(id_prefix: &str, text: &str) -> DialogFooter {
+        DialogFooter::new().child(
+            DialogClose::new()
+                .child(Button::new(format!("{id_prefix}-close")).label(text.to_string())),
         )
     }
 

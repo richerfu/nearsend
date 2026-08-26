@@ -1,6 +1,7 @@
 //! Settings interactions and address-target dialogs.
 
 use super::*;
+use crate::ui::theme::radius;
 use gpui_component::scroll::ScrollableElement as _;
 
 impl HomePage {
@@ -805,50 +806,13 @@ impl HomePage {
                 }
             }
         };
-        let tag_tab_style = ButtonCustomVariant::new(cx)
-            .color(if mode == AddressInputMode::Label {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            })
-            .foreground(if mode == AddressInputMode::Label {
-                cx.theme().primary
-            } else {
-                cx.theme().foreground
-            })
-            .hover(if mode == AddressInputMode::Label {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            })
-            .active(if mode == AddressInputMode::Label {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            });
-        let ip_tab_style = ButtonCustomVariant::new(cx)
-            .color(if mode == AddressInputMode::IpAddress {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            })
-            .foreground(if mode == AddressInputMode::IpAddress {
-                cx.theme().primary
-            } else {
-                cx.theme().foreground
-            })
-            .hover(if mode == AddressInputMode::IpAddress {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            })
-            .active(if mode == AddressInputMode::IpAddress {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            });
+        let selected_bg = cx.theme().background;
+        let selected_fg = cx.theme().foreground;
+        let idle_fg = cx.theme().muted_foreground;
+        let label_selected = mode == AddressInputMode::Label;
+        let ip_selected = mode == AddressInputMode::IpAddress;
 
-        window.open_dialog(cx, move |dialog, _window, _cx| {
+        window.open_dialog(cx, move |dialog, _window, cx| {
             let ip_for_ok = ip_input_state.clone();
             let home_for_ok = home_entity.clone();
             let home_for_tag_tab = home_entity.clone();
@@ -865,14 +829,22 @@ impl HomePage {
                         .gap(px(12.))
                         .child(
                             h_flex()
-                                .gap(px(0.))
+                                .w_full()
+                                .h(px(40.))
+                                .rounded(radius::FULL)
+                                .p(px(3.))
+                                .bg(cx.theme().muted)
                                 .child(
-                                    Button::new("address-mode-label")
-                                        .custom(tag_tab_style.clone())
-                                        .w(px(72.))
-                                        .h(px(32.))
-                                        .rounded_l(px(12.))
-                                        .rounded_r(px(0.))
+                                    div()
+                                        .id("address-mode-label")
+                                        .flex_1()
+                                        .h_full()
+                                        .rounded(radius::FULL)
+                                        .cursor_pointer()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .when(label_selected, |this| this.bg(selected_bg))
                                         .on_click(move |_event, window, cx| {
                                             if mode != AddressInputMode::Label {
                                                 window.close_dialog(cx);
@@ -885,15 +857,29 @@ impl HomePage {
                                                 });
                                             }
                                         })
-                                        .child(div().text_sm().font_medium().child("标签")),
+                                        .child(
+                                            div()
+                                                .text_sm()
+                                                .when(label_selected, |this| this.font_semibold())
+                                                .text_color(if label_selected {
+                                                    selected_fg
+                                                } else {
+                                                    idle_fg
+                                                })
+                                                .child("标签"),
+                                        ),
                                 )
                                 .child(
-                                    Button::new("address-mode-ip")
-                                        .custom(ip_tab_style.clone())
-                                        .w(px(88.))
-                                        .h(px(32.))
-                                        .rounded_l(px(0.))
-                                        .rounded_r(px(12.))
+                                    div()
+                                        .id("address-mode-ip")
+                                        .flex_1()
+                                        .h_full()
+                                        .rounded(radius::FULL)
+                                        .cursor_pointer()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .when(ip_selected, |this| this.bg(selected_bg))
                                         .on_click(move |_event, window, cx| {
                                             if mode != AddressInputMode::IpAddress {
                                                 window.close_dialog(cx);
@@ -906,22 +892,39 @@ impl HomePage {
                                                 });
                                             }
                                         })
-                                        .child(div().text_sm().font_medium().child("IP 地址")),
+                                        .child(
+                                            div()
+                                                .text_sm()
+                                                .when(ip_selected, |this| this.font_semibold())
+                                                .text_color(if ip_selected {
+                                                    selected_fg
+                                                } else {
+                                                    idle_fg
+                                                })
+                                                .child("IP 地址"),
+                                        ),
                                 ),
                         )
                         .child(
                             div()
                                 .w_full()
-                                .shadow_xs()
-                                .rounded_md()
                                 .child(Input::new(&ip_input_state).appearance(true).large()),
                         )
                         .child(
                             div()
                                 .w_full()
-                                .text_sm()
-                                .text_color(_cx.theme().muted_foreground)
-                                .child(example_text.clone()),
+                                .rounded(radius::MD)
+                                .bg(cx.theme().muted.opacity(0.7))
+                                .px(px(12.))
+                                .py(px(10.))
+                                .child(
+                                    div()
+                                        .w_full()
+                                        .text_xs()
+                                        .line_height(px(18.))
+                                        .text_color(cx.theme().muted_foreground)
+                                        .child(example_text.clone()),
+                                ),
                         ),
                 )
                 .button_props(

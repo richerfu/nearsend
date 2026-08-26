@@ -28,6 +28,7 @@ pub mod paths {
     pub const MONITOR: &str = "icons/monitor.svg";
     pub const MORE: &str = "icons/more-horizontal.svg";
     pub const PAUSE: &str = "icons/pause.svg";
+    pub const PENCIL: &str = "icons/pencil.svg";
     pub const PLAY: &str = "icons/play.svg";
     pub const PLUS: &str = "icons/plus.svg";
     pub const QR_CODE: &str = "icons/qr-code.svg";

@@ -7,6 +7,7 @@ use gpui_component::theme::Theme;
 pub mod spacing {
     use gpui::px;
 
+    #[allow(dead_code)]
     pub const XS: gpui::Pixels = px(4.);
     pub const SM: gpui::Pixels = px(8.);
     pub const MD: gpui::Pixels = px(16.);
