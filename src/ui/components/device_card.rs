@@ -134,6 +134,7 @@ impl gpui::RenderOnce for DeviceCard {
             h_flex()
                 .gap(px(6.))
                 .flex_wrap()
+                .items_center()
                 .child(DeviceBadge::new(protocol_badge).colors(
                     cx.theme().primary.opacity(0.14),
                     cx.theme().primary,

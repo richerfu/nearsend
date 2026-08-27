@@ -1,5 +1,5 @@
-use gpui::{prelude::*, Hsla, Window};
-use gpui_component::{tag::Tag, Sizable as _};
+use gpui::{prelude::*, px, Hsla, Window};
+use gpui_component::{tag::Tag, StyledExt as _};
 
 /// Device metadata chip built on gpui-component `Tag`.
 #[derive(IntoElement)]
@@ -28,6 +28,15 @@ impl gpui::RenderOnce for DeviceBadge {
             Some((bg, fg, border)) => Tag::custom(bg, fg, border),
             None => Tag::secondary().outline(),
         };
-        tag.small().rounded_full().child(self.label)
+        // Tag::small() is py_0p5 + line-height 1, which flattens CJK pills.
+        tag.rounded_full()
+            .h(px(22.))
+            .px(px(8.))
+            .flex_none()
+            .items_center()
+            .text_xs()
+            .font_medium()
+            .line_height(px(16.))
+            .child(self.label)
     }
 }
