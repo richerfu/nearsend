@@ -71,4 +71,17 @@ pub fn apply_nearsend_theme(cx: &mut App) {
     theme.ring = brand;
     theme.progress_bar = brand;
     theme.slider_bar = brand;
+    theme.tokens.primary = brand.into();
+    theme.tokens.button_primary = brand.into();
+    theme.tokens.button_primary_hover = brand_hover.into();
+    theme.tokens.button_primary_active = brand_active.into();
+    theme.tokens.button_primary_foreground = on_brand.into();
+    theme.tokens.progress_bar = brand.into();
+    theme.tokens.slider_bar = brand.into();
+    theme.tokens.ring = brand.into();
+    // Outer 3px focus rings paint outside the control. Dialog/sheet bodies
+    // clip overflow, so the ring is cut into a broken halo after the
+    // gpui-component upgrade. Keep the focused border color only.
+    theme.focus_ring = false;
+    Theme::sync_base(cx);
 }

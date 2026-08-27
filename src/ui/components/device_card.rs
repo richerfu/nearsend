@@ -125,32 +125,25 @@ impl gpui::RenderOnce for DeviceCard {
                 .child(info_text.clone())
                 .into_any_element()
         } else if let Some(progress_val) = progress {
-            ProgressBar::new(Some(progress_val)).into_any_element()
+            ProgressBar::new(
+                format!("device-progress-{}", device.alias),
+                Some(progress_val),
+            )
+            .into_any_element()
         } else {
             h_flex()
                 .gap(px(6.))
                 .flex_wrap()
-                .child(
-                    DeviceBadge::new(protocol_badge)
-                        .background_color(cx.theme().primary.opacity(0.14).into())
-                        .foreground_color(cx.theme().primary.into())
-                        .border_color(cx.theme().primary.opacity(0.28).into()),
-                )
+                .child(DeviceBadge::new(protocol_badge).colors(
+                    cx.theme().primary.opacity(0.14),
+                    cx.theme().primary,
+                    cx.theme().primary.opacity(0.28),
+                ))
                 .when_some(ip_suffix_badge, |this, tag| {
-                    this.child(
-                        DeviceBadge::new(tag)
-                            .background_color(cx.theme().muted.into())
-                            .foreground_color(cx.theme().foreground.into())
-                            .border_color(cx.theme().border.into()),
-                    )
+                    this.child(DeviceBadge::new(tag))
                 })
-                .when(device.device_model.is_some(), |this| {
-                    this.child(
-                        DeviceBadge::new(device.device_model.clone().unwrap_or_default())
-                            .background_color(cx.theme().muted.into())
-                            .foreground_color(cx.theme().muted_foreground.into())
-                            .border_color(cx.theme().border.opacity(0.6).into()),
-                    )
+                .when_some(device.device_model.clone(), |this, model| {
+                    this.child(DeviceBadge::new(model))
                 })
                 .into_any_element()
         };

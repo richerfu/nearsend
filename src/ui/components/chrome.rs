@@ -3,12 +3,12 @@
 use crate::ui::icons::{app_icon, paths};
 use crate::ui::theme::{radius, sizing, spacing};
 use gpui::{
-    div, prelude::*, px, AnyElement, App, ClickEvent, Context, ElementId, IntoElement,
-    SharedString, Window,
+    div, prelude::*, px, AnyElement, App, ClickEvent, Context, ElementId, Hsla, IntoElement,
+    Pixels, SharedString, Window,
 };
 use gpui_component::{
     button::{Button, ButtonCustomVariant, ButtonVariants as _},
-    h_flex, v_flex, ActiveTheme as _, Size, StyledExt as _,
+    h_flex, v_flex, ActiveTheme as _, Selectable, Size, StyledExt as _,
 };
 
 /// Dialog title that reserves space for the absolute close icon.
@@ -124,6 +124,7 @@ pub fn circle_icon_button<V: 'static>(
         .w(size)
         .h(size)
         .rounded_full()
+        .overflow_hidden()
         .bg(cx.theme().muted)
         .flex()
         .items_center()
@@ -139,12 +140,83 @@ pub fn circle_icon_slot(icon_el: impl IntoElement, cx: &App) -> impl IntoElement
         .w(sizing::ICON_BUTTON)
         .h(sizing::ICON_BUTTON)
         .rounded_full()
+        .overflow_hidden()
         .bg(cx.theme().muted)
         .flex()
         .items_center()
         .justify_center()
         .flex_none()
         .child(icon_el)
+}
+
+/// Circular muted icon used as a [`gpui_component::popover::Popover`] trigger.
+///
+/// `Popover::trigger` requires [`Selectable`]. Wrapping the same circle in
+/// `Button` is wrong: a Button with children is laid out as a Medium text
+/// button (`h_8` + horizontal padding, 12px radius), which crushes the 40/44px
+/// circle used by the sibling toolbar icons.
+#[derive(IntoElement)]
+pub struct CircleIconTrigger {
+    id: ElementId,
+    size: Pixels,
+    selected: bool,
+    bg: Hsla,
+    icon: AnyElement,
+}
+
+impl CircleIconTrigger {
+    pub fn new(id: impl Into<ElementId>, icon_el: impl IntoElement, cx: &App) -> Self {
+        Self {
+            id: id.into(),
+            size: sizing::ICON_BUTTON,
+            selected: false,
+            bg: cx.theme().muted,
+            icon: icon_el.into_any_element(),
+        }
+    }
+
+    pub fn from_path(id: impl Into<ElementId>, icon_path: &'static str, cx: &App) -> Self {
+        Self::new(
+            id,
+            app_icon(icon_path, Size::Small, cx.theme().foreground),
+            cx,
+        )
+    }
+
+    pub fn touch(mut self) -> Self {
+        self.size = sizing::TOUCH;
+        self
+    }
+}
+
+impl Selectable for CircleIconTrigger {
+    fn selected(mut self, selected: bool) -> Self {
+        self.selected = selected;
+        self
+    }
+
+    fn is_selected(&self) -> bool {
+        self.selected
+    }
+}
+
+impl gpui::RenderOnce for CircleIconTrigger {
+    fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
+        div()
+            .id(self.id)
+            .w(self.size)
+            .h(self.size)
+            .flex_none()
+            .rounded_full()
+            .overflow_hidden()
+            .bg(self.bg)
+            .flex()
+            .items_center()
+            .justify_center()
+            .cursor_pointer()
+            .when(self.selected, |this| this.opacity(0.88))
+            .child(self.icon)
+    }
 }
 
 pub fn surface_card(cx: &App) -> gpui::Div {

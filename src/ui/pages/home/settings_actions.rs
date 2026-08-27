@@ -2,7 +2,9 @@
 
 use super::*;
 use crate::ui::theme::radius;
+use gpui_component::radio::{Radio, RadioGroup};
 use gpui_component::scroll::ScrollableElement as _;
+use std::rc::Rc;
 
 impl HomePage {
     /// Opens a dialog with a multiline text input for sending text messages.
@@ -992,5 +994,51 @@ impl HomePage {
 
     pub(super) fn open_send_target_dialog(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.open_send_to_address_dialog(window, cx);
+    }
+
+    /// Settings picker: gpui-component `RadioGroup` inside a dialog.
+    pub(super) fn open_settings_choice_dialog(
+        &mut self,
+        title: impl Into<String>,
+        options: &'static [&'static str],
+        selected: impl Into<String>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+        on_pick: impl Fn(&mut HomePage, &'static str, &mut Context<HomePage>) + 'static,
+    ) {
+        let title = title.into();
+        let selected = selected.into();
+        let home_entity = cx.entity();
+        let on_pick = Rc::new(on_pick);
+        let selected_index = options
+            .iter()
+            .position(|option| *option == selected.as_str());
+
+        window.open_dialog(cx, move |dialog, _window, _cx| {
+            let home_entity = home_entity.clone();
+            let on_pick = on_pick.clone();
+            dialog
+                .title(dialog_title(title.clone()))
+                .overlay(true)
+                .w(px(320.))
+                .child(
+                    RadioGroup::vertical("settings-choice")
+                        .w_full()
+                        .selected_index(selected_index)
+                        .children(
+                            options
+                                .iter()
+                                .copied()
+                                .map(|option| Radio::new(option).label(option)),
+                        )
+                        .on_click(move |ix, window, cx| {
+                            let option = options[*ix];
+                            home_entity.update(cx, |this, cx| {
+                                on_pick(this, option, cx);
+                            });
+                            window.close_dialog(cx);
+                        }),
+                )
+        });
     }
 }

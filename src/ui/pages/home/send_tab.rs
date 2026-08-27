@@ -1,7 +1,9 @@
 //! Send tab: select content type, files, and nearby devices (LocalSend-aligned layout).
 
 use super::{HomePage, SelectedFileInfo};
-use crate::ui::components::chrome::{circle_icon_slot, muted_card, section_title};
+use crate::ui::components::chrome::{
+    circle_icon_slot, muted_card, section_title, CircleIconTrigger,
+};
 use crate::ui::components::{
     device_card::DeviceCard, device_placeholder::DevicePlaceholder,
     opacity_slideshow::OpacitySlideshow,
@@ -464,7 +466,8 @@ pub fn render_send_content(
                                             ))
                                             // Send mode button (dropdown)
                                             .child(
-                                                Popover::new("send-mode-popover")
+                                                div().flex_none().child(
+                                                    Popover::new("send-mode-popover")
                                                     .anchor(Anchor::TopRight)
                                                     .overlay_closable(true)
                                                     .open(app.send_state.show_send_mode_menu)
@@ -477,25 +480,11 @@ pub fn render_send_content(
                                                         }
                                                     })
                                                     .trigger(
-                                                        Button::new("send-mode")
-                                                            .ghost()
-                                                            .custom(
-                                                                ButtonCustomVariant::new(cx)
-                                                                    .color(cx.theme().transparent)
-                                                                    .foreground(cx.theme().foreground)
-                                                                    .hover(cx.theme().transparent)
-                                                                    .active(cx.theme().transparent),
-                                                            )
-                                                            .rounded_full()
-                                                            .p(px(0.))
-                                                            .child(circle_icon_slot(
-                                                                app_icon(
-                                                                    paths::SETTINGS,
-                                                                    Size::Small,
-                                                                    cx.theme().foreground,
-                                                                ),
-                                                                cx,
-                                                            )),
+                                                        CircleIconTrigger::from_path(
+                                                            "send-mode",
+                                                            paths::SETTINGS,
+                                                            cx,
+                                                        ),
                                                     )
                                                     .content({
                                                         let home_entity = home_entity.clone();
@@ -677,6 +666,7 @@ pub fn render_send_content(
                                                                 )
                                                         }
                                                     }),
+                                                ),
                                             ),
                                     )
                             ),

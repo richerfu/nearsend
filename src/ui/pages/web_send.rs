@@ -2,6 +2,7 @@ use crate::core::share_links::SharedEntry;
 use crate::ui::components::chrome::{
     back_icon_button, dialog_title, header_icon_button, page_header,
 };
+use crate::ui::components::switch::Switch;
 use crate::ui::icons::{app_icon, paths};
 use crate::ui::pages::HomePage;
 use crate::ui::routes;
@@ -616,51 +617,85 @@ impl gpui::Render for WebSendPage {
                                                 .text_color(cx.theme().foreground)
                                                 .child("访问设置"),
                                         )
-                                        .child(
+                                        .child({
+                                            let home = cx.entity();
                                             h_flex()
+                                                .id("web-link-enable-encryption")
                                                 .justify_between()
                                                 .items_center()
+                                                .min_h(px(44.))
+                                                .on_click(cx.listener(move |this, _ev, _w, cx| {
+                                                    this.update_link_encryption(!encryption, cx);
+                                                }))
                                                 .child(div().text_sm().child("启用加密 (HTTPS)"))
                                                 .child(
-                                                    div()
-                                                        .id("web-link-enable-encryption")
-                                                        .cursor_pointer()
-                                                        .on_click(cx.listener(move |this, _ev, _w, cx| {
-                                                            this.update_link_encryption(!encryption, cx);
-                                                        }))
-                                                        .child(crate::ui::components::switch::Switch::new(encryption)),
-                                                ),
-                                        )
-                                        .child(
+                                                    Switch::new("web-link-enable-encryption-switch")
+                                                        .checked(encryption)
+                                                        .large()
+                                                        .on_click(move |checked, _, cx| {
+                                                            cx.stop_propagation();
+                                                            let checked = *checked;
+                                                            home.update(cx, |this, cx| {
+                                                                this.update_link_encryption(
+                                                                    checked, cx,
+                                                                );
+                                                            });
+                                                        }),
+                                                )
+                                        })
+                                        .child({
+                                            let home = cx.entity();
                                             h_flex()
+                                                .id("web-link-auto-accept")
                                                 .justify_between()
                                                 .items_center()
+                                                .min_h(px(44.))
+                                                .on_click(cx.listener(move |this, _ev, _w, cx| {
+                                                    this.update_share_link_auto_accept(
+                                                        !auto_accept,
+                                                        cx,
+                                                    );
+                                                }))
                                                 .child(div().text_sm().child("分享链接自动接受"))
                                                 .child(
-                                                    div()
-                                                        .id("web-link-auto-accept")
-                                                        .cursor_pointer()
-                                                        .on_click(cx.listener(move |this, _ev, _w, cx| {
-                                                            this.update_share_link_auto_accept(!auto_accept, cx);
-                                                        }))
-                                                        .child(crate::ui::components::switch::Switch::new(auto_accept)),
-                                                ),
-                                        )
-                                        .child(
+                                                    Switch::new("web-link-auto-accept-switch")
+                                                        .checked(auto_accept)
+                                                        .large()
+                                                        .on_click(move |checked, _, cx| {
+                                                            cx.stop_propagation();
+                                                            let checked = *checked;
+                                                            home.update(cx, |this, cx| {
+                                                                this.update_share_link_auto_accept(
+                                                                    checked, cx,
+                                                                );
+                                                            });
+                                                        }),
+                                                )
+                                        })
+                                        .child({
+                                            let home = cx.entity();
                                             h_flex()
+                                                .id("web-link-require-pin")
                                                 .justify_between()
                                                 .items_center()
+                                                .min_h(px(44.))
+                                                .on_click(cx.listener(move |this, _ev, _w, cx| {
+                                                    this.update_require_pin(!require_pin, cx);
+                                                }))
                                                 .child(div().text_sm().child("访问需要 PIN"))
                                                 .child(
-                                                    div()
-                                                        .id("web-link-require-pin")
-                                                        .cursor_pointer()
-                                                        .on_click(cx.listener(move |this, _ev, _w, cx| {
-                                                            this.update_require_pin(!require_pin, cx);
-                                                        }))
-                                                        .child(crate::ui::components::switch::Switch::new(require_pin)),
-                                                ),
-                                        )
+                                                    Switch::new("web-link-require-pin-switch")
+                                                        .checked(require_pin)
+                                                        .large()
+                                                        .on_click(move |checked, _, cx| {
+                                                            cx.stop_propagation();
+                                                            let checked = *checked;
+                                                            home.update(cx, |this, cx| {
+                                                                this.update_require_pin(checked, cx);
+                                                            });
+                                                        }),
+                                                )
+                                        })
                                         .when(require_pin, |this| {
                                             this.child(
                                                 h_flex()

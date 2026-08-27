@@ -12,8 +12,8 @@ use crate::ui::pages::{
 };
 use crate::ui::router_history::{HistoryEntry, RouterHistoryState};
 use crate::ui::routes;
-use gpui::{div, prelude::*, Context, Entity, IntoElement, ReadGlobal, Window};
-use gpui_component::{v_flex, ActiveTheme as _, Root};
+use gpui::{div, prelude::*, Context, Entity, IntoElement, MouseButton, ReadGlobal, Window};
+use gpui_component::{v_flex, ActiveTheme as _, Root, WindowExt as _};
 use gpui_router::{Route, RouterState, Routes};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -241,6 +241,7 @@ impl gpui::Render for AppRoot {
         let sheet_layer = Root::render_sheet_layer(window, cx);
         let dialog_layer = Root::render_dialog_layer(window, cx);
         let notification_layer = Root::render_notification_layer(window, cx);
+        let has_dialog = dialog_layer.is_some();
 
         // Clone entities for use in closures
         let home_entity = self.home_entity.clone();
@@ -341,6 +342,7 @@ impl gpui::Render for AppRoot {
         let insets = crate::ui::safe_area::current(cx);
 
         v_flex()
+            .relative()
             .size_full()
             .bg(cx.theme().background)
             .child(
@@ -353,6 +355,25 @@ impl gpui::Render for AppRoot {
                     .child(div().size_full().child(routed_page)),
             )
             .children(sheet_layer)
+            // gpui-component 9890a77 moved the dialog dim onto an
+            // `absolute().size_full()` backdrop nested in an unsized wrapper,
+            // so the mask laid out as 0x0. Paint a window-sized scrim here.
+            .when(has_dialog, |this| {
+                this.child(
+                    div()
+                        .id("dialog-scrim")
+                        .absolute()
+                        .top_0()
+                        .left_0()
+                        .right_0()
+                        .bottom_0()
+                        .occlude()
+                        .bg(cx.theme().overlay)
+                        .on_mouse_down(MouseButton::Left, |_, window, cx| {
+                            window.close_dialog(cx);
+                        }),
+                )
+            })
             .children(dialog_layer)
             .children(notification_layer)
     }

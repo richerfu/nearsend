@@ -1,21 +1,33 @@
 //! Settings tab: general, receive, send, network, other (uses ui/pages state types).
 
-use super::HomePage;
-use crate::ui::components::{logo::Logo, switch::Switch};
+use super::{HomePage, NetworkFilterMode, SendMode};
+use crate::ui::components::logo::Logo;
+use crate::ui::components::switch::Switch;
 use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
 use crate::ui::theme::{radius, spacing};
 use gpui::{
-    div, percentage, prelude::*, px, Animation, AnimationExt as _, AnyElement, Context, Entity,
+    div, percentage, prelude::*, px, Animation, AnimationExt as _, AnyElement, Context,
     Transformation, Window,
 };
 use gpui_component::scroll::ScrollableElement as _;
-use gpui_component::{
-    h_flex,
-    select::{Select, SelectState},
-    v_flex, ActiveTheme as _, Sizable as _, Size, StyledExt as _,
-};
+use gpui_component::{h_flex, v_flex, ActiveTheme as _, Sizable as _, Size, StyledExt as _};
+use std::rc::Rc;
 use std::time::Duration;
+
+const SEND_MODE_OPTIONS: &[&str] = &["单设备", "多设备", "链接分享"];
+const DEVICE_TYPE_OPTIONS: &[&str] = &["Mobile", "Desktop", "Web", "Server", "Headless"];
+const DEVICE_MODEL_OPTIONS: &[&str] = &[
+    "自动",
+    "OpenHarmony",
+    "Android",
+    "iPhone",
+    "iPad",
+    "Windows",
+    "macOS",
+    "Linux",
+];
+const NETWORK_FILTER_OPTIONS: &[&str] = &["全部", "白名单", "黑名单"];
 
 // ---------------------------------------------------------------------------
 // Reusable helpers
@@ -90,25 +102,34 @@ fn settings_row() -> gpui::Div {
         .gap(px(12.))
 }
 
-/// Label + compact trailing select.
-fn render_select_entry(
-    label: &str,
-    select_state: &Entity<SelectState<Vec<&'static str>>>,
-    id: &str,
-    cx: &mut Context<HomePage>,
-) -> AnyElement {
-    settings_row()
-        .child(settings_label(label, cx))
-        .child(
-            div()
-                .id(id.to_string())
-                .w(px(132.))
-                .child(Select::new(select_state).w_full().with_size(Size::Small)),
-        )
-        .into_any_element()
+fn device_type_display(value: &str) -> &'static str {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "mobile" => "Mobile",
+        "web" => "Web",
+        "server" => "Server",
+        "headless" => "Headless",
+        _ => "Desktop",
+    }
 }
 
-/// Whole-row toggle with a trailing switch.
+fn device_model_display(value: &str) -> &str {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        "自动"
+    } else {
+        trimmed
+    }
+}
+
+fn network_filter_mode_label(mode: NetworkFilterMode) -> &'static str {
+    match mode {
+        NetworkFilterMode::All => "全部",
+        NetworkFilterMode::Whitelist => "白名单",
+        NetworkFilterMode::Blacklist => "黑名单",
+    }
+}
+
+/// Whole-row toggle with a trailing gpui-component Switch.
 fn render_boolean_entry(
     label: &str,
     value: bool,
@@ -116,14 +137,27 @@ fn render_boolean_entry(
     cx: &mut Context<HomePage>,
     on_toggle: impl Fn(&mut HomePage, &mut Context<HomePage>) + 'static,
 ) -> AnyElement {
+    let home = cx.entity();
+    let switch_id = format!("{id}-switch");
+    let on_toggle = Rc::new(on_toggle);
+    let on_toggle_row = on_toggle.clone();
+    let on_toggle_switch = on_toggle;
     settings_row()
         .id(id.to_string())
         .cursor_pointer()
         .on_click(cx.listener(move |this, _ev, _win, cx| {
-            on_toggle(this, cx);
+            on_toggle_row(this, cx);
         }))
         .child(settings_label(label, cx))
-        .child(Switch::new(value))
+        .child(
+            Switch::new(switch_id)
+                .checked(value)
+                .large()
+                .on_click(move |_, _, cx| {
+                    cx.stop_propagation();
+                    home.update(cx, |this, cx| on_toggle_switch(this, cx));
+                }),
+        )
         .into_any_element()
 }
 
@@ -198,31 +232,6 @@ pub fn render_settings_content(
     _window: &mut Window,
     cx: &mut Context<HomePage>,
 ) -> AnyElement {
-    let Some(send_mode_default_select) = app.send_mode_default_select.clone() else {
-        return div()
-            .size_full()
-            .bg(cx.theme().background)
-            .into_any_element();
-    };
-    let Some(device_type_select) = app.device_type_select.clone() else {
-        return div()
-            .size_full()
-            .bg(cx.theme().background)
-            .into_any_element();
-    };
-    let Some(device_model_select) = app.device_model_select.clone() else {
-        return div()
-            .size_full()
-            .bg(cx.theme().background)
-            .into_any_element();
-    };
-    let Some(network_filter_mode_select) = app.network_filter_mode_select.clone() else {
-        return div()
-            .size_full()
-            .bg(cx.theme().background)
-            .into_any_element();
-    };
-
     let advanced = app.settings_state.advanced;
     let animations = app.settings_state.animations;
     let server_running = app.settings_state.server_running;
@@ -328,11 +337,30 @@ pub fn render_settings_content(
     let receive = render_settings_section("接收", cx, receive_children);
 
     // -- Send section (align with LocalSend advanced settings) --
-    let send_mode = render_select_entry(
+    let send_mode = render_value_entry(
         "默认发送模式",
-        &send_mode_default_select,
+        HomePage::send_mode_setting_label(app.settings_state.send_mode_default),
         "select-send-mode-default",
         cx,
+        |this, window, cx| {
+            let selected = HomePage::send_mode_setting_label(this.settings_state.send_mode_default)
+                .to_string();
+            this.open_settings_choice_dialog(
+                "默认发送模式",
+                SEND_MODE_OPTIONS,
+                selected,
+                window,
+                cx,
+                |this, value, cx| {
+                    match value {
+                        "多设备" => this.apply_send_mode_default(SendMode::Multiple),
+                        "链接分享" => this.apply_send_mode_default(SendMode::Link),
+                        _ => this.apply_send_mode_default(SendMode::Single),
+                    }
+                    cx.notify();
+                },
+            );
+        },
     );
     let share_link = render_boolean_entry(
         "分享链接自动接受",
@@ -443,10 +471,57 @@ pub fn render_settings_content(
     );
     let mut network_children: Vec<AnyElement> = vec![server_controls, n1, n2];
     if advanced {
-        let device_type_entry =
-            render_select_entry("设备类型", &device_type_select, "select-device-type", cx);
-        let device_model_entry =
-            render_select_entry("设备型号", &device_model_select, "select-device-model", cx);
+        let device_type_entry = render_value_entry(
+            "设备类型",
+            device_type_display(&app.settings_state.device_type),
+            "select-device-type",
+            cx,
+            |this, window, cx| {
+                let selected = device_type_display(&this.settings_state.device_type).to_string();
+                this.open_settings_choice_dialog(
+                    "设备类型",
+                    DEVICE_TYPE_OPTIONS,
+                    selected,
+                    window,
+                    cx,
+                    |this, value, cx| {
+                        this.settings_state.device_type = value.to_string();
+                        this.sync_server_config_to_runtime(cx);
+                        this.persist_settings();
+                        cx.notify();
+                    },
+                );
+            },
+        );
+        let device_model_entry = render_value_entry(
+            "设备型号",
+            device_model_display(&app.settings_state.device_model),
+            "select-device-model",
+            cx,
+            |this, window, cx| {
+                let selected = device_model_display(&this.settings_state.device_model).to_string();
+                this.open_settings_choice_dialog(
+                    "设备型号",
+                    DEVICE_MODEL_OPTIONS,
+                    selected,
+                    window,
+                    cx,
+                    |this, value, cx| {
+                        let next_model = if value == "自动" {
+                            String::new()
+                        } else {
+                            value.to_string()
+                        };
+                        if this.settings_state.device_model != next_model {
+                            this.settings_state.device_model = next_model;
+                            this.sync_server_config_to_runtime(cx);
+                            this.persist_settings();
+                        }
+                        cx.notify();
+                    },
+                );
+            },
+        );
         let n3 = render_boolean_entry(
             "加密",
             app.settings_state.encryption,
@@ -492,11 +567,32 @@ pub fn render_settings_content(
                 this.open_multicast_group_dialog(window, cx);
             },
         );
-        let n4 = render_select_entry(
+        let n4 = render_value_entry(
             "网络接口模式",
-            &network_filter_mode_select,
+            network_filter_mode_label(app.settings_state.network_filter_mode),
             "select-network-mode",
             cx,
+            |this, window, cx| {
+                let selected =
+                    network_filter_mode_label(this.settings_state.network_filter_mode).to_string();
+                this.open_settings_choice_dialog(
+                    "网络接口模式",
+                    NETWORK_FILTER_OPTIONS,
+                    selected,
+                    window,
+                    cx,
+                    |this, value, cx| {
+                        this.settings_state.network_filter_mode = match value {
+                            "白名单" => NetworkFilterMode::Whitelist,
+                            "黑名单" => NetworkFilterMode::Blacklist,
+                            _ => NetworkFilterMode::All,
+                        };
+                        this.sync_server_config_to_runtime(cx);
+                        this.persist_settings();
+                        cx.notify();
+                    },
+                );
+            },
         );
         let n5 = render_nav_entry(
             "网络接口规则",

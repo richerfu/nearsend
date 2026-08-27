@@ -2,19 +2,19 @@
 
 use super::HomePage;
 use super::QuickSaveMode;
-use crate::ui::components::chrome::{circle_icon_button, dialog_title};
+use crate::ui::components::chrome::{circle_icon_button, dialog_title, CircleIconTrigger};
 use crate::ui::components::logo::Logo;
-use crate::ui::icons::{app_icon, paths};
+use crate::ui::icons::paths;
 use crate::ui::routes;
 use crate::ui::theme::{radius, spacing};
 use gpui::{div, prelude::*, px, Anchor, AnyElement, Context, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
-    button::{Button, ButtonCustomVariant, ButtonVariant, ButtonVariants as _},
+    button::{Button, ButtonVariant, ButtonVariants as _},
     dialog::{DialogAction, DialogButtonProps, DialogFooter},
     h_flex,
     popover::Popover,
-    v_flex, ActiveTheme as _, Size, StyledExt as _, WindowExt as _,
+    v_flex, ActiveTheme as _, StyledExt as _, WindowExt as _,
 };
 
 pub fn render_receive_content(
@@ -61,80 +61,63 @@ pub fn render_receive_content(
                     },
                 ))
                 .child(
-                    Popover::new("receive-info")
-                        .anchor(Anchor::TopRight)
-                        .overlay_closable(false)
-                        .open(show_advanced)
-                        .on_open_change({
-                            let home_entity = home_entity.clone();
-                            move |open, _window, cx| {
-                                home_entity.update(cx, |this, _cx| {
-                                    this.receive_state.show_advanced = *open;
-                                });
-                            }
-                        })
-                        .trigger(
-                            Button::new("receive-info")
-                                .custom(
-                                    ButtonCustomVariant::new(cx)
-                                        .color(cx.theme().transparent)
-                                        .foreground(cx.theme().foreground)
-                                        .hover(cx.theme().muted)
-                                        .active(cx.theme().muted),
+                    div().flex_none().child(
+                        Popover::new("receive-info")
+                            .anchor(Anchor::TopRight)
+                            .overlay_closable(false)
+                            .open(show_advanced)
+                            .on_open_change({
+                                let home_entity = home_entity.clone();
+                                move |open, _window, cx| {
+                                    home_entity.update(cx, |this, _cx| {
+                                        this.receive_state.show_advanced = *open;
+                                    });
+                                }
+                            })
+                            .trigger(
+                                CircleIconTrigger::from_path(
+                                    "receive-info-trigger",
+                                    paths::INFO,
+                                    cx,
                                 )
-                                .rounded_full()
-                                .p(px(0.))
-                                .child(
-                                    div()
-                                        .bg(cx.theme().muted)
-                                        .rounded_full()
-                                        .w(px(44.))
-                                        .h(px(44.))
-                                        .flex()
-                                        .items_center()
-                                        .justify_center()
-                                        .child(app_icon(
-                                            paths::INFO,
-                                            Size::Small,
-                                            cx.theme().foreground,
-                                        )),
-                                ),
-                        )
-                        .content(move |_state, _window, cx| {
-                            v_flex()
-                                .gap(spacing::SM)
-                                .child(render_info_row("Alias:", &info_alias, cx))
-                                .child(
-                                    h_flex()
-                                        .items_start()
-                                        .child(
-                                            div()
-                                                .w(px(60.))
-                                                .text_sm()
-                                                .text_color(cx.theme().muted_foreground)
-                                                .child("IP:"),
-                                        )
-                                        .child(if info_ips.is_empty() {
-                                            div()
-                                                .text_sm()
-                                                .text_color(cx.theme().foreground)
-                                                .child("Unknown")
-                                        } else {
-                                            v_flex().gap(px(2.)).items_start().children(
-                                                info_ips.iter().map(|ip| {
-                                                    div()
-                                                        .w_full()
-                                                        .overflow_hidden()
-                                                        .truncate()
-                                                        .text_sm()
-                                                        .text_color(cx.theme().foreground)
-                                                        .child(ip.clone())
-                                                }),
+                                .touch(),
+                            )
+                            .content(move |_state, _window, cx| {
+                                v_flex()
+                                    .gap(spacing::SM)
+                                    .child(render_info_row("Alias:", &info_alias, cx))
+                                    .child(
+                                        h_flex()
+                                            .items_start()
+                                            .child(
+                                                div()
+                                                    .w(px(60.))
+                                                    .text_sm()
+                                                    .text_color(cx.theme().muted_foreground)
+                                                    .child("IP:"),
                                             )
-                                        }),
-                                )
-                                .child(render_info_row("Port:", &server_port.to_string(), cx))
-                        }),
+                                            .child(if info_ips.is_empty() {
+                                                div()
+                                                    .text_sm()
+                                                    .text_color(cx.theme().foreground)
+                                                    .child("Unknown")
+                                            } else {
+                                                v_flex().gap(px(2.)).items_start().children(
+                                                    info_ips.iter().map(|ip| {
+                                                        div()
+                                                            .w_full()
+                                                            .overflow_hidden()
+                                                            .truncate()
+                                                            .text_sm()
+                                                            .text_color(cx.theme().foreground)
+                                                            .child(ip.clone())
+                                                    }),
+                                                )
+                                            }),
+                                    )
+                                    .child(render_info_row("Port:", &server_port.to_string(), cx))
+                            }),
+                    ),
                 ),
         )
         // Middle: logo + alias + IP display
