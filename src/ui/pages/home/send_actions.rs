@@ -179,59 +179,44 @@ impl HomePage {
 
     pub(super) fn open_add_content_dialog(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let home_entity = cx.entity();
-        window.open_dialog(cx, move |dialog, _window, _cx| {
+        window.open_dialog(cx, move |dialog, _window, cx| {
             let home_file = home_entity.clone();
             let home_folder = home_entity.clone();
             let home_text = home_entity.clone();
             let home_clipboard = home_entity.clone();
-            let variant = ButtonCustomVariant::new(_cx)
-                .color(_cx.theme().secondary)
-                .foreground(_cx.theme().foreground)
-                .hover(_cx.theme().secondary)
-                .active(_cx.theme().secondary);
             dialog
-                .title("你想加入什么文件？")
+                .title(dialog_title("添加内容"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
-                    h_flex()
+                    v_flex()
                         .w_full()
-                        .gap(px(10.))
-                        .flex_wrap()
-                        .justify_start()
+                        .gap(px(12.))
                         .child(
-                            Button::new("add-file")
-                                .custom(variant.clone())
-                                .w(px(90.))
-                                .h(px(65.))
-                                .rounded_md()
-                                .on_click(move |_event, window, cx| {
+                            div()
+                                .text_sm()
+                                .text_color(cx.theme().muted_foreground)
+                                .child("选择要加入的内容类型"),
+                        )
+                        .child(content_picker_grid([
+                            content_picker_tile(
+                                "add-file",
+                                paths::FILE,
+                                "文件",
+                                cx,
+                                move |_event, window, cx| {
                                     window.close_dialog(cx);
                                     home_file.update(cx, |this, cx| {
                                         this.handle_pick_content(SendContentType::File, window, cx);
                                     });
-                                })
-                                .child(
-                                    v_flex()
-                                        .items_center()
-                                        .justify_between()
-                                        .gap(px(4.))
-                                        .child(
-                                            Icon::default()
-                                                .path("icons/file.svg")
-                                                .with_size(gpui_component::Size::Medium)
-                                                .text_color(_cx.theme().foreground),
-                                        )
-                                        .child(div().text_sm().text_center().child("文件")),
-                                ),
-                        )
-                        .child(
-                            Button::new("add-folder")
-                                .custom(variant.clone())
-                                .w(px(90.))
-                                .h(px(65.))
-                                .rounded_md()
-                                .on_click(move |_event, window, cx| {
+                                },
+                            ),
+                            content_picker_tile(
+                                "add-folder",
+                                paths::FOLDER,
+                                "文件夹",
+                                cx,
+                                move |_event, window, cx| {
                                     window.close_dialog(cx);
                                     home_folder.update(cx, |this, cx| {
                                         this.handle_pick_content(
@@ -240,54 +225,26 @@ impl HomePage {
                                             cx,
                                         );
                                     });
-                                })
-                                .child(
-                                    v_flex()
-                                        .items_center()
-                                        .justify_between()
-                                        .gap(px(4.))
-                                        .child(
-                                            Icon::default()
-                                                .path("icons/folder.svg")
-                                                .with_size(gpui_component::Size::Medium)
-                                                .text_color(_cx.theme().foreground),
-                                        )
-                                        .child(div().text_sm().text_center().child("文件夹")),
-                                ),
-                        )
-                        .child(
-                            Button::new("add-text")
-                                .custom(variant.clone())
-                                .w(px(90.))
-                                .h(px(65.))
-                                .rounded_md()
-                                .on_click(move |_event, window, cx| {
+                                },
+                            ),
+                            content_picker_tile(
+                                "add-text",
+                                paths::BOOK_OPEN,
+                                "文本",
+                                cx,
+                                move |_event, window, cx| {
                                     window.close_dialog(cx);
                                     home_text.update(cx, |this, cx| {
                                         this.handle_pick_content(SendContentType::Text, window, cx);
                                     });
-                                })
-                                .child(
-                                    v_flex()
-                                        .items_center()
-                                        .justify_between()
-                                        .gap(px(4.))
-                                        .child(
-                                            Icon::default()
-                                                .path("icons/book-open.svg")
-                                                .with_size(gpui_component::Size::Medium)
-                                                .text_color(_cx.theme().foreground),
-                                        )
-                                        .child(div().text_sm().text_center().child("文本")),
-                                ),
-                        )
-                        .child(
-                            Button::new("add-clipboard")
-                                .custom(variant)
-                                .w(px(90.))
-                                .h(px(65.))
-                                .rounded_md()
-                                .on_click(move |_event, window, cx| {
+                                },
+                            ),
+                            content_picker_tile(
+                                "add-clipboard",
+                                paths::COPY,
+                                "剪贴板",
+                                cx,
+                                move |_event, window, cx| {
                                     window.close_dialog(cx);
                                     home_clipboard.update(cx, |this, cx| {
                                         this.handle_pick_content(
@@ -296,23 +253,11 @@ impl HomePage {
                                             cx,
                                         );
                                     });
-                                })
-                                .child(
-                                    v_flex()
-                                        .items_center()
-                                        .justify_between()
-                                        .gap(px(4.))
-                                        .child(
-                                            Icon::default()
-                                                .path("icons/copy.svg")
-                                                .with_size(gpui_component::Size::Medium)
-                                                .text_color(_cx.theme().foreground),
-                                        )
-                                        .child(div().text_sm().text_center().child("剪贴板")),
-                                ),
-                        ),
+                                },
+                            ),
+                        ])),
                 )
-                .footer(Self::build_alert_dialog_footer("add-content", "关闭"))
+                .footer(Self::build_close_footer("add-content", "关闭"))
                 .button_props(gpui_component::dialog::DialogButtonProps::default().ok_text("关闭"))
         });
     }
@@ -326,7 +271,7 @@ impl HomePage {
             let home_multiple = home_entity.clone();
             let home_link = home_entity.clone();
             dialog
-                .title("发送模式")
+                .title(dialog_title("发送模式"))
                 .overlay(true)
                 .w(px(320.))
                 .child(
@@ -352,14 +297,17 @@ impl HomePage {
                                         .child(div().text_sm().child("单接收者"))
                                         .child(
                                             if matches!(current_mode, SendModeSetting::Single) {
-                                                Icon::default()
-                                                    .path("icons/check.svg")
-                                                    .with_size(Size::Small)
+                                                app_icon(
+                                                    paths::CHECK,
+                                                    Size::Small,
+                                                    _cx.theme().primary,
+                                                )
                                             } else {
-                                                Icon::default()
-                                                    .path("icons/more-horizontal.svg")
-                                                    .with_size(Size::Small)
-                                                    .text_color(_cx.theme().muted_foreground)
+                                                app_icon(
+                                                    paths::MORE,
+                                                    Size::Small,
+                                                    _cx.theme().muted_foreground,
+                                                )
                                             },
                                         ),
                                 ),
@@ -383,14 +331,17 @@ impl HomePage {
                                         .child(div().text_sm().child("多个接收者"))
                                         .child(
                                             if matches!(current_mode, SendModeSetting::Multiple) {
-                                                Icon::default()
-                                                    .path("icons/check.svg")
-                                                    .with_size(Size::Small)
+                                                app_icon(
+                                                    paths::CHECK,
+                                                    Size::Small,
+                                                    _cx.theme().primary,
+                                                )
                                             } else {
-                                                Icon::default()
-                                                    .path("icons/more-horizontal.svg")
-                                                    .with_size(Size::Small)
-                                                    .text_color(_cx.theme().muted_foreground)
+                                                app_icon(
+                                                    paths::MORE,
+                                                    Size::Small,
+                                                    _cx.theme().muted_foreground,
+                                                )
                                             },
                                         ),
                                 ),
@@ -432,14 +383,13 @@ impl HomePage {
                                         .items_center()
                                         .child(div().text_sm().child("通过分享链接发送"))
                                         .child(if matches!(current_mode, SendModeSetting::Link) {
-                                            Icon::default()
-                                                .path("icons/check.svg")
-                                                .with_size(Size::Small)
+                                            app_icon(paths::CHECK, Size::Small, _cx.theme().primary)
                                         } else {
-                                            Icon::default()
-                                                .path("icons/more-horizontal.svg")
-                                                .with_size(Size::Small)
-                                                .text_color(_cx.theme().muted_foreground)
+                                            app_icon(
+                                                paths::MORE,
+                                                Size::Small,
+                                                _cx.theme().muted_foreground,
+                                            )
                                         }),
                                 ),
                         ),
@@ -456,7 +406,7 @@ impl HomePage {
     ) {
         window.open_dialog(cx, move |dialog, _window, _cx| {
             dialog
-                .title("发送模式说明")
+                .title(dialog_title("发送模式说明"))
                 .overlay(true)
                 .w(px(360.))
                 .child(
@@ -582,7 +532,7 @@ impl HomePage {
             let home_for_copy = home_entity.clone();
             let link_for_copy = link.clone();
             dialog
-                .title("分享链接")
+                .title(dialog_title("分享链接"))
                 .overlay(true)
                 .w(px(380.))
                 .child(

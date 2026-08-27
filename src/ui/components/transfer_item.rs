@@ -1,11 +1,12 @@
 use crate::state::transfer_state::{TransferInfo, TransferStatus};
-use crate::ui::theme::{sizing, spacing};
+use crate::ui::icons::{app_icon, paths};
+use crate::ui::theme::{radius, sizing, spacing};
 use gpui::{div, prelude::*, px, Window};
 use gpui_component::{
     button::{Button, ButtonVariants as _},
     h_flex,
     progress::Progress,
-    v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _,
+    v_flex, ActiveTheme as _, Size, StyledExt as _,
 };
 
 /// Transfer item component for mobile design — shows per-file transfer progress.
@@ -47,12 +48,12 @@ impl TransferItem {
 impl gpui::RenderOnce for TransferItem {
     fn render(self, _window: &mut Window, cx: &mut gpui::App) -> impl IntoElement {
         let (status_text, status_icon_path) = match self.transfer.status {
-            TransferStatus::Pending => ("等待中", "icons/loader.svg"),
-            TransferStatus::InProgress => ("传输中", "icons/upload.svg"),
-            TransferStatus::Completed => ("已完成", "icons/check.svg"),
-            TransferStatus::Failed => ("失败", "icons/x.svg"),
-            TransferStatus::Cancelled => ("已取消", "icons/x.svg"),
-            TransferStatus::Skipped => ("已跳过", "icons/x.svg"),
+            TransferStatus::Pending => ("等待中", paths::LOADER),
+            TransferStatus::InProgress => ("传输中", paths::UPLOAD),
+            TransferStatus::Completed => ("已完成", paths::CHECK),
+            TransferStatus::Failed => ("失败", paths::X),
+            TransferStatus::Cancelled => ("已取消", paths::X),
+            TransferStatus::Skipped => ("已跳过", paths::X),
         };
 
         let status_color = match self.transfer.status {
@@ -68,11 +69,11 @@ impl gpui::RenderOnce for TransferItem {
         let transfer_id_open = self.transfer.id.clone();
 
         div()
-            .bg(cx.theme().secondary)
-            .rounded_lg()
+            .bg(cx.theme().background)
+            .rounded(radius::LG)
             .p(sizing::CARD_PADDING)
             .border_1()
-            .border_color(cx.theme().border)
+            .border_color(cx.theme().border.opacity(0.8))
             .child(
                 v_flex()
                     .gap(spacing::SM)
@@ -82,12 +83,7 @@ impl gpui::RenderOnce for TransferItem {
                             .items_center()
                             .gap(spacing::SM)
                             .w_full()
-                            .child(
-                                Icon::default()
-                                    .path("icons/file.svg")
-                                    .with_size(Size::Medium)
-                                    .text_color(cx.theme().muted_foreground),
-                            )
+                            .child(app_icon(paths::FILE, Size::Small, cx.theme().muted_foreground))
                             .child(
                                 v_flex()
                                     .flex_1()
@@ -107,12 +103,11 @@ impl gpui::RenderOnce for TransferItem {
                                         h_flex()
                                             .gap(px(6.))
                                             .items_center()
-                                            .child(
-                                                Icon::default()
-                                                    .path(status_icon_path)
-                                                    .with_size(Size::XSmall)
-                                                    .text_color(status_color),
-                                            )
+                                            .child(app_icon(
+                                                status_icon_path,
+                                                Size::XSmall,
+                                                status_color,
+                                            ))
                                             .child(
                                                 div()
                                                     .text_xs()
@@ -133,11 +128,7 @@ impl gpui::RenderOnce for TransferItem {
                                                     handler(&transfer_id, window, cx);
                                                 }
                                             })
-                                            .child(
-                                                Icon::default()
-                                                    .path("icons/x.svg")
-                                                    .with_size(Size::Small),
-                                            ),
+                                            .child(app_icon(paths::X, Size::Small, cx.theme().danger)),
                                     )
                                 },
                             )
@@ -153,11 +144,11 @@ impl gpui::RenderOnce for TransferItem {
                                                     handler(&transfer_id_open, window, cx);
                                                 }
                                             })
-                                            .child(
-                                                Icon::default()
-                                                    .path("icons/external-link.svg")
-                                                    .with_size(Size::Small),
-                                            ),
+                                            .child(app_icon(
+                                                paths::EXTERNAL_LINK,
+                                                Size::Small,
+                                                cx.theme().foreground,
+                                            )),
                                     )
                                 },
                             ),

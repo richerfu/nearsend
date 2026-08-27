@@ -1,33 +1,29 @@
 //! Send tab: select content type, files, and nearby devices (LocalSend-aligned layout).
 
-use super::HomePage;
+use super::{HomePage, SelectedFileInfo};
+use crate::ui::components::chrome::{
+    circle_icon_slot, muted_card, section_title, CircleIconTrigger,
+};
 use crate::ui::components::{
     device_card::DeviceCard, device_placeholder::DevicePlaceholder,
     opacity_slideshow::OpacitySlideshow,
 };
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
-use crate::ui::theme::spacing;
+use crate::ui::theme::{radius, spacing};
 use crate::ui::utils::format_file_size;
 use gpui::{
-    div, percentage, prelude::*, px, Animation, AnimationExt as _, AnyElement, Context,
-    ScrollHandle, Transformation, Window,
+    div, percentage, prelude::*, px, Anchor, Animation, AnimationExt as _, AnyElement, Context,
+    Transformation, Window,
 };
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
     button::{Button, ButtonCustomVariant, ButtonVariants as _},
     h_flex,
     popover::Popover,
-    v_flex, ActiveTheme as _, Anchor, Icon, Sizable as _, Size, StyledExt as _,
+    v_flex, ActiveTheme as _, Size, StyledExt as _,
 };
 use std::time::Duration;
-
-/// Button width/height for content type buttons (matches BigButton constants).
-const CONTENT_BTN_WIDTH: f32 = 90.0;
-const CONTENT_BTN_HEIGHT: f32 = 65.0;
-const CONTENT_BTN_GAP: f32 = 10.0;
-const CONTENT_BTN_COUNT: f32 = 4.0;
-const CONTENT_ROW_MIN_WIDTH: f32 =
-    CONTENT_BTN_WIDTH * CONTENT_BTN_COUNT + CONTENT_BTN_GAP * (CONTENT_BTN_COUNT - 1.0) + 2.0;
 
 /// Render a content-type selector button (File / Media / Text / Folder).
 /// Primary background + white text, no hover/active state change.
@@ -39,40 +35,50 @@ fn render_content_type_button(
     on_click: impl Fn(&mut HomePage, &mut Window, &mut Context<HomePage>) + 'static,
 ) -> AnyElement {
     let icon_path = icon_path.into();
-    let bg = cx.theme().foreground.opacity(0.08);
-    let hover_bg = cx.theme().foreground.opacity(0.10);
-    let active_bg = cx.theme().foreground.opacity(0.12);
     let fg = cx.theme().foreground;
+    let fill = cx.theme().foreground.opacity(0.08);
+    let hover_fill = cx.theme().foreground.opacity(0.12);
+    let active_fill = cx.theme().foreground.opacity(0.16);
+    let border = cx.theme().border;
 
     Button::new(id)
-        .flex_none()
+        .flex_1()
         .custom(
             ButtonCustomVariant::new(cx)
-                .color(bg)
+                .color(fill)
                 .foreground(fg)
-                .hover(hover_bg)
-                .active(active_bg),
+                .hover(hover_fill)
+                .active(active_fill),
         )
-        .w(px(CONTENT_BTN_WIDTH))
-        .h(px(CONTENT_BTN_HEIGHT))
-        .rounded_md()
+        .h(px(76.))
+        .rounded(radius::LG)
+        .border_1()
+        .border_color(border)
         .on_click(cx.listener(move |this, _event, window, cx| {
             on_click(this, window, cx);
         }))
         .child(
             v_flex()
+                .w_full()
+                .h_full()
                 .items_center()
-                .justify_between()
-                .gap(px(4.))
+                .justify_center()
+                .gap(px(8.))
                 .child(
-                    Icon::default()
-                        .path(icon_path.clone())
-                        .with_size(gpui_component::Size::Medium)
-                        .text_color(fg),
+                    div()
+                        .w(px(32.))
+                        .h(px(32.))
+                        .rounded(radius::MD)
+                        .bg(cx.theme().background.opacity(0.72))
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .child(app_icon(icon_path, Size::Small, fg)),
                 )
                 .child(
                     div()
-                        .text_sm()
+                        .text_xs()
+                        .font_medium()
                         .text_center()
                         .text_color(fg)
                         .child(label.to_string()),
@@ -91,54 +97,205 @@ fn render_action_button(
     on_click: impl Fn(&mut HomePage, &mut Window, &mut Context<HomePage>) + 'static,
 ) -> AnyElement {
     let icon_path = icon_path.into();
-    let icon = Icon::default()
-        .path(icon_path.clone())
-        .with_size(Size::Small)
-        .text_color(cx.theme().foreground);
+    let icon_el = app_icon(icon_path, Size::Small, cx.theme().foreground);
 
     let icon_element = if spinning && animations {
-        icon.with_animation(
-            "send-action-refresh-spin",
-            Animation::new(Duration::from_millis(900)).repeat(),
-            |this, delta| this.transform(Transformation::rotate(percentage(delta))),
-        )
-        .into_any_element()
+        icon_el
+            .with_animation(
+                "send-action-refresh-spin",
+                Animation::new(Duration::from_millis(900)).repeat(),
+                |this, delta| this.transform(Transformation::rotate(percentage(delta))),
+            )
+            .into_any_element()
     } else {
-        icon.into_any_element()
+        icon_el.into_any_element()
     };
 
     div()
         .id(id)
-        .cursor_default()
-        .rounded_full()
-        .p(px(4.))
-        .child(
-            div()
-                .shadow(vec![gpui_component::box_shadow(
-                    px(0.),
-                    px(0.),
-                    px(0.),
-                    px(1.),
-                    cx.theme().foreground.opacity(0.10),
-                )])
-                .bg(cx.theme().foreground.opacity(0.04))
-                .rounded_full()
-                .w(px(38.))
-                .h(px(38.))
-                .flex()
-                .items_center()
-                .justify_center()
-                .child(icon_element),
-        )
+        .cursor_pointer()
+        .child(circle_icon_slot(icon_element, cx))
         .on_click(cx.listener(move |this, _event, window, cx| {
             on_click(this, window, cx);
         }))
         .into_any_element()
 }
 
+fn file_kind_icon(file: &SelectedFileInfo) -> &'static str {
+    if file.text_content.is_some() {
+        return paths::BOOK_OPEN;
+    }
+    let lower = file.name.to_lowercase();
+    if lower.ends_with(".png")
+        || lower.ends_with(".jpg")
+        || lower.ends_with(".jpeg")
+        || lower.ends_with(".gif")
+        || lower.ends_with(".webp")
+        || lower.ends_with(".bmp")
+        || lower.ends_with(".svg")
+    {
+        paths::IMAGE
+    } else {
+        paths::FILE
+    }
+}
+
+/// Selected-files card. Keep original send-tab actions (clear / edit / add).
+/// Width is constrained: `muted_card` is already `w_full`, so extra `mx` would
+/// overflow the render area.
+fn render_selected_files_card(
+    files: &[SelectedFileInfo],
+    total_size: u64,
+    cx: &mut Context<HomePage>,
+) -> AnyElement {
+    let file_count = files.len();
+    div()
+        .w_full()
+        .min_w(px(0.))
+        .flex_none()
+        .px(spacing::PAGE)
+        .mb(px(10.))
+        .child(
+            muted_card(cx)
+                .w_full()
+                .min_w(px(0.))
+                .flex_none()
+                .overflow_hidden()
+                .pl(px(14.))
+                .pr(px(10.))
+                .pt(px(8.))
+                .pb(px(12.))
+                .child(
+                    v_flex()
+                        .w_full()
+                        .min_w(px(0.))
+                        .flex_none()
+                        .gap(px(8.))
+                        .child(
+                            h_flex()
+                                .w_full()
+                                .min_w(px(0.))
+                                .items_center()
+                                .child(
+                                    div()
+                                        .flex_1()
+                                        .min_w(px(0.))
+                                        .text_base()
+                                        .font_semibold()
+                                        .text_color(cx.theme().foreground)
+                                        .truncate()
+                                        .child(format!("{file_count} 个文件已选择")),
+                                )
+                                .child(
+                                    div()
+                                        .id("send-clear-selection")
+                                        .w(px(36.))
+                                        .h(px(36.))
+                                        .rounded_full()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .flex_none()
+                                        .cursor_pointer()
+                                        .on_click(cx.listener(|this, _event, _window, cx| {
+                                            this.send_selection_state.update(cx, |state, _| {
+                                                state.clear();
+                                            });
+                                        }))
+                                        .child(app_icon(
+                                            paths::X,
+                                            Size::Small,
+                                            cx.theme().muted_foreground,
+                                        )),
+                                ),
+                        )
+                        .child(
+                            v_flex()
+                                .w_full()
+                                .min_w(px(0.))
+                                .gap(px(2.))
+                                .child(
+                                    div()
+                                        .text_sm()
+                                        .text_color(cx.theme().foreground)
+                                        .child(format!("{file_count} 个文件")),
+                                )
+                                .child(
+                                    div()
+                                        .text_sm()
+                                        .text_color(cx.theme().muted_foreground)
+                                        .child(format_file_size(total_size)),
+                                ),
+                        )
+                        .child(
+                            div()
+                                .id("send-selected-thumbs")
+                                .w_full()
+                                .min_w(px(0.))
+                                .h(px(48.))
+                                .overflow_x_scroll()
+                                .child(h_flex().h(px(48.)).gap(px(8.)).children(files.iter().map(
+                                    |file| {
+                                        div()
+                                            .w(px(48.))
+                                            .h(px(48.))
+                                            .rounded(radius::MD)
+                                            .bg(cx.theme().primary.opacity(0.12))
+                                            .flex()
+                                            .items_center()
+                                            .justify_center()
+                                            .flex_none()
+                                            .child(app_icon(
+                                                file_kind_icon(file),
+                                                Size::Small,
+                                                cx.theme().foreground,
+                                            ))
+                                    },
+                                ))),
+                        )
+                        .child(
+                            h_flex()
+                                .w_full()
+                                .min_w(px(0.))
+                                .justify_end()
+                                .items_center()
+                                .gap(px(8.))
+                                .child(
+                                    Button::new("edit")
+                                        .ghost()
+                                        .on_click(cx.listener(|this, _event, window, cx| {
+                                            this.navigate_to(routes::SEND_FILES, cx);
+                                            window.refresh();
+                                        }))
+                                        .child("编辑"),
+                                )
+                                .child(
+                                    Button::new("add")
+                                        .primary()
+                                        .on_click(cx.listener(|this, _event, window, cx| {
+                                            this.open_add_content_dialog(window, cx);
+                                        }))
+                                        .child(
+                                            h_flex()
+                                                .items_center()
+                                                .gap(px(6.))
+                                                .child(app_icon(
+                                                    paths::PLUS,
+                                                    Size::Small,
+                                                    cx.theme().primary_foreground,
+                                                ))
+                                                .child("添加"),
+                                        ),
+                                ),
+                        ),
+                ),
+        )
+        .into_any_element()
+}
+
 pub fn render_send_content(
     app: &mut HomePage,
-    window: &mut Window,
+    _window: &mut Window,
     cx: &mut Context<HomePage>,
 ) -> AnyElement {
     app.hydrate_nearby_devices_from_cache(cx);
@@ -156,10 +313,6 @@ pub fn render_send_content(
     let total_size = app.send_state.selected_files_total_size;
     let animations = app.settings_state.animations;
     let home_entity = cx.entity();
-    let select_row_scroll = window
-        .use_keyed_state("send-select-row-scroll", cx, |_, _| ScrollHandle::default())
-        .read(cx)
-        .clone();
 
     v_flex()
     .size_full()
@@ -169,261 +322,118 @@ pub fn render_send_content(
         div()
             .size_full()
             .w_full()
+            .min_w(px(0.))
+            .overflow_x_hidden()
             .overflow_y_scrollbar()
             .child(
                 v_flex()
                     .w_full()
+                    .min_w(px(0.))
                     .pt(px(20.))
                     .child(
                 v_flex()
                     .w_full()
+                    .min_w(px(0.))
+                    .flex_none()
+                    .overflow_x_hidden()
                     .gap(spacing::SM)
-                    // -- Section title: "选择" --
                     .child(
                         div()
-                            .px(px(15.))
-                            .child(
-                                div()
-                                    .text_lg()
-                                    .font_weight(gpui::FontWeight::BLACK)
-                                    .text_color(cx.theme().foreground)
-                                    .child("选择"),
-                            ),
+                            .px(spacing::PAGE)
+                            .child(section_title("选择", cx)),
                     )
-                    // -- Content type buttons row --
                     .child(
-                        div()
-                            .px(px(15.))
-                            .child(
-                                div()
-                                    .id("send-content-type-scroll")
-                                    .w_full()
-                                    .track_scroll(&select_row_scroll)
-                                    .overflow_x_scroll()
-                                    .child(
-                                        h_flex()
-                                            .min_w(px(CONTENT_ROW_MIN_WIDTH))
-                                            .gap(px(CONTENT_BTN_GAP))
-                                            .items_center()
-                                            .child(render_content_type_button(
-                                                "content-file",
-                                                "icons/file.svg",
-                                                "文件",
-                                                cx,
-                                                |this, window, cx| {
-                                                    this.handle_pick_content(
-                                                        super::SendContentType::File,
-                                                        window,
-                                                        cx,
-                                                    );
-                                                },
-                                            ))
-                                            .child(render_content_type_button(
-                                                "content-folder",
-                                                "icons/folder.svg",
-                                                "文件夹",
-                                                cx,
-                                                |this, window, cx| {
-                                                    this.handle_pick_content(
-                                                        super::SendContentType::Folder,
-                                                        window,
-                                                        cx,
-                                                    );
-                                                },
-                                            ))
-                                            .child(render_content_type_button(
-                                                "content-text",
-                                                "icons/book-open.svg",
-                                                "文本",
-                                                cx,
-                                                |this, window, cx| {
-                                                    this.handle_pick_content(
-                                                        super::SendContentType::Text,
-                                                        window,
-                                                        cx,
-                                                    );
-                                                },
-                                            ))
-                                            .child(render_content_type_button(
-                                                "content-clipboard",
-                                                "icons/copy.svg",
-                                                "剪贴板",
-                                                cx,
-                                                |this, window, cx| {
-                                                    this.handle_pick_content(
-                                                        super::SendContentType::Media,
-                                                        window,
-                                                        cx,
-                                                    );
-                                                },
-                                            )),
-                                    ),
-                            ),
+                        div().px(spacing::PAGE).child(
+                            h_flex()
+                                .w_full()
+                                .min_w(px(0.))
+                                .gap(px(8.))
+                                .items_stretch()
+                                .child(render_content_type_button(
+                                    "content-file",
+                                    paths::FILE,
+                                    "文件",
+                                    cx,
+                                    |this, window, cx| {
+                                        this.handle_pick_content(
+                                            super::SendContentType::File,
+                                            window,
+                                            cx,
+                                        );
+                                    },
+                                ))
+                                .child(render_content_type_button(
+                                    "content-folder",
+                                    paths::FOLDER,
+                                    "文件夹",
+                                    cx,
+                                    |this, window, cx| {
+                                        this.handle_pick_content(
+                                            super::SendContentType::Folder,
+                                            window,
+                                            cx,
+                                        );
+                                    },
+                                ))
+                                .child(render_content_type_button(
+                                    "content-text",
+                                    paths::BOOK_OPEN,
+                                    "文本",
+                                    cx,
+                                    |this, window, cx| {
+                                        this.handle_pick_content(
+                                            super::SendContentType::Text,
+                                            window,
+                                            cx,
+                                        );
+                                    },
+                                ))
+                                .child(render_content_type_button(
+                                    "content-clipboard",
+                                    paths::COPY,
+                                    "剪贴板",
+                                    cx,
+                                    |this, window, cx| {
+                                        this.handle_pick_content(
+                                            super::SendContentType::Media,
+                                            window,
+                                            cx,
+                                        );
+                                    },
+                                )),
+                        ),
                     )
-                    // -- Selected files card --
                     .when(has_files, |this| {
-                        let file_count = selected_files.len();
-                        this.child(
-                            div()
-                                .mx(px(15.))
-                                .mb(px(10.))
-                                .bg(cx.theme().secondary)
-                                .border_1()
-                                .border_color(cx.theme().border)
-                                .rounded_lg()
-                                .pl(px(15.))
-                                .pt(px(5.))
-                                .pb(px(15.))
-                                .child(
-                                    v_flex()
-                                        .gap(spacing::MD)
-                                        // Card title: file count
-                                        .child(
-                                            h_flex()
-                                                .justify_between()
-                                                .items_center()
-                                                .child(
-                                                    div()
-                                                        .text_base()
-                                                        .font_weight(gpui::FontWeight::BLACK)
-                                                        .text_color(cx.theme().foreground)
-                                                        .child(format!("{} 个文件已选择", file_count)),
-                                                )
-                                                .child(
-                                                    Button::new("clear")
-                                                        .ghost()
-                                                        .on_click(cx.listener(|this, _event, _window, _cx| {
-                                                            this.send_selection_state.update(_cx, |state, _| {
-                                                                state.clear();
-                                                            });
-                                                        }))
-                                                        .child(
-                                                            Icon::default()
-                                                                .path("icons/x.svg")
-                                                                .with_size(gpui_component::Size::Small),
-                                                        ),
-                                                ),
-                                        )
-                                        // File count + total size
-                                        .child(
-                                            v_flex()
-                                                .gap(spacing::XS)
-                                                .child(
-                                                    div()
-                                                        .text_sm()
-                                                        .text_color(cx.theme().foreground)
-                                                        .child(format!("{} 个文件", file_count)),
-                                                )
-                                                .child(
-                                                    div()
-                                                        .text_sm()
-                                                        .text_color(cx.theme().muted_foreground)
-                                                        .child(format_file_size(total_size)),
-                                                ),
-                                        )
-                                        // File thumbnails
-                                        .child(
-                                            div()
-                                                .child(
-                                                    h_flex()
-                                                        .gap(px(10.))
-                                                        .children(selected_files.iter().map(|file| {
-                                                            let icon_path = if file.text_content.is_some() {
-                                                                "icons/book-open.svg"
-                                                            } else {
-                                                                let lower = file.name.to_lowercase();
-                                                                if lower.ends_with(".png")
-                                                                    || lower.ends_with(".jpg")
-                                                                    || lower.ends_with(".jpeg")
-                                                                    || lower.ends_with(".gif")
-                                                                    || lower.ends_with(".webp")
-                                                                    || lower.ends_with(".bmp")
-                                                                    || lower.ends_with(".svg")
-                                                                {
-                                                                    "icons/image.svg"
-                                                                } else {
-                                                                    "icons/file.svg"
-                                                                }
-                                                            };
-                                                            div()
-                                                                .child(
-                                                                    div()
-                                                                        .w(px(56.))
-                                                                        .h(px(56.))
-                                                                        .bg(cx.theme().primary.opacity(0.18))
-                                                                        .rounded_md()
-                                                                        .flex()
-                                                                        .items_center()
-                                                                        .justify_center()
-                                                                        .child(
-                                                                            Icon::default()
-                                                                                .path(icon_path)
-                                                                                .with_size(gpui_component::Size::Medium),
-                                                                        ),
-                                                                )
-                                                        })),
-                                                ),
-                                        )
-                                        // Edit / Add buttons
-                                        .child(
-                                            h_flex()
-                                                .justify_end()
-                                                .gap(px(15.))
-                                                .child(
-                                                    Button::new("edit")
-                                                        .ghost()
-                                                        .on_click(cx.listener(|_this, _event, window, cx| {
-                                                            _this.navigate_to(routes::SEND_FILES, cx);
-                                                            window.refresh();
-                                                        }))
-                                                        .child("编辑"),
-                                                )
-                                                .child(
-                                                    Button::new("add")
-                                                        .with_variant(gpui_component::button::ButtonVariant::Primary)
-                                                        .on_click(cx.listener(|this, _event, window, cx| {
-                                                            this.open_add_content_dialog(window, cx);
-                                                        }))
-                                                        .child(
-                                                            h_flex()
-                                                                .items_center()
-                                                                .gap(px(6.))
-                                                                .child(
-                                                                    Icon::default()
-                                                                        .path("icons/plus.svg")
-                                                                        .with_size(gpui_component::Size::Small),
-                                                                )
-                                                                .child("添加"),
-                                                        ),
-                                                ),
-                                        ),
-                                ),
-                        )
+                        this.child(render_selected_files_card(
+                            &selected_files,
+                            total_size,
+                            cx,
+                        ))
                     })
                     // -- Nearby devices section --
                     .child(
                         div()
-                            .px(px(15.))
-                            .pt(px(5.))
+                            .px(spacing::PAGE)
+                            .pt(px(8.))
                             .child(
                                 h_flex()
-                                    .gap(px(16.))
+                                    .w_full()
+                                    .min_w(px(0.))
+                                    .gap(px(10.))
                                     .items_center()
                                     .child(
                                         div()
-                                            .text_lg()
-                                            .font_weight(gpui::FontWeight::BLACK)
-                                            .text_color(cx.theme().foreground)
-                                            .child("附近的设备"),
+                                            .flex_1()
+                                            .min_w(px(0.))
+                                            .child(section_title("附近的设备", cx)),
                                     )
                                     .child(
                                         h_flex()
-                                            .gap(spacing::SM)
+                                            .gap(px(6.))
                                             .items_center()
-                                            // Scan button
                                             .child(render_action_button(
                                                 "send-scan",
-                                                "icons/refresh.svg",
+                                                paths::REFRESH,
                                                 scanning,
                                                 animations,
                                                 cx,
@@ -431,10 +441,9 @@ pub fn render_send_content(
                                                     this.start_discovery_scan(true, cx);
                                                 },
                                             ))
-                                            // Manual address button
                                             .child(render_action_button(
                                                 "send-manual",
-                                                "icons/target.svg",
+                                                paths::TARGET,
                                                 false,
                                                 animations,
                                                 cx,
@@ -445,10 +454,9 @@ pub fn render_send_content(
                                                     this.open_send_target_dialog(window, cx);
                                                 },
                                             ))
-                                            // Favorites button
                                             .child(render_action_button(
                                                 "send-favorites",
-                                                "icons/heart.svg",
+                                                paths::HEART,
                                                 false,
                                                 animations,
                                                 cx,
@@ -458,7 +466,8 @@ pub fn render_send_content(
                                             ))
                                             // Send mode button (dropdown)
                                             .child(
-                                                Popover::new("send-mode-popover")
+                                                div().flex_none().child(
+                                                    Popover::new("send-mode-popover")
                                                     .anchor(Anchor::TopRight)
                                                     .overlay_closable(true)
                                                     .open(app.send_state.show_send_mode_menu)
@@ -471,40 +480,11 @@ pub fn render_send_content(
                                                         }
                                                     })
                                                     .trigger(
-                                                        Button::new("send-mode")
-                                                            .ghost()
-                                                            .custom(
-                                                                ButtonCustomVariant::new(cx)
-                                                                    .color(cx.theme().transparent)
-                                                                    .foreground(cx.theme().foreground)
-                                                                    .hover(cx.theme().transparent)
-                                                                    .active(cx.theme().transparent),
-                                                            )
-                                                            .rounded_full()
-                                                            .p(px(4.))
-                                                            .child(
-                                                                div()
-                                                                    .shadow(vec![gpui_component::box_shadow(
-                                                                        px(0.),
-                                                                        px(0.),
-                                                                        px(0.),
-                                                                        px(1.),
-                                                                        cx.theme().foreground.opacity(0.10),
-                                                                    )])
-                                                                    .bg(cx.theme().foreground.opacity(0.04))
-                                                                    .rounded_full()
-                                                                    .w(px(38.))
-                                                                    .h(px(38.))
-                                                                    .flex()
-                                                                    .items_center()
-                                                                    .justify_center()
-                                                                    .child(
-                                                                        Icon::default()
-                                                                            .path("icons/settings.svg")
-                                                                            .with_size(Size::Small)
-                                                                            .text_color(cx.theme().foreground),
-                                                                    ),
-                                                            ),
+                                                        CircleIconTrigger::from_path(
+                                                            "send-mode",
+                                                            paths::SETTINGS,
+                                                            cx,
+                                                        ),
                                                     )
                                                     .content({
                                                         let home_entity = home_entity.clone();
@@ -558,7 +538,7 @@ pub fn render_send_content(
                                                                                         .child("通过分享链接发送"),
                                                                                 )
                                                                                 .child(if matches!(current_mode, super::SendMode::Link) {
-                                                                                    Icon::default().path("icons/check.svg").with_size(Size::Small).into_any_element()
+                                                                                    app_icon(paths::CHECK, Size::Small, cx.theme().primary).into_any_element()
                                                                                 } else {
                                                                                     div().w(px(16.)).into_any_element()
                                                                                 }),
@@ -594,7 +574,7 @@ pub fn render_send_content(
                                                                                         .child("单接收者"),
                                                                                 )
                                                                                 .child(if matches!(current_mode, super::SendMode::Single) {
-                                                                                    Icon::default().path("icons/check.svg").with_size(Size::Small).into_any_element()
+                                                                                    app_icon(paths::CHECK, Size::Small, cx.theme().primary).into_any_element()
                                                                                 } else {
                                                                                     div().w(px(16.)).into_any_element()
                                                                                 }),
@@ -630,7 +610,7 @@ pub fn render_send_content(
                                                                                         .child("多个接收者"),
                                                                                 )
                                                                                 .child(if matches!(current_mode, super::SendMode::Multiple) {
-                                                                                    Icon::default().path("icons/check.svg").with_size(Size::Small).into_any_element()
+                                                                                    app_icon(paths::CHECK, Size::Small, cx.theme().primary).into_any_element()
                                                                                 } else {
                                                                                     div().w(px(16.)).into_any_element()
                                                                                 }),
@@ -668,10 +648,11 @@ pub fn render_send_content(
                                                                                         .items_center()
                                                                                         .gap(px(8.))
                                                                                         .child(
-                                                                                            Icon::default()
-                                                                                                .path("icons/info.svg")
-                                                                                                .with_size(Size::Small)
-                                                                                                .text_color(cx.theme().muted_foreground),
+                                                                                            app_icon(
+                                                                                                paths::INFO,
+                                                                                                Size::Small,
+                                                                                                cx.theme().muted_foreground,
+                                                                                            ),
                                                                                         )
                                                                                         .child(
                                                                                             div()
@@ -685,6 +666,7 @@ pub fn render_send_content(
                                                                 )
                                                         }
                                                     }),
+                                                ),
                                             ),
                                     )
                             ),
@@ -693,7 +675,7 @@ pub fn render_send_content(
                     .child(
                         if app.send_state.nearby_devices.is_empty() {
                             div()
-                                .px(px(15.))
+                                .px(spacing::PAGE)
                                 .pb(px(10.))
                                 .child(DevicePlaceholder)
                         } else {
@@ -727,8 +709,8 @@ pub fn render_send_content(
                                     });
                                     div()
                                         .id(format!("device-row-{}", token))
-                                        .px(px(15.))
-                                        .pb(px(10.))
+                                        .px(spacing::PAGE)
+                                        .pb(px(8.))
                                         .on_click(cx.listener(move |this, _event, window, cx| {
                                             if this.send_state.suppress_next_nearby_row_click {
                                                 this.send_state.suppress_next_nearby_row_click = false;
@@ -840,7 +822,7 @@ pub fn render_send_content(
                     // -- OpacitySlideshow hints --
                     .child(
                         div()
-                            .px(px(15.))
+                            .px(spacing::PAGE)
                             .child(
                                 OpacitySlideshow::new(vec![
                                     "选择文件并选择附近设备即可发送".to_string(),

@@ -1,11 +1,12 @@
 //! Receive dialog: modal shown when another device sends a transfer request.
 
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::theme::spacing;
 use gpui::{div, prelude::*, px, Context, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
     button::{Button, ButtonVariants as _},
-    h_flex, v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _,
+    h_flex, v_flex, ActiveTheme as _, Size, StyledExt as _,
 };
 use localsend::http::state::ClientInfo;
 use localsend::model::transfer::FileDto;
@@ -47,12 +48,12 @@ impl gpui::Render for ReceiveDialog {
         let selected_count = selected.iter().filter(|&&s| s).count();
 
         let device_icon = match self.sender.device_type {
-            Some(localsend::model::discovery::DeviceType::Mobile) => "icons/smartphone.svg",
-            Some(localsend::model::discovery::DeviceType::Desktop) => "icons/monitor.svg",
-            Some(localsend::model::discovery::DeviceType::Web) => "icons/globe.svg",
+            Some(localsend::model::discovery::DeviceType::Mobile) => paths::SMARTPHONE,
+            Some(localsend::model::discovery::DeviceType::Desktop) => paths::MONITOR,
+            Some(localsend::model::discovery::DeviceType::Web) => paths::GLOBE,
             Some(localsend::model::discovery::DeviceType::Server)
-            | Some(localsend::model::discovery::DeviceType::Headless) => "icons/server.svg",
-            None => "icons/smartphone.svg",
+            | Some(localsend::model::discovery::DeviceType::Headless) => paths::SERVER,
+            None => paths::SMARTPHONE,
         };
 
         v_flex()
@@ -76,12 +77,7 @@ impl gpui::Render for ReceiveDialog {
                             .flex()
                             .items_center()
                             .justify_center()
-                            .child(
-                                Icon::default()
-                                    .path(device_icon)
-                                    .with_size(Size::Large)
-                                    .text_color(cx.theme().foreground),
-                            ),
+                            .child(app_icon(device_icon, Size::Large, cx.theme().foreground)),
                     )
                     .child(
                         v_flex()
@@ -164,20 +160,20 @@ impl gpui::Render for ReceiveDialog {
                                                     .justify_center()
                                                     .when(is_selected, |this| {
                                                         this.child(
-                                                            Icon::default()
-                                                                .path("icons/check.svg")
-                                                                .with_size(Size::XSmall)
-                                                                .text_color(
-                                                                    cx.theme().primary_foreground,
-                                                                ),
+                                                            app_icon(
+                                                                paths::CHECK,
+                                                                Size::XSmall,
+                                                                cx.theme().primary_foreground,
+                                                            ),
                                                         )
                                                     }),
                                             )
                                             .child(
-                                                Icon::default()
-                                                    .path("icons/file.svg")
-                                                    .with_size(Size::Small)
-                                                    .text_color(cx.theme().muted_foreground),
+                                                app_icon(
+                                                    paths::FILE,
+                                                    Size::Small,
+                                                    cx.theme().muted_foreground,
+                                                ),
                                             )
                                             .child(
                                                 v_flex()

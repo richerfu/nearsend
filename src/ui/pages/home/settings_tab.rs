@@ -1,21 +1,33 @@
 //! Settings tab: general, receive, send, network, other (uses ui/pages state types).
 
-use super::HomePage;
-use crate::ui::components::{logo::Logo, switch::Switch};
+use super::{HomePage, NetworkFilterMode, SendMode};
+use crate::ui::components::logo::Logo;
+use crate::ui::components::switch::Switch;
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
-use crate::ui::theme::spacing;
+use crate::ui::theme::{radius, spacing};
 use gpui::{
-    div, percentage, prelude::*, px, Animation, AnimationExt as _, AnyElement, Context, Entity,
+    div, percentage, prelude::*, px, Animation, AnimationExt as _, AnyElement, Context,
     Transformation, Window,
 };
 use gpui_component::scroll::ScrollableElement as _;
-use gpui_component::{
-    button::{Button, ButtonVariants as _},
-    h_flex,
-    select::{Select, SelectState},
-    v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _,
-};
+use gpui_component::{h_flex, v_flex, ActiveTheme as _, Sizable as _, Size, StyledExt as _};
+use std::rc::Rc;
 use std::time::Duration;
+
+const SEND_MODE_OPTIONS: &[&str] = &["单设备", "多设备", "链接分享"];
+const DEVICE_TYPE_OPTIONS: &[&str] = &["Mobile", "Desktop", "Web", "Server", "Headless"];
+const DEVICE_MODEL_OPTIONS: &[&str] = &[
+    "自动",
+    "OpenHarmony",
+    "Android",
+    "iPhone",
+    "iPad",
+    "Windows",
+    "macOS",
+    "Linux",
+];
+const NETWORK_FILTER_OPTIONS: &[&str] = &["全部", "白名单", "黑名单"];
 
 // ---------------------------------------------------------------------------
 // Reusable helpers
@@ -27,56 +39,97 @@ fn render_settings_section(
     cx: &mut Context<HomePage>,
     children: Vec<AnyElement>,
 ) -> AnyElement {
-    let mut inner = v_flex().gap(px(10.)).child(
-        div()
-            .text_lg()
-            .font_semibold()
-            .text_color(cx.theme().foreground)
-            .child(title.to_string()),
-    );
-    for child in children {
+    let mut inner = v_flex().w_full();
+    for (index, child) in children.into_iter().enumerate() {
+        if index > 0 {
+            inner = inner.child(
+                div()
+                    .h(px(1.))
+                    .ml(px(4.))
+                    .bg(cx.theme().border.opacity(0.7)),
+            );
+        }
         inner = inner.child(child);
     }
-    div()
-        .bg(cx.theme().secondary)
-        .border_1()
-        .border_color(cx.theme().border)
-        .rounded_lg()
-        .p(px(15.))
-        .child(inner)
-        .into_any_element()
-}
-
-/// Renders a select entry (label + in-place dropdown in a 150px container).
-fn render_select_entry(
-    label: &str,
-    select_state: &Entity<SelectState<Vec<&'static str>>>,
-    id: &str,
-    cx: &mut Context<HomePage>,
-) -> AnyElement {
-    div()
-        .pb(px(15.))
+    v_flex()
+        .w_full()
+        .gap(px(8.))
         .child(
-            h_flex()
-                .items_center()
-                .child(
-                    div()
-                        .text_sm()
-                        .text_color(cx.theme().foreground)
-                        .flex_1()
-                        .child(label.to_string()),
-                )
-                .child(
-                    div()
-                        .id(id.to_string())
-                        .w(px(150.))
-                        .child(Select::new(select_state).w_full().with_size(Size::Medium)),
-                ),
+            div()
+                .px(px(4.))
+                .text_sm()
+                .font_semibold()
+                .text_color(cx.theme().muted_foreground)
+                .child(title.to_string()),
+        )
+        .child(
+            div()
+                .w_full()
+                .bg(cx.theme().background)
+                .border_1()
+                .border_color(cx.theme().border.opacity(0.75))
+                .rounded(radius::LG)
+                .px(px(14.))
+                .py(px(4.))
+                .child(inner),
         )
         .into_any_element()
 }
 
-/// Renders a boolean toggle entry (label + switch).
+fn settings_label(label: &str, cx: &mut Context<HomePage>) -> impl IntoElement {
+    div()
+        .text_sm()
+        .text_color(cx.theme().foreground)
+        .flex_1()
+        .min_w(px(0.))
+        .child(label.to_string())
+}
+
+fn settings_chevron(cx: &mut Context<HomePage>) -> impl IntoElement {
+    app_icon(
+        paths::CHEVRON_RIGHT,
+        Size::Small,
+        cx.theme().muted_foreground,
+    )
+}
+
+fn settings_row() -> gpui::Div {
+    h_flex()
+        .w_full()
+        .items_center()
+        .min_h(px(48.))
+        .py(px(8.))
+        .gap(px(12.))
+}
+
+fn device_type_display(value: &str) -> &'static str {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "mobile" => "Mobile",
+        "web" => "Web",
+        "server" => "Server",
+        "headless" => "Headless",
+        _ => "Desktop",
+    }
+}
+
+fn device_model_display(value: &str) -> &str {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        "自动"
+    } else {
+        trimmed
+    }
+}
+
+fn network_filter_mode_label(mode: NetworkFilterMode) -> &'static str {
+    match mode {
+        NetworkFilterMode::All => "全部",
+        NetworkFilterMode::Whitelist => "白名单",
+        NetworkFilterMode::Blacklist => "黑名单",
+    }
+}
+
+/// Whole-row toggle with a trailing gpui-component Switch.
 fn render_boolean_entry(
     label: &str,
     value: bool,
@@ -84,89 +137,89 @@ fn render_boolean_entry(
     cx: &mut Context<HomePage>,
     on_toggle: impl Fn(&mut HomePage, &mut Context<HomePage>) + 'static,
 ) -> AnyElement {
-    div()
-        .pb(px(15.))
+    let home = cx.entity();
+    let switch_id = format!("{id}-switch");
+    let on_toggle = Rc::new(on_toggle);
+    let on_toggle_row = on_toggle.clone();
+    let on_toggle_switch = on_toggle;
+    settings_row()
+        .id(id.to_string())
+        .cursor_pointer()
+        .on_click(cx.listener(move |this, _ev, _win, cx| {
+            on_toggle_row(this, cx);
+        }))
+        .child(settings_label(label, cx))
         .child(
-            h_flex()
-                .items_center()
-                .child(
-                    div()
-                        .text_sm()
-                        .text_color(cx.theme().foreground)
-                        .flex_1()
-                        .child(label.to_string()),
-                )
-                .child(
-                    div()
-                        .id(id.to_string())
-                        .cursor_pointer()
-                        .on_click(cx.listener(move |this, _ev, _win, cx| {
-                            on_toggle(this, cx);
-                        }))
-                        .child(Switch::new(value)),
-                ),
+            Switch::new(switch_id)
+                .checked(value)
+                .large()
+                .on_click(move |_, _, cx| {
+                    cx.stop_propagation();
+                    home.update(cx, |this, cx| on_toggle_switch(this, cx));
+                }),
         )
         .into_any_element()
 }
 
-/// Renders a button entry whose click handler needs `window` and `cx`.
-fn render_clickable_entry(
+/// Whole-row navigation (label + chevron).
+fn render_nav_entry(
     label: &str,
-    button_text: &str,
     id: &str,
     cx: &mut Context<HomePage>,
     on_click: impl Fn(&mut HomePage, &mut Window, &mut Context<HomePage>) + 'static,
 ) -> AnyElement {
-    div()
-        .pb(px(15.))
+    settings_row()
+        .id(id.to_string())
+        .cursor_pointer()
+        .on_click(cx.listener(move |this, _ev, window, cx| {
+            on_click(this, window, cx);
+        }))
+        .child(settings_label(label, cx))
+        .child(settings_chevron(cx))
+        .into_any_element()
+}
+
+/// Whole-row value editor (label + muted value + chevron).
+fn render_value_entry(
+    label: &str,
+    value: &str,
+    id: &str,
+    cx: &mut Context<HomePage>,
+    on_click: impl Fn(&mut HomePage, &mut Window, &mut Context<HomePage>) + 'static,
+) -> AnyElement {
+    settings_row()
+        .id(id.to_string())
+        .cursor_pointer()
+        .on_click(cx.listener(move |this, _ev, window, cx| {
+            on_click(this, window, cx);
+        }))
+        .child(settings_label(label, cx))
         .child(
-            h_flex()
-                .items_center()
-                .child(
-                    div()
-                        .text_sm()
-                        .text_color(cx.theme().foreground)
-                        .flex_1()
-                        .child(label.to_string()),
-                )
-                .child(div().w(px(10.)))
-                .child(
-                    div().w(px(150.)).child(
-                        Button::new(id.to_string())
-                            .with_variant(gpui_component::button::ButtonVariant::Secondary)
-                            .outline()
-                            .w_full()
-                            .on_click(cx.listener(move |this, _ev, window, cx| {
-                                on_click(this, window, cx);
-                            }))
-                            .child(
-                                div()
-                                    .w_full()
-                                    .overflow_hidden()
-                                    .truncate()
-                                    .child(button_text.to_string()),
-                            ),
-                    ),
-                ),
+            div()
+                .max_w(px(168.))
+                .overflow_hidden()
+                .truncate()
+                .text_sm()
+                .text_color(cx.theme().muted_foreground)
+                .child(value.to_string()),
         )
+        .child(settings_chevron(cx))
         .into_any_element()
 }
 
 fn render_refresh_icon(spinning: bool, animations: bool, cx: &mut Context<HomePage>) -> AnyElement {
-    let icon = Icon::default()
-        .path("icons/refresh.svg")
-        .with_size(Size::Small)
-        .text_color(cx.theme().foreground);
+    let refresh_icon = app_icon(paths::REFRESH, Size::Small, cx.theme().foreground);
 
     if spinning && animations {
-        icon.with_animation(
-            "settings-server-refresh-spin",
-            Animation::new(Duration::from_millis(900)).repeat(),
-            |this, delta| this.transform(Transformation::rotate(percentage(delta))),
-        )
-        .into_any_element()
+        refresh_icon
+            .with_animation(
+                "settings-server-refresh-spin",
+                Animation::new(Duration::from_millis(900)).repeat(),
+                |this, delta| this.transform(Transformation::rotate(percentage(delta))),
+            )
+            .into_any_element()
     } else {
-        icon.into_any_element()
+        refresh_icon.into_any_element()
     }
 }
 
@@ -179,31 +232,6 @@ pub fn render_settings_content(
     _window: &mut Window,
     cx: &mut Context<HomePage>,
 ) -> AnyElement {
-    let Some(send_mode_default_select) = app.send_mode_default_select.clone() else {
-        return div()
-            .size_full()
-            .bg(cx.theme().background)
-            .into_any_element();
-    };
-    let Some(device_type_select) = app.device_type_select.clone() else {
-        return div()
-            .size_full()
-            .bg(cx.theme().background)
-            .into_any_element();
-    };
-    let Some(device_model_select) = app.device_model_select.clone() else {
-        return div()
-            .size_full()
-            .bg(cx.theme().background)
-            .into_any_element();
-    };
-    let Some(network_filter_mode_select) = app.network_filter_mode_select.clone() else {
-        return div()
-            .size_full()
-            .bg(cx.theme().background)
-            .into_any_element();
-    };
-
     let advanced = app.settings_state.advanced;
     let animations = app.settings_state.animations;
     let server_running = app.settings_state.server_running;
@@ -235,7 +263,7 @@ pub fn render_settings_content(
             this.persist_settings();
         },
     );
-    let r2 = render_clickable_entry(
+    let r2 = render_value_entry(
         "接收 PIN",
         &masked_pin,
         "receive-pin-input",
@@ -309,11 +337,30 @@ pub fn render_settings_content(
     let receive = render_settings_section("接收", cx, receive_children);
 
     // -- Send section (align with LocalSend advanced settings) --
-    let send_mode = render_select_entry(
+    let send_mode = render_value_entry(
         "默认发送模式",
-        &send_mode_default_select,
+        HomePage::send_mode_setting_label(app.settings_state.send_mode_default),
         "select-send-mode-default",
         cx,
+        |this, window, cx| {
+            let selected = HomePage::send_mode_setting_label(this.settings_state.send_mode_default)
+                .to_string();
+            this.open_settings_choice_dialog(
+                "默认发送模式",
+                SEND_MODE_OPTIONS,
+                selected,
+                window,
+                cx,
+                |this, value, cx| {
+                    match value {
+                        "多设备" => this.apply_send_mode_default(SendMode::Multiple),
+                        "链接分享" => this.apply_send_mode_default(SendMode::Link),
+                        _ => this.apply_send_mode_default(SendMode::Single),
+                    }
+                    cx.notify();
+                },
+            );
+        },
     );
     let share_link = render_boolean_entry(
         "分享链接自动接受",
@@ -329,89 +376,82 @@ pub fn render_settings_content(
     let send = render_settings_section("发送", cx, vec![send_mode, share_link]);
 
     // -- Network section --
-    let server_label_text = format!("服务器{}", if server_running { "" } else { " (离线)" });
+    let server_status = if !server_running {
+        "离线"
+    } else if server_paused {
+        "已暂停"
+    } else {
+        "运行中"
+    };
     let can_pause = server_running && !server_paused;
-    let server_controls = div()
-        .pb(px(15.))
+    let server_controls = settings_row()
+        .child(settings_label("服务器", cx))
+        .child(
+            div()
+                .text_sm()
+                .text_color(cx.theme().muted_foreground)
+                .child(server_status),
+        )
         .child(
             h_flex()
                 .items_center()
+                .gap(px(2.))
                 .child(
                     div()
-                        .text_sm()
-                        .text_color(cx.theme().foreground)
-                        .flex_1()
-                        .child(server_label_text.clone()),
+                        .id("server-start")
+                        .w(px(36.))
+                        .h(px(36.))
+                        .rounded_full()
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .cursor_pointer()
+                        .on_click(cx.listener(|this, _ev, _win, cx| {
+                            this.trigger_server_refresh_feedback(cx);
+                            if this.settings_state.server_paused {
+                                this.resume_local_server(cx);
+                            } else if this.settings_state.server_running {
+                                this.restart_local_server_with_current_config(cx);
+                            } else {
+                                this.start_local_server(cx);
+                            }
+                        }))
+                        .child(if server_paused {
+                            app_icon(paths::PLAY, Size::Small, cx.theme().foreground)
+                                .into_any_element()
+                        } else {
+                            render_refresh_icon(server_refreshing, animations, cx)
+                        }),
                 )
-                .child(div().w(px(10.)))
                 .child(
-                    div().w(px(150.)).child(
-                        div().bg(cx.theme().muted).rounded_md().child(
-                            h_flex()
-                                .justify_center()
-                                .gap(px(4.))
-                                .child(
-                                    div()
-                                        .id("server-start")
-                                        .cursor_pointer()
-                                        .px(px(8.))
-                                        .py(px(6.))
-                                        .rounded_md()
-                                        .on_click(cx.listener(|this, _ev, _win, cx| {
-                                            this.trigger_server_refresh_feedback(cx);
-                                            if this.settings_state.server_paused {
-                                                this.resume_local_server(cx);
-                                            } else if this.settings_state.server_running {
-                                                this.restart_local_server_with_current_config(cx);
-                                            } else {
-                                                this.start_local_server(cx);
-                                            }
-                                        }))
-                                        .when(server_paused, |this| {
-                                            this.child(
-                                                div()
-                                                    .text_sm()
-                                                    .font_weight(gpui::FontWeight::BOLD)
-                                                    .text_color(cx.theme().foreground)
-                                                    .child("▶"),
-                                            )
-                                        })
-                                        .when(!server_paused, |this| {
-                                            this.child(render_refresh_icon(
-                                                server_refreshing,
-                                                animations,
-                                                cx,
-                                            ))
-                                        }),
-                                )
-                                .child(
-                                    div()
-                                        .id("server-stop")
-                                        .px(px(8.))
-                                        .py(px(6.))
-                                        .rounded_md()
-                                        .when(can_pause, |this| {
-                                            this.cursor_pointer().on_click(cx.listener(
-                                                |this, _ev, _win, cx| {
-                                                    this.pause_local_server(cx);
-                                                },
-                                            ))
-                                        })
-                                        .child(div().w(px(12.)).h(px(12.)).rounded_sm().bg(
-                                            if can_pause {
-                                                cx.theme().foreground
-                                            } else {
-                                                cx.theme().muted_foreground.opacity(0.35)
-                                            },
-                                        )),
-                                ),
-                        ),
-                    ),
+                    div()
+                        .id("server-stop")
+                        .w(px(36.))
+                        .h(px(36.))
+                        .rounded_full()
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .when(can_pause, |this| {
+                            this.cursor_pointer()
+                                .on_click(cx.listener(|this, _ev, _win, cx| {
+                                    this.pause_local_server(cx);
+                                }))
+                        })
+                        .child(app_icon(
+                            paths::PAUSE,
+                            Size::Small,
+                            if can_pause {
+                                cx.theme().foreground
+                            } else {
+                                cx.theme().muted_foreground.opacity(0.35)
+                            },
+                        )),
                 ),
         )
         .into_any_element();
 
-    let n1 = render_clickable_entry(
+    let n1 = render_value_entry(
         "别名",
         &server_alias,
         "alias-input",
@@ -420,7 +460,7 @@ pub fn render_settings_content(
             this.open_server_alias_dialog(window, cx);
         },
     );
-    let n2 = render_clickable_entry(
+    let n2 = render_value_entry(
         "端口",
         &server_port.to_string(),
         "port-input",
@@ -431,10 +471,57 @@ pub fn render_settings_content(
     );
     let mut network_children: Vec<AnyElement> = vec![server_controls, n1, n2];
     if advanced {
-        let device_type_entry =
-            render_select_entry("设备类型", &device_type_select, "select-device-type", cx);
-        let device_model_entry =
-            render_select_entry("设备型号", &device_model_select, "select-device-model", cx);
+        let device_type_entry = render_value_entry(
+            "设备类型",
+            device_type_display(&app.settings_state.device_type),
+            "select-device-type",
+            cx,
+            |this, window, cx| {
+                let selected = device_type_display(&this.settings_state.device_type).to_string();
+                this.open_settings_choice_dialog(
+                    "设备类型",
+                    DEVICE_TYPE_OPTIONS,
+                    selected,
+                    window,
+                    cx,
+                    |this, value, cx| {
+                        this.settings_state.device_type = value.to_string();
+                        this.sync_server_config_to_runtime(cx);
+                        this.persist_settings();
+                        cx.notify();
+                    },
+                );
+            },
+        );
+        let device_model_entry = render_value_entry(
+            "设备型号",
+            device_model_display(&app.settings_state.device_model),
+            "select-device-model",
+            cx,
+            |this, window, cx| {
+                let selected = device_model_display(&this.settings_state.device_model).to_string();
+                this.open_settings_choice_dialog(
+                    "设备型号",
+                    DEVICE_MODEL_OPTIONS,
+                    selected,
+                    window,
+                    cx,
+                    |this, value, cx| {
+                        let next_model = if value == "自动" {
+                            String::new()
+                        } else {
+                            value.to_string()
+                        };
+                        if this.settings_state.device_model != next_model {
+                            this.settings_state.device_model = next_model;
+                            this.sync_server_config_to_runtime(cx);
+                            this.persist_settings();
+                        }
+                        cx.notify();
+                    },
+                );
+            },
+        );
         let n3 = render_boolean_entry(
             "加密",
             app.settings_state.encryption,
@@ -447,7 +534,7 @@ pub fn render_settings_content(
                 this.persist_settings();
             },
         );
-        let discovery_timeout_entry = render_clickable_entry(
+        let discovery_timeout_entry = render_value_entry(
             "发现超时(ms)",
             &app.settings_state.discovery_timeout.to_string(),
             "discovery-timeout",
@@ -462,7 +549,7 @@ pub fn render_settings_content(
             } else {
                 format!("{} 条", app.settings_state.discovery_target_subnets.len())
             };
-        let discovery_target_subnets_entry = render_clickable_entry(
+        let discovery_target_subnets_entry = render_value_entry(
             "发现目标网段",
             &discovery_target_subnets_label,
             "discovery-target-subnets",
@@ -471,7 +558,7 @@ pub fn render_settings_content(
                 this.open_discovery_target_subnets_dialog(window, cx);
             },
         );
-        let multicast_entry = render_clickable_entry(
+        let multicast_entry = render_value_entry(
             "组播地址",
             &app.settings_state.multicast_group,
             "multicast-group",
@@ -480,15 +567,35 @@ pub fn render_settings_content(
                 this.open_multicast_group_dialog(window, cx);
             },
         );
-        let n4 = render_select_entry(
+        let n4 = render_value_entry(
             "网络接口模式",
-            &network_filter_mode_select,
+            network_filter_mode_label(app.settings_state.network_filter_mode),
             "select-network-mode",
             cx,
+            |this, window, cx| {
+                let selected =
+                    network_filter_mode_label(this.settings_state.network_filter_mode).to_string();
+                this.open_settings_choice_dialog(
+                    "网络接口模式",
+                    NETWORK_FILTER_OPTIONS,
+                    selected,
+                    window,
+                    cx,
+                    |this, value, cx| {
+                        this.settings_state.network_filter_mode = match value {
+                            "白名单" => NetworkFilterMode::Whitelist,
+                            "黑名单" => NetworkFilterMode::Blacklist,
+                            _ => NetworkFilterMode::All,
+                        };
+                        this.sync_server_config_to_runtime(cx);
+                        this.persist_settings();
+                        cx.notify();
+                    },
+                );
+            },
         );
-        let n5 = render_clickable_entry(
+        let n5 = render_nav_entry(
             "网络接口规则",
-            "编辑",
             "network-rules",
             cx,
             |this, window, cx| {
@@ -506,128 +613,70 @@ pub fn render_settings_content(
     }
     let network = render_settings_section("网络", cx, network_children);
 
-    // -- Other section children --
-    let o1 = render_clickable_entry("关于", "打开", "about", cx, |this, _window, cx| {
+    let o1 = render_nav_entry("关于", "about", cx, |this, _window, cx| {
         this.navigate_to(routes::SETTINGS_ABOUT, cx);
     });
-    let o2 = render_clickable_entry("支持", "捐赠", "donate", cx, |this, _window, cx| {
+    let o2 = render_nav_entry("支持", "donate", cx, |this, _window, cx| {
         this.navigate_to(routes::SETTINGS_DONATE, cx);
     });
-    let o3 = render_clickable_entry(
+    let o3 = render_nav_entry(
         "开源协议",
-        "打开",
         "open-source-licenses",
         cx,
         |this, _window, cx| {
             this.navigate_to(routes::SETTINGS_OPEN_SOURCE_LICENSES, cx);
         },
     );
-    let other = render_settings_section("其他", cx, vec![o1, o2, o3]);
-
-    // -- Advanced Settings toggle --
-    let advanced_toggle = h_flex()
-        .justify_end()
-        .w_full()
-        .child(
-            h_flex()
-                .items_center()
-                .gap(px(8.))
-                .child(
-                    div()
-                        .text_sm()
-                        .text_color(cx.theme().foreground)
-                        .child("高级设置"),
-                )
-                .child(
-                    div()
-                        .id("toggle-advanced-settings")
-                        .cursor_pointer()
-                        .on_click(cx.listener(|this, _ev, _win, _cx| {
-                            this.settings_state.advanced = !this.settings_state.advanced;
-                            this.persist_settings();
-                        }))
-                        .child(
-                            div()
-                                .w(px(18.))
-                                .h(px(18.))
-                                .rounded(px(4.))
-                                .border_1()
-                                .border_color(if advanced {
-                                    cx.theme().primary
-                                } else {
-                                    cx.theme().border
-                                })
-                                .bg(if advanced {
-                                    cx.theme().primary
-                                } else {
-                                    cx.theme().background
-                                })
-                                .flex()
-                                .items_center()
-                                .justify_center()
-                                .when(advanced, |this| {
-                                    this.child(
-                                        Icon::default()
-                                            .path("icons/check.svg")
-                                            .with_size(Size::XSmall)
-                                            .text_color(cx.theme().primary_foreground),
-                                    )
-                                }),
-                        ),
-                ),
-        )
-        .into_any_element();
+    let o4 = render_nav_entry("更新日志", "changelog", cx, |this, _window, cx| {
+        this.navigate_to(routes::SETTINGS_CHANGELOG, cx);
+    });
+    let advanced_entry = render_boolean_entry(
+        "高级设置",
+        advanced,
+        "toggle-advanced-settings",
+        cx,
+        |this, _cx| {
+            this.settings_state.advanced = !this.settings_state.advanced;
+            this.persist_settings();
+        },
+    );
+    let other = render_settings_section("其他", cx, vec![o1, o2, o3, o4, advanced_entry]);
 
     // -- About section --
     let about = v_flex()
-        .gap(px(5.))
+        .gap(px(2.))
         .items_center()
-        .child(Logo::new().size(80.).with_text(true))
+        .pt(px(4.))
+        .pb(px(8.))
+        .child(Logo::new().size(56.).with_text(true))
         .child(
             div()
-                .text_sm()
+                .text_xs()
                 .text_color(cx.theme().muted_foreground)
                 .text_center()
-                .child("Version 0.1.0"),
-        )
-        .child(
-            div()
-                .text_sm()
-                .text_color(cx.theme().muted_foreground)
-                .text_center()
-                .child("\u{00a9} 2025 NearSend"),
-        )
-        .child(
-            Button::new("changelog")
-                .ghost()
-                .on_click(cx.listener(|this, _ev, _win, cx| {
-                    this.navigate_to(routes::SETTINGS_CHANGELOG, cx);
-                }))
-                .child("更新日志"),
+                .child("Version 0.1.0 · \u{00a9} 2025 NearSend"),
         )
         .into_any_element();
 
     // -- Assemble page --
     let mut content = v_flex()
         .w_full()
-        .px(px(15.))
-        .pt(px(15.))
-        .pb(px(40.))
-        .gap(spacing::LG);
+        .px(spacing::PAGE)
+        .pt(px(12.))
+        .pb(px(12.))
+        .gap(spacing::MD);
 
     content = content
         .child(receive)
         .when(advanced, |this| this.child(send))
         .child(network)
         .child(other)
-        .child(advanced_toggle)
-        .child(about)
-        .child(div().h(px(80.)));
+        .child(about);
 
     div()
         .size_full()
         .w_full()
-        .bg(cx.theme().background)
+        .bg(cx.theme().muted.opacity(0.45))
         .overflow_y_scrollbar()
         .child(content)
         .into_any_element()

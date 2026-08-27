@@ -9,17 +9,19 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "1c1d008920706640663a9bb6c2870a6e6148f650" }
+gpui = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a", version = "=0.2.2" }
+gpui_platform = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a" }
+gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "9890a77c2d427f05b2512f05ddc6cce84686f9a6" }
 gpui-router = { version = "0.3" }
-gpui-component-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "1c1d008920706640663a9bb6c2870a6e6148f650" }
-openharmony-ability = { git = "https://github.com/harmony-contrib/openharmony-ability.git" }
-openharmony-ability-derive = { git = "https://github.com/harmony-contrib/openharmony-ability.git" }
+gpui-component-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "9890a77c2d427f05b2512f05ddc6cce84686f9a6" }
+openharmony-ability = { version = "1.0.0-beta.2" }
+openharmony-ability-derive = { version = "1.0.0-beta.1" }
+openharmony-ability-plugin-files = { version = "1.0.0-beta.1" }
+openharmony-ability-plugin-permission = { version = "1.0.0-beta.1" }
 
-napi-ohos = { version = "=1.1.6" }
-napi-derive-ohos = { version = "=1.1.6" }
-napi-derive-backend-ohos = { version = "=1.1.6" }
+napi-ohos = { version = "=1.2.0" }
+napi-derive-ohos = { version = "=1.2.0" }
+napi-derive-backend-ohos = { version = "=1.2.0" }
 ohos-hilog-binding = { version = "*", features = ["log"] }
 log = { version = "*" }
 
@@ -64,21 +66,24 @@ ohos-fileuri-binding = "0.1"
 ohos-fileshare-binding = "0.1"
 
 [build-dependencies]
-napi-build-ohos = { version = "=1.1.6" }
+napi-build-ohos = { version = "=1.2.0" }
 
 
-# 强制 patch 所有来源的依赖，确保统一使用 richerfu/zed 的 ohos 分支
+# 强制 patch 所有来源的依赖，确保统一使用 fork 中固定 revision 的 OHOS 实现
 [patch.crates-io]
-gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_macros = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a", version = "=0.2.2" }
+gpui_platform = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a" }
+gpui_macros = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a" }
+# gpui-router 0.3.0 and its upstream HEAD require this RenderOnce
+# disambiguation when built against the current GPUI main branch.
+gpui-router = { path = "vendor/gpui-router" }
 
 [patch."https://github.com/zed-industries/zed.git"]
-gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_macros = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a", version = "=0.2.2" }
+gpui_platform = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a" }
+gpui_macros = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a" }
 
 [patch."https://github.com/zed-industries/zed"]
-gpui = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_platform = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
-gpui_macros = { git = "https://github.com/richerfu/zed.git", branch = "ohos" }
+gpui = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a", version = "=0.2.2" }
+gpui_platform = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a" }
+gpui_macros = { git = "https://github.com/richerfu/zed.git", rev = "373a5c5cdec13154e6cfa114af96a6cf5b46ec7a" }

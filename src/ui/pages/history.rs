@@ -3,19 +3,21 @@
 use crate::state::{
     history_state::{HistoryEntry, HistoryEntryKind, HistoryState},
     receive_inbox_state::{ReceiveInboxState, ReceiveItem, ReceiveSession},
-    transfer_state::TransferDirection,
+    transfer_state::{TransferDirection, TransferStatus},
 };
+use crate::ui::components::chrome::{
+    back_icon_button, dialog_title, empty_state, header_icon_button, page_header, section_title,
+};
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
-use crate::ui::theme::spacing;
+use crate::ui::theme::{radius, spacing};
 use chrono::{Datelike, Local, TimeZone as _, Timelike};
-use gpui::{div, prelude::*, px, Context, Entity, Window};
+use gpui::{div, prelude::*, px, AnyElement, App, Context, Entity, Hsla, SharedString, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
-    button::{Button, ButtonCustomVariant, ButtonVariants as _},
+    button::{Button, ButtonVariants as _},
     dialog::{DialogAction, DialogClose, DialogFooter},
-    h_flex,
-    popover::Popover,
-    v_flex, ActiveTheme as _, Anchor, Icon, Sizable as _, Size, StyledExt as _, WindowExt as _,
+    h_flex, v_flex, ActiveTheme as _, Size, StyledExt as _, WindowExt as _,
 };
 use gpui_router::RouterState;
 
@@ -24,7 +26,6 @@ pub struct HistoryPage {
     pub root: Option<Entity<crate::app::AppRoot>>,
     history_state: Option<Entity<HistoryState>>,
     receive_inbox_state: Option<Entity<ReceiveInboxState>>,
-    open_menu_entry: Option<String>,
 }
 
 impl HistoryPage {
@@ -33,7 +34,6 @@ impl HistoryPage {
             root: None,
             history_state: None,
             receive_inbox_state: None,
-            open_menu_entry: None,
         }
     }
 
@@ -61,74 +61,54 @@ impl gpui::Render for HistoryPage {
             vec![]
         };
         let has_entries = !entries.is_empty();
-        let page_entity = cx.entity();
-        let history_state = self.history_state.clone();
+        let groups = group_entries_by_date(entries);
         let receive_inbox_state = self.receive_inbox_state.clone();
         let root = self.root.clone();
-        let back_button_variant = ButtonCustomVariant::new(cx)
-            .hover(cx.theme().transparent)
-            .active(cx.theme().transparent);
+
+        let mut trailing = h_flex().items_center();
+        trailing = trailing.child(header_icon_button(
+            "history-open-folder",
+            paths::FOLDER,
+            cx,
+            |this, window, cx| {
+                this.open_notice_dialog("打开目录功能即将接入。", window, cx);
+            },
+        ));
+        if has_entries {
+            trailing = trailing.child(header_icon_button(
+                "history-clear",
+                paths::TRASH,
+                cx,
+                |this, window, cx| {
+                    this.open_clear_history_dialog(window, cx);
+                },
+            ));
+        }
 
         v_flex()
             .size_full()
-            .bg(cx.theme().background)
-            // App bar
-            .child(
-                h_flex()
-                    .w_full()
-                    .h(px(56.))
-                    .px(px(16.))
-                    .items_center()
-                    .border_b_1()
-                    .border_color(cx.theme().border)
-                    .child(
-                        h_flex()
-                            .items_center()
-                            .gap(px(8.))
-                            .child(
-                                Button::new("history-back")
-                                    .ghost()
-                                    .custom(back_button_variant)
-                                    .h(px(36.))
-                                    .w(px(36.))
-                                    .p(px(0.))
-                                    .rounded_md()
-                                    .child(
-                                        Icon::default()
-                                            .path("icons/arrow-left.svg")
-                                            .with_size(Size::Small),
-                                    )
-                                    .on_click(cx.listener(|this, _event, window, cx| {
-                                        if let Some(root) = &this.root {
-                                            let _ = root.update(cx, |this, cx| {
-                                                this.go_back_or_navigate(routes::HOME, cx);
-                                            });
-                                        } else {
-                                            // Fallback if no root
-                                            if let Some(entry) =
-                                                crate::ui::router_history::RouterHistoryState::global_mut(cx)
-                                                    .history
-                                                    .go_back()
-                                            {
-                                                RouterState::global_mut(cx).location.pathname = entry.pathname;
-                                            } else {
-                                                RouterState::global_mut(cx).location.pathname =
-                                                    routes::HOME.into();
-                                            }
-                                        }
-                                        window.refresh();
-                                    })),
-                            )
-                            .child(
-                                div()
-                                    .text_lg()
-                                    .font_semibold()
-                                    .text_color(cx.theme().foreground)
-                                    .child("历史"),
-                            ),
-                    ),
-            )
-            // Content
+            .bg(cx.theme().muted.opacity(0.45))
+            .child(page_header(
+                "历史",
+                back_icon_button("history-back", cx, |this, window, cx| {
+                    if let Some(root) = &this.root {
+                        let _ = root.update(cx, |this, cx| {
+                            this.go_back_or_navigate(routes::HOME, cx);
+                        });
+                    } else if let Some(entry) =
+                        crate::ui::router_history::RouterHistoryState::global_mut(cx)
+                            .history
+                            .go_back()
+                    {
+                        RouterState::global_mut(cx).location.pathname = entry.pathname;
+                    } else {
+                        RouterState::global_mut(cx).location.pathname = routes::HOME.into();
+                    }
+                    window.refresh();
+                }),
+                trailing,
+                cx,
+            ))
             .child(
                 div()
                     .flex_1()
@@ -139,313 +119,18 @@ impl gpui::Render for HistoryPage {
                             .w_full()
                             .max_w(px(960.))
                             .mx_auto()
-                            .px(px(15.))
-                            .pt(px(8.))
-                            .pb(px(10.))
-                            .gap(px(8.))
-                            .child(
-                                h_flex()
-                                    .gap(px(10.))
-                                    .items_center()
-                                    .child(
-                                        Button::new("history-open-folder")
-                                            .outline()
-                                            .rounded_md()
-                                            .h(px(36.))
-                                            .px(px(12.))
-                                            .on_click(cx.listener(|this, _event, window, cx| {
-                                                this.open_notice_dialog(
-                                                    "打开目录功能即将接入。",
-                                                    window,
-                                                    cx,
-                                                );
-                                            }))
-                                            .child(
-                                                h_flex()
-                                                    .items_center()
-                                                    .gap(px(8.))
-                                                    .child(
-                                                        Icon::default()
-                                                            .path("icons/folder.svg")
-                                                            .with_size(Size::Small),
-                                                    )
-                                                    .child(
-                                                        div()
-                                                            .text_sm()
-                                                            .font_medium()
-                                                            .child("打开目录"),
-                                                    ),
-                                            ),
-                                    )
-                                    .child(
-                                        Button::new("history-clear")
-                                            .outline()
-                                            .rounded_md()
-                                            .h(px(36.))
-                                            .px(px(12.))
-                                            .on_click(cx.listener(|this, _event, window, cx| {
-                                                this.open_clear_history_dialog(window, cx);
-                                            }))
-                                            .child(
-                                                h_flex()
-                                                    .items_center()
-                                                    .gap(px(8.))
-                                                    .child(
-                                                        Icon::default()
-                                                            .path("icons/trash.svg")
-                                                            .with_size(Size::Small),
-                                                    )
-                                                    .child(
-                                                        div()
-                                                            .text_sm()
-                                                            .font_medium()
-                                                            .child("删除历史"),
-                                                    ),
-                                            ),
-                                    ),
-                            )
-                            .children(entries.into_iter().map(|entry| {
-                                let entry_id = entry.id.clone();
-                                let menu_open = self.open_menu_entry.as_ref() == Some(&entry_id);
-                                let entry_openable = is_openable_entry(&entry);
-                                let file_name = entry.file_name.clone();
-                                let subline = format!(
-                                    "{} - {} - {}",
-                                    format_timestamp(entry.timestamp),
-                                    format_file_size(entry.file_size),
-                                    entry.device_name
-                                );
-
-                                let history_state_for_delete = history_state.clone();
-                                let page_for_delete = page_entity.clone();
-                                let page_for_open_change = page_entity.clone();
-                                let page_for_open_action = page_entity.clone();
-                                let page_for_info = page_entity.clone();
-                                let entry_for_info = entry.clone();
-                                let entry_for_open = entry.clone();
-                                let entry_for_row_open = entry.clone();
-                                let receive_inbox_for_row_open = receive_inbox_state.clone();
-                                let receive_inbox_for_menu_open = receive_inbox_state.clone();
-                                let root_for_row_open = root.clone();
-                                let root_for_menu_open = root.clone();
-                                let entry_id_open_change = entry_id.clone();
-                                let entry_id_for_open = entry_id.clone();
-                                let entry_id_for_delete = entry_id.clone();
-                                let row_id = format!("history-row-{}", entry.id);
-
-                                h_flex()
-                                    .id(row_id)
-                                    .w_full()
-                                    .items_center()
-                                    .gap(px(12.))
-                                    .when(entry_openable, |this| {
-                                        this.cursor_pointer().on_click({
-                                            let entry_for_row_open = entry_for_row_open.clone();
-                                            let receive_inbox_for_row_open =
-                                                receive_inbox_for_row_open.clone();
-                                            move |_event, window, cx| {
-                                                open_history_entry(
-                                                    &entry_for_row_open,
-                                                    receive_inbox_for_row_open.as_ref(),
-                                                    root_for_row_open.as_ref(),
-                                                    window,
-                                                    cx,
-                                                );
-                                            }
-                                        })
-                                    })
-                                    .child(
-                                        div()
-                                            .w(px(44.))
-                                            .h(px(44.))
-                                            .rounded_md()
-                                            .bg(cx.theme().secondary)
-                                            .border_1()
-                                            .border_color(cx.theme().border)
-                                            .flex()
-                                            .items_center()
-                                            .justify_center()
-                                            .child(
-                                                Icon::default()
-                                                    .path(icon_for_direction(entry.direction))
-                                                    .with_size(Size::Medium)
-                                                    .text_color(cx.theme().primary),
-                                            ),
-                                    )
-                                    .child(
-                                        v_flex()
-                                            .flex_1()
-                                            .gap(px(4.))
-                                            .overflow_hidden()
-                                            .child(
-                                                div()
-                                                    .w_full()
-                                                    .text_lg()
-                                                    .font_medium()
-                                                    .text_color(cx.theme().foreground)
-                                                    .truncate()
-                                                    .child(file_name),
-                                            )
-                                            .child(
-                                                div()
-                                                    .w_full()
-                                                    .text_base()
-                                                    .text_color(cx.theme().muted_foreground)
-                                                    .truncate()
-                                                    .child(subline),
-                                            ),
-                                    )
-                                    .child(
-                                        div().flex_none().child(
-                                            Popover::new(format!("history-menu-{}", entry_id))
-                                                .anchor(Anchor::BottomRight)
-                                                .open(menu_open)
-                                                .on_open_change(move |open, _window, cx| {
-                                                    page_for_open_change.update(cx, |this, _cx| {
-                                                        if *open {
-                                                            this.open_menu_entry =
-                                                                Some(entry_id_open_change.clone());
-                                                        } else if this.open_menu_entry.as_ref()
-                                                            == Some(&entry_id_open_change)
-                                                        {
-                                                            this.open_menu_entry = None;
-                                                        }
-                                                    });
-                                                })
-                                                .trigger(
-                                                    Button::new(format!("history-more-{}", entry_id))
-                                                        .ghost()
-                                                        .rounded_full()
-                                                        .p(px(8.))
-                                                        .child(
-                                                            Icon::default()
-                                                                .path("icons/more-horizontal.svg")
-                                                                .with_size(Size::Large),
-                                                        ),
-                                                )
-                                                .content(move |_state, _window, _cx| {
-                                                    v_flex()
-                                                        .w(px(184.))
-                                                        .p(px(4.))
-                                                        .gap(px(1.))
-                                                        .child(
-                                                            Button::new(format!(
-                                                                "history-entry-info-{}",
-                                                                entry_id_for_open
-                                                            ))
-                                                            .ghost()
-                                                            .w_full()
-                                                            .h(px(30.))
-                                                            .px(px(8.))
-                                                            .justify_start()
-                                                            .on_click({
-                                                                let page_for_info =
-                                                                    page_for_info.clone();
-                                                                let entry_for_info =
-                                                                    entry_for_info.clone();
-                                                                move |_event, window, cx| {
-                                                                    page_for_info.update(
-                                                                        cx,
-                                                                        |this, _cx| {
-                                                                            this.open_menu_entry = None;
-                                                                        },
-                                                                    );
-                                                                    open_entry_info_dialog(
-                                                                        &entry_for_info,
-                                                                        window,
-                                                                        cx,
-                                                                    );
-                                                                }
-                                                            })
-                                                            .child(div().text_sm().child("信息")),
-                                                        )
-                                                        .child(
-                                                            Button::new(format!(
-                                                                "history-entry-delete-{}",
-                                                                entry_id_for_delete
-                                                            ))
-                                                            .ghost()
-                                                            .w_full()
-                                                            .h(px(30.))
-                                                            .px(px(8.))
-                                                            .justify_start()
-                                                            .on_click({
-                                                                let history_state_for_delete =
-                                                                    history_state_for_delete.clone();
-                                                                let page_for_delete =
-                                                                    page_for_delete.clone();
-                                                                let entry_id_for_delete =
-                                                                    entry_id_for_delete.clone();
-                                                                move |_event, _window, cx| {
-                                                                    if let Some(ref state) =
-                                                                        history_state_for_delete
-                                                                    {
-                                                                        state.update(cx, |s, _cx| {
-                                                                            s.remove_entry(
-                                                                                &entry_id_for_delete,
-                                                                            );
-                                                                        });
-                                                                    }
-                                                                    page_for_delete.update(
-                                                                        cx,
-                                                                        |this, _cx| {
-                                                                            this.open_menu_entry = None;
-                                                                        },
-                                                                    );
-                                                                }
-                                                            })
-                                                            .child(
-                                                                div().text_sm().child("从历史记录中删除"),
-                                                            ),
-                                                        )
-                                                        .when(entry_openable, |this| {
-                                                                let root_for_menu_open =
-                                                                    root_for_menu_open.clone();
-                                                                this.child(
-                                                                    Button::new(format!(
-                                                                        "history-entry-open-{}",
-                                                                        entry_id_for_open
-                                                                    ))
-                                                                    .ghost()
-                                                                    .w_full()
-                                                                    .h(px(30.))
-                                                                    .px(px(8.))
-                                                                    .justify_start()
-                                                                    .on_click({
-                                                                        let page_for_open_action =
-                                                                            page_for_open_action
-                                                                                .clone();
-                                                                        let entry_for_open =
-                                                                            entry_for_open.clone();
-                                                                        let receive_inbox_for_menu_open =
-                                                                            receive_inbox_for_menu_open
-                                                                                .clone();
-                                                                        let root_for_menu_open =
-                                                                            root_for_menu_open
-                                                                                .clone();
-                                                                        move |_event, window, cx| {
-                                                                            page_for_open_action.update(
-                                                                            cx,
-                                                                            |this, _cx| {
-                                                                                this.open_menu_entry =
-                                                                                    None;
-                                                                            },
-                                                                        );
-                                                                            open_history_entry(
-                                                                                &entry_for_open,
-                                                                                receive_inbox_for_menu_open.as_ref(),
-                                                                                root_for_menu_open.as_ref(),
-                                                                                window,
-                                                                                cx,
-                                                                            );
-                                                                        }
-                                                                    })
-                                                                    .child(div().text_sm().child("打开")),
-                                                                )
-                                                            })
-                                                }),
-                                        ),
-                                    )
+                            .px(spacing::PAGE)
+                            .pt(px(12.))
+                            .pb(px(12.))
+                            .gap(px(16.))
+                            .children(groups.into_iter().map(|(label, items)| {
+                                render_date_group(
+                                    label,
+                                    items,
+                                    receive_inbox_state.clone(),
+                                    root.clone(),
+                                    cx,
+                                )
                             }))
                             .into_any_element()
                     } else {
@@ -456,14 +141,12 @@ impl gpui::Render for HistoryPage {
                             .items_center()
                             .justify_center()
                             .py(px(80.))
-                            .child(
-                                v_flex().items_center().gap(spacing::MD).child(
-                                    div()
-                                        .text_xl()
-                                        .text_color(cx.theme().muted_foreground)
-                                        .child("无历史记录"),
-                                ),
-                            )
+                            .child(empty_state(
+                                paths::HISTORY,
+                                "无历史记录",
+                                "发送或接收文件后会出现在这里",
+                                cx,
+                            ))
                             .into_any_element()
                     }),
             )
@@ -480,10 +163,16 @@ impl HistoryPage {
         window.open_dialog(cx, move |dialog, _window, _cx| {
             let history_state = history_state.clone();
             dialog
-                .title("删除历史")
+                .title(dialog_title("删除历史"))
                 .overlay(true)
                 .w(px(340.))
-                .child(div().w_full().text_sm().child("确定删除所有历史记录吗？"))
+                .child(
+                    div()
+                        .w_full()
+                        .text_sm()
+                        .text_color(_cx.theme().muted_foreground)
+                        .child("确定删除全部历史记录吗？仅移除列表，不会删除已保存的文件。"),
+                )
                 .button_props(
                     gpui_component::dialog::DialogButtonProps::default()
                         .ok_text("删除")
@@ -499,6 +188,398 @@ impl HistoryPage {
                 })
         });
     }
+
+    fn open_delete_entry_dialog(
+        &self,
+        entry_id: String,
+        file_name: String,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let history_state = self.history_state.clone();
+        window.open_dialog(cx, move |dialog, _window, _cx| {
+            let history_state = history_state.clone();
+            let entry_id = entry_id.clone();
+            dialog
+                .title(dialog_title("删除记录"))
+                .overlay(true)
+                .w(px(340.))
+                .child(
+                    v_flex()
+                        .w_full()
+                        .gap(px(6.))
+                        .child(
+                            div()
+                                .w_full()
+                                .text_sm()
+                                .child(format!("从历史记录中删除「{file_name}」？")),
+                        )
+                        .child(
+                            div()
+                                .w_full()
+                                .text_sm()
+                                .text_color(_cx.theme().muted_foreground)
+                                .child("不会删除设备上已保存的文件。"),
+                        ),
+                )
+                .button_props(
+                    gpui_component::dialog::DialogButtonProps::default()
+                        .ok_text("删除")
+                        .show_cancel(true)
+                        .cancel_text("取消"),
+                )
+                .footer(build_confirm_dialog_footer(
+                    "history-entry-delete",
+                    "删除",
+                    "取消",
+                ))
+                .on_ok(move |_event, _window, cx| {
+                    if let Some(ref state) = history_state {
+                        state.update(cx, |s, _cx| {
+                            s.remove_entry(&entry_id);
+                        });
+                    }
+                    true
+                })
+        });
+    }
+
+    fn open_entry_actions_dialog(
+        &self,
+        entry: &HistoryEntry,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let page = cx.entity();
+        let entry = entry.clone();
+        let receive_inbox_state = self.receive_inbox_state.clone();
+        let root = self.root.clone();
+        let openable = is_openable_entry(&entry);
+        let title = entry.file_name.clone();
+
+        window.open_dialog(cx, move |dialog, _window, cx| {
+            let fg = cx.theme().foreground;
+            let danger = cx.theme().danger;
+            let border = cx.theme().border.opacity(0.7);
+
+            let mut actions = v_flex().w_full();
+            let mut added = false;
+
+            if openable {
+                let entry_open = entry.clone();
+                let inbox_open = receive_inbox_state.clone();
+                let root_open = root.clone();
+                actions = actions.child(action_sheet_row(
+                    format!("history-sheet-open-{}", entry.id),
+                    paths::EXTERNAL_LINK,
+                    "打开",
+                    fg,
+                    cx,
+                    move |_event, window, cx| {
+                        window.close_dialog(cx);
+                        open_history_entry(
+                            &entry_open,
+                            inbox_open.as_ref(),
+                            root_open.as_ref(),
+                            window,
+                            cx,
+                        );
+                    },
+                ));
+                added = true;
+            }
+
+            {
+                let entry_info = entry.clone();
+                if added {
+                    actions = actions.child(sheet_divider(border));
+                }
+                actions = actions.child(action_sheet_row(
+                    format!("history-sheet-info-{}", entry.id),
+                    paths::INFO,
+                    "查看详情",
+                    fg,
+                    cx,
+                    move |_event, window, cx| {
+                        window.close_dialog(cx);
+                        open_entry_info_dialog(&entry_info, window, cx);
+                    },
+                ));
+                added = true;
+            }
+
+            {
+                let page_delete = page.clone();
+                let entry_id = entry.id.clone();
+                let file_name = entry.file_name.clone();
+                if added {
+                    actions = actions.child(sheet_divider(border));
+                }
+                actions = actions.child(action_sheet_row(
+                    format!("history-sheet-delete-{}", entry.id),
+                    paths::TRASH,
+                    "从历史中删除",
+                    danger,
+                    cx,
+                    move |_event, window, cx| {
+                        window.close_dialog(cx);
+                        page_delete.update(cx, |this, cx| {
+                            this.open_delete_entry_dialog(
+                                entry_id.clone(),
+                                file_name.clone(),
+                                window,
+                                cx,
+                            );
+                        });
+                    },
+                ));
+            }
+
+            dialog
+                .title(dialog_title(title.clone()))
+                .overlay(true)
+                .w(px(340.))
+                .child(actions)
+                .footer(build_alert_dialog_footer("history-sheet", "取消"))
+                .button_props(gpui_component::dialog::DialogButtonProps::default().ok_text("取消"))
+        });
+    }
+}
+
+fn render_date_group(
+    label: String,
+    items: Vec<HistoryEntry>,
+    receive_inbox_state: Option<Entity<ReceiveInboxState>>,
+    root: Option<Entity<crate::app::AppRoot>>,
+    cx: &mut Context<HistoryPage>,
+) -> AnyElement {
+    let mut group = v_flex()
+        .w_full()
+        .bg(cx.theme().background)
+        .border_1()
+        .border_color(cx.theme().border.opacity(0.75))
+        .rounded(radius::LG)
+        .px(px(10.));
+
+    for (index, entry) in items.into_iter().enumerate() {
+        if index > 0 {
+            group = group.child(
+                div()
+                    .h(px(1.))
+                    .ml(px(52.))
+                    .bg(cx.theme().border.opacity(0.7)),
+            );
+        }
+        group = group.child(render_history_entry(
+            entry,
+            receive_inbox_state.clone(),
+            root.clone(),
+            cx,
+        ));
+    }
+
+    v_flex()
+        .w_full()
+        .gap(px(8.))
+        .child(section_title(label, cx))
+        .child(group)
+        .into_any_element()
+}
+
+fn render_history_entry(
+    entry: HistoryEntry,
+    receive_inbox_state: Option<Entity<ReceiveInboxState>>,
+    root: Option<Entity<crate::app::AppRoot>>,
+    cx: &mut Context<HistoryPage>,
+) -> AnyElement {
+    let entry_openable = is_openable_entry(&entry);
+    let file_name = entry.file_name.clone();
+    let time_label = format_time_of_day(entry.timestamp);
+    let subline = format_entry_subline(&entry);
+    let icon_color = status_icon_color(entry.status, cx);
+    let row_id = format!("history-row-{}", entry.id);
+    let more_id = format!("history-more-{}", entry.id);
+    let entry_for_row = entry.clone();
+    let inbox_for_row = receive_inbox_state.clone();
+    let root_for_row = root.clone();
+    let entry_for_more = entry.clone();
+
+    h_flex()
+        .w_full()
+        .items_center()
+        .gap(px(2.))
+        .child(
+            h_flex()
+                .id(row_id)
+                .flex_1()
+                .min_w(px(0.))
+                .items_center()
+                .gap(px(12.))
+                .min_h(px(56.))
+                .py(px(8.))
+                .cursor_pointer()
+                .on_click(move |_event, window, cx| {
+                    if is_openable_entry(&entry_for_row) {
+                        open_history_entry(
+                            &entry_for_row,
+                            inbox_for_row.as_ref(),
+                            root_for_row.as_ref(),
+                            window,
+                            cx,
+                        );
+                    } else {
+                        open_entry_info_dialog(&entry_for_row, window, cx);
+                    }
+                })
+                .child(
+                    div()
+                        .w(px(40.))
+                        .h(px(40.))
+                        .rounded(radius::MD)
+                        .bg(cx.theme().muted)
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .flex_none()
+                        .child(app_icon(icon_for_entry(&entry), Size::Small, icon_color)),
+                )
+                .child(
+                    v_flex()
+                        .flex_1()
+                        .min_w(px(0.))
+                        .gap(px(2.))
+                        .child(
+                            h_flex()
+                                .w_full()
+                                .items_center()
+                                .gap(px(8.))
+                                .child(
+                                    div()
+                                        .flex_1()
+                                        .min_w(px(0.))
+                                        .text_sm()
+                                        .font_semibold()
+                                        .text_color(cx.theme().foreground)
+                                        .truncate()
+                                        .child(file_name),
+                                )
+                                .child(
+                                    div()
+                                        .flex_none()
+                                        .text_xs()
+                                        .text_color(cx.theme().muted_foreground)
+                                        .child(time_label),
+                                ),
+                        )
+                        .child(
+                            h_flex()
+                                .w_full()
+                                .items_center()
+                                .gap(px(6.))
+                                .child(
+                                    div()
+                                        .flex_1()
+                                        .min_w(px(0.))
+                                        .text_xs()
+                                        .text_color(cx.theme().muted_foreground)
+                                        .truncate()
+                                        .child(subline),
+                                )
+                                .children(status_badge(entry.status, cx)),
+                        )
+                        .when(
+                            entry.kind == HistoryEntryKind::File && !entry_openable,
+                            |this| {
+                                this.child(
+                                    div()
+                                        .text_xs()
+                                        .text_color(cx.theme().muted_foreground.opacity(0.9))
+                                        .child("文件已不可用"),
+                                )
+                            },
+                        ),
+                ),
+        )
+        .child(
+            div()
+                .id(more_id)
+                .w(px(36.))
+                .h(px(36.))
+                .rounded_full()
+                .flex()
+                .items_center()
+                .justify_center()
+                .flex_none()
+                .cursor_pointer()
+                .on_click(cx.listener(move |this, _event, window, cx| {
+                    this.open_entry_actions_dialog(&entry_for_more, window, cx);
+                }))
+                .child(app_icon(
+                    paths::MORE,
+                    Size::Small,
+                    cx.theme().muted_foreground,
+                )),
+        )
+        .into_any_element()
+}
+
+fn action_sheet_row(
+    id: impl Into<SharedString>,
+    icon: &'static str,
+    label: &'static str,
+    color: Hsla,
+    _cx: &App,
+    on_click: impl Fn(&gpui::ClickEvent, &mut Window, &mut App) + 'static,
+) -> AnyElement {
+    h_flex()
+        .id(id.into())
+        .w_full()
+        .min_h(px(48.))
+        .px(px(4.))
+        .gap(px(12.))
+        .items_center()
+        .cursor_pointer()
+        .on_click(on_click)
+        .child(app_icon(icon, Size::Small, color))
+        .child(
+            div()
+                .flex_1()
+                .min_w(px(0.))
+                .text_sm()
+                .font_medium()
+                .text_color(color)
+                .child(label),
+        )
+        .into_any_element()
+}
+
+fn sheet_divider(color: Hsla) -> AnyElement {
+    div().h(px(1.)).bg(color).into_any_element()
+}
+
+fn info_row(label: &str, value: impl Into<SharedString>, cx: &App) -> AnyElement {
+    h_flex()
+        .w_full()
+        .items_start()
+        .gap(px(12.))
+        .child(
+            div()
+                .w(px(44.))
+                .flex_none()
+                .text_sm()
+                .text_color(cx.theme().muted_foreground)
+                .child(label.to_string()),
+        )
+        .child(
+            div()
+                .flex_1()
+                .min_w(px(0.))
+                .text_sm()
+                .text_color(cx.theme().foreground)
+                .whitespace_normal()
+                .child(value.into()),
+        )
+        .into_any_element()
 }
 
 fn is_openable_entry(entry: &HistoryEntry) -> bool {
@@ -587,25 +668,134 @@ fn open_history_entry(
         return;
     }
 
-    let open_result = if let Some(uri) = entry.file_uri.as_ref().filter(|u| !u.trim().is_empty()) {
-        crate::platform::file_opener::open_saved_uri(uri)
-    } else if entry.file_path.exists() {
-        crate::platform::file_opener::open_saved_file(&entry.file_path)
-    } else {
-        open_notice_dialog("文件不存在或已被移动。", window, cx);
-        return;
-    };
-    if let Err(err) = open_result {
-        log::warn!("failed to open file from history: {}", err);
-        open_notice_dialog("系统打开文件失败。", window, cx);
+    #[cfg(target_env = "ohos")]
+    {
+        enum OpenTarget {
+            Uri(String),
+            Path(std::path::PathBuf),
+        }
+
+        let target = if let Some(uri) = entry.file_uri.as_ref().filter(|u| !u.trim().is_empty()) {
+            OpenTarget::Uri(uri.clone())
+        } else if entry.file_path.exists() {
+            OpenTarget::Path(entry.file_path.clone())
+        } else {
+            open_notice_dialog("文件不存在或已被移动。", window, cx);
+            return;
+        };
+        let window_handle = window.window_handle();
+        cx.spawn(async move |cx| {
+            let open_result = match target {
+                OpenTarget::Uri(uri) => crate::platform::file_opener::open_saved_uri(&uri).await,
+                OpenTarget::Path(path) => {
+                    crate::platform::file_opener::open_saved_file(&path).await
+                }
+            };
+            if let Err(error) = open_result {
+                log::warn!("failed to open file from history: {error}");
+                let _ = window_handle.update(cx, |_, window, cx| {
+                    open_notice_dialog("系统打开文件失败。", window, cx);
+                });
+            }
+        })
+        .detach();
+    }
+
+    #[cfg(not(target_env = "ohos"))]
+    {
+        let open_result =
+            if let Some(uri) = entry.file_uri.as_ref().filter(|u| !u.trim().is_empty()) {
+                crate::platform::file_opener::open_saved_uri(uri)
+            } else if entry.file_path.exists() {
+                crate::platform::file_opener::open_saved_file(&entry.file_path)
+            } else {
+                open_notice_dialog("文件不存在或已被移动。", window, cx);
+                return;
+            };
+        if let Err(err) = open_result {
+            log::warn!("failed to open file from history: {err}");
+            open_notice_dialog("系统打开文件失败。", window, cx);
+        }
     }
 }
 
-fn icon_for_direction(direction: TransferDirection) -> &'static str {
-    match direction {
-        TransferDirection::Send => "icons/upload.svg",
-        TransferDirection::Receive => "icons/download.svg",
+fn icon_for_entry(entry: &HistoryEntry) -> &'static str {
+    match entry.kind {
+        HistoryEntryKind::Text => paths::BOOK_OPEN,
+        HistoryEntryKind::File => match entry.direction {
+            TransferDirection::Send => paths::UPLOAD,
+            TransferDirection::Receive => paths::DOWNLOAD,
+        },
     }
+}
+
+fn status_icon_color(status: TransferStatus, cx: &App) -> Hsla {
+    match status {
+        TransferStatus::Failed => cx.theme().danger,
+        TransferStatus::Cancelled | TransferStatus::Skipped => cx.theme().muted_foreground,
+        _ => cx.theme().primary,
+    }
+}
+
+fn status_badge(status: TransferStatus, cx: &App) -> Option<AnyElement> {
+    if status == TransferStatus::Completed {
+        return None;
+    }
+    let (label, color) = match status {
+        TransferStatus::Pending => ("等待中", cx.theme().muted_foreground),
+        TransferStatus::InProgress => ("传输中", cx.theme().primary),
+        TransferStatus::Completed => return None,
+        TransferStatus::Failed => ("失败", cx.theme().danger),
+        TransferStatus::Cancelled => ("已取消", cx.theme().muted_foreground),
+        TransferStatus::Skipped => ("已跳过", cx.theme().muted_foreground),
+    };
+    Some(
+        div()
+            .flex_none()
+            .px(px(6.))
+            .py(px(1.))
+            .rounded(radius::FULL)
+            .bg(color.opacity(0.14))
+            .child(div().text_xs().font_medium().text_color(color).child(label))
+            .into_any_element(),
+    )
+}
+
+fn format_direction(direction: TransferDirection) -> &'static str {
+    match direction {
+        TransferDirection::Send => "发送",
+        TransferDirection::Receive => "接收",
+    }
+}
+
+fn format_kind(kind: HistoryEntryKind) -> &'static str {
+    match kind {
+        HistoryEntryKind::File => "文件",
+        HistoryEntryKind::Text => "文本",
+    }
+}
+
+fn format_status(status: TransferStatus) -> &'static str {
+    match status {
+        TransferStatus::Pending => "等待中",
+        TransferStatus::InProgress => "传输中",
+        TransferStatus::Completed => "已完成",
+        TransferStatus::Failed => "失败",
+        TransferStatus::Cancelled => "已取消",
+        TransferStatus::Skipped => "已跳过",
+    }
+}
+
+fn format_entry_subline(entry: &HistoryEntry) -> String {
+    let mut parts = vec![format_direction(entry.direction).to_string()];
+    match entry.kind {
+        HistoryEntryKind::Text => parts.push("文本".to_string()),
+        HistoryEntryKind::File => parts.push(format_file_size(entry.file_size)),
+    }
+    if !entry.device_name.trim().is_empty() {
+        parts.push(entry.device_name.clone());
+    }
+    parts.join(" · ")
 }
 
 fn format_file_size(bytes: u64) -> String {
@@ -635,78 +825,93 @@ fn format_timestamp(timestamp: u64) -> String {
     }
 }
 
-fn open_entry_info_dialog(
-    entry: &crate::state::history_state::HistoryEntry,
-    window: &mut Window,
-    cx: &mut gpui::App,
-) {
+fn format_time_of_day(timestamp: u64) -> String {
+    if let Some(dt) = Local.timestamp_opt(timestamp as i64, 0).single() {
+        format!("{:02}:{:02}", dt.hour(), dt.minute())
+    } else {
+        "-".to_string()
+    }
+}
+
+fn date_group_label(timestamp: u64) -> String {
+    let Some(dt) = Local.timestamp_opt(timestamp as i64, 0).single() else {
+        return "更早".to_string();
+    };
+    let today = Local::now().date_naive();
+    let date = dt.date_naive();
+    if date == today {
+        "今天".to_string()
+    } else if Some(date) == today.pred_opt() {
+        "昨天".to_string()
+    } else if date.year() == today.year() {
+        format!("{}月{}日", date.month(), date.day())
+    } else {
+        format!("{}年{}月{}日", date.year(), date.month(), date.day())
+    }
+}
+
+fn group_entries_by_date(entries: Vec<HistoryEntry>) -> Vec<(String, Vec<HistoryEntry>)> {
+    let mut groups: Vec<(String, Vec<HistoryEntry>)> = Vec::new();
+    for entry in entries {
+        let label = date_group_label(entry.timestamp);
+        match groups.last_mut() {
+            Some((last, items)) if *last == label => items.push(entry),
+            _ => groups.push((label, vec![entry])),
+        }
+    }
+    groups
+}
+
+fn open_entry_info_dialog(entry: &HistoryEntry, window: &mut Window, cx: &mut gpui::App) {
     let title = entry.file_name.clone();
-    let file_path = entry.file_path.display().to_string();
-    let file_uri = entry.file_uri.clone().unwrap_or_default();
+    let kind = format_kind(entry.kind).to_string();
+    let direction = format_direction(entry.direction).to_string();
+    let status = format_status(entry.status).to_string();
+    let device = entry.device_name.clone();
     let file_size = format_file_size(entry.file_size);
     let timestamp = format_timestamp(entry.timestamp);
-    let sender = entry.device_name.clone();
+    let file_path = entry.file_path.display().to_string();
+    let file_uri = entry.file_uri.clone().unwrap_or_default();
+    let text_preview = entry.text_content.clone().and_then(|text| {
+        let trimmed = text.trim();
+        if trimmed.is_empty() {
+            None
+        } else if trimmed.chars().count() > 160 {
+            Some(trimmed.chars().take(160).collect::<String>() + "…")
+        } else {
+            Some(trimmed.to_string())
+        }
+    });
+    let show_path = entry.kind == HistoryEntryKind::File && !file_path.trim().is_empty();
 
-    window.open_dialog(cx, move |dialog, _window, _cx| {
+    window.open_dialog(cx, move |dialog, _window, cx| {
+        let mut rows = v_flex().w_full().gap(px(10.));
+        rows = rows
+            .child(info_row("名称", title.clone(), cx))
+            .child(info_row("类型", kind.clone(), cx))
+            .child(info_row("方向", direction.clone(), cx))
+            .child(info_row("状态", status.clone(), cx));
+        if !device.trim().is_empty() {
+            rows = rows.child(info_row("设备", device.clone(), cx));
+        }
+        rows = rows
+            .child(info_row("大小", file_size.clone(), cx))
+            .child(info_row("时间", timestamp.clone(), cx));
+        if let Some(preview) = text_preview.clone() {
+            rows = rows.child(info_row("内容", preview, cx));
+        }
+        if !file_uri.is_empty() {
+            rows = rows.child(info_row("URI", file_uri.clone(), cx));
+        }
+        if show_path {
+            rows = rows.child(info_row("路径", file_path.clone(), cx));
+        }
+
         dialog
-            .title("信息")
+            .title(dialog_title("详情"))
             .overlay(true)
             .w(px(360.))
-            .child(
-                v_flex()
-                    .w_full()
-                    .gap(px(8.))
-                    .child(
-                        div()
-                            .w_full()
-                            .overflow_hidden()
-                            .truncate()
-                            .text_sm()
-                            .child(format!("名称: {}", title)),
-                    )
-                    .child(
-                        div()
-                            .w_full()
-                            .overflow_hidden()
-                            .truncate()
-                            .text_sm()
-                            .child(format!("大小: {}", file_size)),
-                    )
-                    .child(
-                        div()
-                            .w_full()
-                            .overflow_hidden()
-                            .truncate()
-                            .text_sm()
-                            .child(format!("来源: {}", sender)),
-                    )
-                    .child(
-                        div()
-                            .w_full()
-                            .overflow_hidden()
-                            .truncate()
-                            .text_sm()
-                            .child(format!("时间: {}", timestamp)),
-                    )
-                    .when(!file_uri.is_empty(), |this| {
-                        this.child(
-                            div()
-                                .w_full()
-                                .overflow_hidden()
-                                .truncate()
-                                .text_sm()
-                                .child(format!("URI: {}", file_uri)),
-                        )
-                    })
-                    .child(
-                        div()
-                            .w_full()
-                            .overflow_hidden()
-                            .truncate()
-                            .text_sm()
-                            .child(format!("路径: {}", file_path)),
-                    ),
-            )
+            .child(rows)
             .footer(build_alert_dialog_footer("history-info", "关闭"))
             .button_props(gpui_component::dialog::DialogButtonProps::default().ok_text("关闭"))
     });
@@ -716,7 +921,7 @@ fn open_notice_dialog(message: &str, window: &mut Window, cx: &mut gpui::App) {
     let msg = message.to_string();
     window.open_dialog(cx, move |dialog, _window, _cx| {
         dialog
-            .title("提示")
+            .title(dialog_title("提示"))
             .overlay(true)
             .w(px(320.))
             .child(div().w_full().text_sm().child(msg.clone()))

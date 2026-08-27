@@ -161,6 +161,12 @@ pub fn get_third_party_libs() -> Vec<ThirdPartyLib> {
             OPENHARMONY_ABILITY_LICENSE,
         ),
         ThirdPartyLib::new(
+            "openharmony-ability-plugin-files",
+            "https://github.com/harmony-contrib/openharmony-ability.git",
+            "MIT OR Apache-2.0",
+            OPENHARMONY_ABILITY_LICENSE,
+        ),
+        ThirdPartyLib::new(
             "napi-ohos",
             "https://github.com/ohos-rs/ohos-rs",
             "MIT",

@@ -1,14 +1,17 @@
 //! Settings interactions and address-target dialogs.
 
 use super::*;
+use crate::ui::theme::radius;
+use gpui_component::radio::{Radio, RadioGroup};
 use gpui_component::scroll::ScrollableElement as _;
+use std::rc::Rc;
 
 impl HomePage {
     /// Opens a dialog with a multiline text input for sending text messages.
     /// Matches LocalSend's MessageInputDialog behavior.
     pub(super) fn open_text_input_dialog(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let input_state = cx.new(|cx| {
-            InputState::new(window, cx)
+            TextareaState::new(window, cx)
                 .auto_grow(3, 5)
                 .placeholder("输入文本内容")
                 .soft_wrap(true)
@@ -22,13 +25,13 @@ impl HomePage {
             let home_for_ok = home_entity.clone();
 
             dialog
-                .title("发送文本")
+                .title(dialog_title("发送文本"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
                     div()
                         .w_full()
-                        .child(Input::new(&input_state).appearance(true)),
+                        .child(Textarea::new(&input_state).appearance(true)),
                 )
                 .button_props(
                     gpui_component::dialog::DialogButtonProps::default()
@@ -77,11 +80,11 @@ impl HomePage {
                 .hover(_cx.theme().secondary)
                 .active(_cx.theme().secondary);
             dialog
-                .title(if show_invalid_pin {
+                .title(dialog_title(if show_invalid_pin {
                     "PIN 错误，请重试"
                 } else {
                     "请输入接收端 PIN"
-                })
+                }))
                 .overlay(true)
                 .w(px(320.))
                 .child(
@@ -148,7 +151,7 @@ impl HomePage {
             let home_for_ok = home_entity.clone();
 
             dialog
-                .title("编辑别名")
+                .title(dialog_title("编辑别名"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -198,7 +201,7 @@ impl HomePage {
             let home_for_ok = home_entity.clone();
 
             dialog
-                .title("编辑端口")
+                .title(dialog_title("编辑端口"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -254,7 +257,7 @@ impl HomePage {
             let home_for_ok = home_entity.clone();
 
             dialog
-                .title("设置接收 PIN")
+                .title(dialog_title("设置接收 PIN"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -355,7 +358,7 @@ impl HomePage {
             let input_for_ok = input_state.clone();
             let home_for_ok = home_entity.clone();
             dialog
-                .title("发现超时")
+                .title(dialog_title("发现超时"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -406,7 +409,7 @@ impl HomePage {
             let input_for_ok = input_state.clone();
             let home_for_ok = home_entity.clone();
             dialog
-                .title("组播地址")
+                .title(dialog_title("组播地址"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -532,10 +535,11 @@ impl HomePage {
                                     });
                                 })
                                 .child(
-                                Icon::default()
-                                    .path("icons/plus.svg")
-                                    .with_size(Size::Small)
-                                    .text_color(_cx.theme().foreground),
+                                app_icon(
+                                    paths::PLUS,
+                                    Size::Small,
+                                    _cx.theme().foreground,
+                                ),
                                 ),
                         )
                         .child(
@@ -566,10 +570,11 @@ impl HomePage {
                                     });
                                 })
                                 .child(
-                                Icon::default()
-                                    .path("icons/trash.svg")
-                                    .with_size(Size::Small)
-                                    .text_color(_cx.theme().muted_foreground),
+                                app_icon(
+                                    paths::TRASH,
+                                    Size::Small,
+                                    _cx.theme().muted_foreground,
+                                ),
                             ),
                         )
                         .into_any_element()
@@ -577,7 +582,7 @@ impl HomePage {
                 .collect();
 
             dialog
-                .title("发现目标网段")
+                .title(dialog_title("发现目标网段"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -720,7 +725,7 @@ impl HomePage {
             let input_for_ok = input_state.clone();
             let home_for_ok = home_entity.clone();
             dialog
-                .title("网络接口过滤规则")
+                .title(dialog_title("网络接口过滤规则"))
                 .overlay(true)
                 .w(px(380.))
                 .child(
@@ -803,50 +808,13 @@ impl HomePage {
                 }
             }
         };
-        let tag_tab_style = ButtonCustomVariant::new(cx)
-            .color(if mode == AddressInputMode::Label {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            })
-            .foreground(if mode == AddressInputMode::Label {
-                cx.theme().primary
-            } else {
-                cx.theme().foreground
-            })
-            .hover(if mode == AddressInputMode::Label {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            })
-            .active(if mode == AddressInputMode::Label {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            });
-        let ip_tab_style = ButtonCustomVariant::new(cx)
-            .color(if mode == AddressInputMode::IpAddress {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            })
-            .foreground(if mode == AddressInputMode::IpAddress {
-                cx.theme().primary
-            } else {
-                cx.theme().foreground
-            })
-            .hover(if mode == AddressInputMode::IpAddress {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            })
-            .active(if mode == AddressInputMode::IpAddress {
-                cx.theme().primary.opacity(0.2)
-            } else {
-                cx.theme().secondary
-            });
+        let selected_bg = cx.theme().background;
+        let selected_fg = cx.theme().foreground;
+        let idle_fg = cx.theme().muted_foreground;
+        let label_selected = mode == AddressInputMode::Label;
+        let ip_selected = mode == AddressInputMode::IpAddress;
 
-        window.open_dialog(cx, move |dialog, _window, _cx| {
+        window.open_dialog(cx, move |dialog, _window, cx| {
             let ip_for_ok = ip_input_state.clone();
             let home_for_ok = home_entity.clone();
             let home_for_tag_tab = home_entity.clone();
@@ -854,7 +822,7 @@ impl HomePage {
             let mode_for_ok = mode;
 
             dialog
-                .title("输入地址")
+                .title(dialog_title("输入地址"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -863,14 +831,22 @@ impl HomePage {
                         .gap(px(12.))
                         .child(
                             h_flex()
-                                .gap(px(0.))
+                                .w_full()
+                                .h(px(40.))
+                                .rounded(radius::FULL)
+                                .p(px(3.))
+                                .bg(cx.theme().muted)
                                 .child(
-                                    Button::new("address-mode-label")
-                                        .custom(tag_tab_style.clone())
-                                        .w(px(72.))
-                                        .h(px(32.))
-                                        .rounded_l(px(12.))
-                                        .rounded_r(px(0.))
+                                    div()
+                                        .id("address-mode-label")
+                                        .flex_1()
+                                        .h_full()
+                                        .rounded(radius::FULL)
+                                        .cursor_pointer()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .when(label_selected, |this| this.bg(selected_bg))
                                         .on_click(move |_event, window, cx| {
                                             if mode != AddressInputMode::Label {
                                                 window.close_dialog(cx);
@@ -883,15 +859,29 @@ impl HomePage {
                                                 });
                                             }
                                         })
-                                        .child(div().text_sm().font_medium().child("标签")),
+                                        .child(
+                                            div()
+                                                .text_sm()
+                                                .when(label_selected, |this| this.font_semibold())
+                                                .text_color(if label_selected {
+                                                    selected_fg
+                                                } else {
+                                                    idle_fg
+                                                })
+                                                .child("标签"),
+                                        ),
                                 )
                                 .child(
-                                    Button::new("address-mode-ip")
-                                        .custom(ip_tab_style.clone())
-                                        .w(px(88.))
-                                        .h(px(32.))
-                                        .rounded_l(px(0.))
-                                        .rounded_r(px(12.))
+                                    div()
+                                        .id("address-mode-ip")
+                                        .flex_1()
+                                        .h_full()
+                                        .rounded(radius::FULL)
+                                        .cursor_pointer()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .when(ip_selected, |this| this.bg(selected_bg))
                                         .on_click(move |_event, window, cx| {
                                             if mode != AddressInputMode::IpAddress {
                                                 window.close_dialog(cx);
@@ -904,22 +894,39 @@ impl HomePage {
                                                 });
                                             }
                                         })
-                                        .child(div().text_sm().font_medium().child("IP 地址")),
+                                        .child(
+                                            div()
+                                                .text_sm()
+                                                .when(ip_selected, |this| this.font_semibold())
+                                                .text_color(if ip_selected {
+                                                    selected_fg
+                                                } else {
+                                                    idle_fg
+                                                })
+                                                .child("IP 地址"),
+                                        ),
                                 ),
                         )
                         .child(
                             div()
                                 .w_full()
-                                .shadow_xs()
-                                .rounded_md()
                                 .child(Input::new(&ip_input_state).appearance(true).large()),
                         )
                         .child(
                             div()
                                 .w_full()
-                                .text_sm()
-                                .text_color(_cx.theme().muted_foreground)
-                                .child(example_text.clone()),
+                                .rounded(radius::MD)
+                                .bg(cx.theme().muted.opacity(0.7))
+                                .px(px(12.))
+                                .py(px(10.))
+                                .child(
+                                    div()
+                                        .w_full()
+                                        .text_xs()
+                                        .line_height(px(18.))
+                                        .text_color(cx.theme().muted_foreground)
+                                        .child(example_text.clone()),
+                                ),
                         ),
                 )
                 .button_props(
@@ -987,5 +994,51 @@ impl HomePage {
 
     pub(super) fn open_send_target_dialog(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.open_send_to_address_dialog(window, cx);
+    }
+
+    /// Settings picker: gpui-component `RadioGroup` inside a dialog.
+    pub(super) fn open_settings_choice_dialog(
+        &mut self,
+        title: impl Into<String>,
+        options: &'static [&'static str],
+        selected: impl Into<String>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+        on_pick: impl Fn(&mut HomePage, &'static str, &mut Context<HomePage>) + 'static,
+    ) {
+        let title = title.into();
+        let selected = selected.into();
+        let home_entity = cx.entity();
+        let on_pick = Rc::new(on_pick);
+        let selected_index = options
+            .iter()
+            .position(|option| *option == selected.as_str());
+
+        window.open_dialog(cx, move |dialog, _window, _cx| {
+            let home_entity = home_entity.clone();
+            let on_pick = on_pick.clone();
+            dialog
+                .title(dialog_title(title.clone()))
+                .overlay(true)
+                .w(px(320.))
+                .child(
+                    RadioGroup::vertical("settings-choice")
+                        .w_full()
+                        .selected_index(selected_index)
+                        .children(
+                            options
+                                .iter()
+                                .copied()
+                                .map(|option| Radio::new(option).label(option)),
+                        )
+                        .on_click(move |ix, window, cx| {
+                            let option = options[*ix];
+                            home_entity.update(cx, |this, cx| {
+                                on_pick(this, option, cx);
+                            });
+                            window.close_dialog(cx);
+                        }),
+                )
+        });
     }
 }

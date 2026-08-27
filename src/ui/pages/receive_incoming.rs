@@ -1,7 +1,9 @@
 use crate::state::{
     app_state::AppState, receive_inbox_state::ReceiveInboxState, transfer_state::TransferDirection,
 };
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
+use crate::ui::theme::{radius, spacing};
 use gpui::{div, hsla, prelude::*, px, Context, Entity, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
@@ -9,7 +11,7 @@ use gpui_component::{
     h_flex,
     notification::Notification,
     progress::Progress,
-    v_flex, ActiveTheme as _, Icon, Sizable as _, Size, StyledExt as _, WindowExt as _,
+    v_flex, ActiveTheme as _, Size, StyledExt as _, WindowExt as _,
 };
 use gpui_router::RouterState;
 use std::collections::HashSet;
@@ -242,13 +244,13 @@ impl gpui::Render for ReceiveIncomingPage {
             "保持此页面打开以继续接收".to_string()
         };
         let status_icon = if show_cancelled {
-            "icons/x.svg"
+            paths::X
         } else if is_completed {
-            "icons/check.svg"
+            paths::CHECK
         } else if direction == TransferDirection::Send {
-            "icons/upload.svg"
+            paths::UPLOAD
         } else {
-            "icons/download.svg"
+            paths::DOWNLOAD
         };
         let status_color = if show_cancelled {
             cx.theme().danger
@@ -271,8 +273,8 @@ impl gpui::Render for ReceiveIncomingPage {
                             .w_full()
                             .max_w(px(760.))
                             .mx_auto()
-                            .px(px(20.))
-                            .pt(px(76.))
+                            .px(spacing::PAGE)
+                            .pt(px(20.))
                             .pb(px(20.))
                             .items_center()
                             .gap(px(14.))
@@ -287,12 +289,7 @@ impl gpui::Render for ReceiveIncomingPage {
                                     .flex()
                                     .items_center()
                                     .justify_center()
-                                    .child(
-                                        Icon::default()
-                                            .path(status_icon)
-                                            .with_size(Size::Large)
-                                            .text_color(status_color),
-                                    ),
+                                    .child(app_icon(status_icon, Size::Large, status_color)),
                             )
                             .child(
                                 div()
@@ -350,10 +347,10 @@ impl gpui::Render for ReceiveIncomingPage {
                                 div()
                                     .w_full()
                                     .mt(px(8.))
-                                    .rounded_lg()
+                                    .rounded(radius::LG)
                                     .border_1()
                                     .border_color(cx.theme().border.opacity(0.78))
-                                    .bg(cx.theme().secondary)
+                                    .bg(cx.theme().background)
                                     .shadow_sm()
                                     .p(px(16.))
                                     .child(
@@ -373,10 +370,11 @@ impl gpui::Render for ReceiveIncomingPage {
                                                             .items_center()
                                                             .justify_center()
                                                             .child(
-                                                                Icon::default()
-                                                                    .path(status_icon)
-                                                                    .with_size(Size::Medium)
-                                                                    .text_color(status_color),
+                                                                app_icon(
+                                                                    status_icon,
+                                                                    Size::Small,
+                                                                    status_color,
+                                                                ),
                                                             ),
                                                     )
                                                     .child(
@@ -463,9 +461,9 @@ impl gpui::Render for ReceiveIncomingPage {
                                                             s.items.into_iter().map(|item| {
                                                                 let file_id = item.file_id.clone();
                                                                 let icon = if item.file_type.starts_with("text/") {
-                                                                    "icons/book-open.svg"
+                                                                    paths::BOOK_OPEN
                                                                 } else {
-                                                                    "icons/file.svg"
+                                                                    paths::FILE
                                                                 };
                                                                 let selected = selected_file_ids.contains(&item.file_id);
                                                                 let row_tone = if show_cancelled {
@@ -558,21 +556,23 @@ impl gpui::Render for ReceiveIncomingPage {
                                                                                     .items_center()
                                                                                     .justify_center()
                                                                                     .child(
-                                                                                        Icon::default()
-                                                                                            .path(if row_active {
-                                                                                                "icons/check.svg"
+                                                                                        app_icon(
+                                                                                            if row_active {
+                                                                                                paths::CHECK
                                                                                             } else {
-                                                                                                "icons/x.svg"
-                                                                                            })
-                                                                                            .with_size(Size::XSmall)
-                                                                                            .text_color(row_tone),
+                                                                                                paths::X
+                                                                                            },
+                                                                                            Size::XSmall,
+                                                                                            row_tone,
+                                                                                        ),
                                                                                     ),
                                                                             )
                                                                             .child(
-                                                                                Icon::default()
-                                                                                    .path(icon)
-                                                                                    .with_size(Size::Small)
-                                                                                    .text_color(cx.theme().muted_foreground),
+                                                                                app_icon(
+                                                                                    icon,
+                                                                                    Size::Small,
+                                                                                    cx.theme().muted_foreground,
+                                                                                ),
                                                                             )
                                                                             .child(
                                                                                 v_flex()

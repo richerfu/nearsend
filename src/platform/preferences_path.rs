@@ -1,21 +1,17 @@
 use std::path::PathBuf;
 use std::sync::{LazyLock, RwLock};
 
-use napi_derive_ohos::napi;
-use napi_ohos::{Error, Result};
-
 static PREFERENCES_PATH: LazyLock<RwLock<Option<PathBuf>>> = LazyLock::new(|| RwLock::new(None));
 
-#[napi]
-pub fn set_preferences_path(preferences_path: String) -> Result<()> {
+pub fn set_preferences_path(preferences_path: String) -> Result<(), String> {
     let trimmed = preferences_path.trim();
     if trimmed.is_empty() {
-        return Err(Error::from_reason("preferences_path is empty"));
+        return Err("preferences_path is empty".to_string());
     }
 
     let mut guard = PREFERENCES_PATH
         .write()
-        .map_err(|_| Error::from_reason("failed to lock PREFERENCES_PATH"))?;
+        .map_err(|_| "failed to lock PREFERENCES_PATH".to_string())?;
     guard.replace(PathBuf::from(trimmed));
     Ok(())
 }

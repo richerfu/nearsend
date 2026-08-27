@@ -34,16 +34,19 @@ use crate::state::{
         FileTransferInfo, TransferDirection, TransferInfo, TransferState, TransferStatus,
     },
 };
+pub(super) use crate::ui::components::chrome::{
+    content_picker_grid, content_picker_tile, dialog_title,
+};
+use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
 use gpui::{div, hsla, prelude::*, px, AnyElement, Context, Entity, IntoElement, Window};
 use gpui_component::button::{Button, ButtonCustomVariant, ButtonVariants as _};
 use gpui_component::dialog::{DialogAction, DialogClose, DialogFooter};
-use gpui_component::input::{Input, InputState};
+use gpui_component::input::{Input, InputState, Textarea, TextareaState};
 use gpui_component::notification::Notification;
 use gpui_component::select::{SelectEvent, SelectState};
 use gpui_component::{
-    h_flex, v_flex, ActiveTheme as _, Icon, IndexPath, Sizable as _, Size, StyledExt as _,
-    WindowExt as _,
+    h_flex, v_flex, ActiveTheme as _, IndexPath, Sizable as _, Size, StyledExt as _, WindowExt as _,
 };
 use gpui_router::RouterState;
 use localsend::http::state::ClientInfo;
@@ -87,7 +90,7 @@ pub struct HomePage {
     pub(super) device_model_select: Option<Entity<SelectState<Vec<&'static str>>>>,
     pub(super) network_filter_mode_select: Option<Entity<SelectState<Vec<&'static str>>>>,
     // Text input state for the message input dialog
-    pub(super) text_input_state: Option<Entity<InputState>>,
+    pub(super) text_input_state: Option<Entity<TextareaState>>,
     // Input states for the send-to-address dialog
     pub(super) send_ip_input_state: Option<Entity<InputState>>,
 }
@@ -120,6 +123,13 @@ impl HomePage {
                     .label(ok_text.to_string())
                     .primary(),
             ),
+        )
+    }
+
+    fn build_close_footer(id_prefix: &str, text: &str) -> DialogFooter {
+        DialogFooter::new().child(
+            DialogClose::new()
+                .child(Button::new(format!("{id_prefix}-close")).label(text.to_string())),
         )
     }
 

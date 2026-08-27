@@ -1,187 +1,229 @@
 //! Favorite devices management dialogs and actions.
 
 use super::*;
+use crate::ui::theme::{radius, spacing};
 
 impl HomePage {
     pub(super) fn open_favorites_dialog(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let favorites = self.send_state.favorite_list_sorted();
         let home_entity = cx.entity();
         let dialog_nonce = uuid::Uuid::new_v4().to_string();
-        window.open_dialog(cx, move |dialog, _window, _cx| {
+        window.open_dialog(cx, move |dialog, _window, cx| {
             let home_for_add = home_entity.clone();
+            let mut list = v_flex()
+                .w_full()
+                .min_w(px(0.))
+                .bg(cx.theme().background)
+                .border_1()
+                .border_color(cx.theme().border.opacity(0.75))
+                .rounded(radius::LG)
+                .px(px(10.));
+
+            for (index, favorite) in favorites.iter().enumerate() {
+                if index > 0 {
+                    list = list.child(
+                        div()
+                            .h(px(1.))
+                            .ml(px(52.))
+                            .bg(cx.theme().border.opacity(0.7)),
+                    );
+                }
+                let favorite = favorite.clone();
+                let home_for_pick = home_entity.clone();
+                let home_for_edit = home_entity.clone();
+                let home_for_delete = home_entity.clone();
+                let favorite_for_edit = favorite.clone();
+                let favorite_for_delete = favorite.clone();
+                let row_alias = favorite.alias.clone();
+                let row_ip = favorite.ip.clone();
+                let row_port = favorite.port;
+                let send_ip = row_ip.clone();
+                let send_alias = row_alias.clone();
+                let send_token = favorite.token.clone();
+                let send_https = favorite.https;
+                let custom_alias = favorite.custom_alias;
+                let id_prefix = format!("favorite-device-{}-{}", favorite.token, dialog_nonce);
+
+                list = list.child(
+                    h_flex()
+                        .w_full()
+                        .min_w(px(0.))
+                        .items_center()
+                        .gap(px(4.))
+                        .child(
+                            h_flex()
+                                .id(format!("{id_prefix}-send"))
+                                .flex_1()
+                                .min_w(px(0.))
+                                .items_center()
+                                .gap(px(12.))
+                                .min_h(px(52.))
+                                .py(px(8.))
+                                .cursor_pointer()
+                                .on_click(move |_event, window, cx| {
+                                    window.close_dialog(cx);
+                                    home_for_pick.update(cx, |this, cx| {
+                                        this.send_state.target_device = None;
+                                        this.send_to_favorite_device(
+                                            send_state::FavoriteDevice {
+                                                token: send_token.clone(),
+                                                alias: send_alias.clone(),
+                                                ip: send_ip.clone(),
+                                                port: row_port,
+                                                https: send_https,
+                                                custom_alias,
+                                            },
+                                            window,
+                                            cx,
+                                        );
+                                    });
+                                })
+                                .child(
+                                    div()
+                                        .w(px(40.))
+                                        .h(px(40.))
+                                        .rounded(radius::MD)
+                                        .bg(cx.theme().muted)
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .flex_none()
+                                        .child(app_icon(
+                                            paths::SMARTPHONE,
+                                            Size::Small,
+                                            cx.theme().primary,
+                                        )),
+                                )
+                                .child(
+                                    v_flex()
+                                        .flex_1()
+                                        .min_w(px(0.))
+                                        .gap(px(2.))
+                                        .child(
+                                            div()
+                                                .w_full()
+                                                .overflow_hidden()
+                                                .truncate()
+                                                .text_sm()
+                                                .font_semibold()
+                                                .text_color(cx.theme().foreground)
+                                                .child(row_alias.clone()),
+                                        )
+                                        .child(
+                                            div()
+                                                .w_full()
+                                                .overflow_hidden()
+                                                .truncate()
+                                                .text_xs()
+                                                .text_color(cx.theme().muted_foreground)
+                                                .child(format!("{row_ip}:{row_port}")),
+                                        ),
+                                ),
+                        )
+                        .child(
+                            div()
+                                .id(format!("{id_prefix}-edit"))
+                                .w(px(36.))
+                                .h(px(36.))
+                                .rounded_full()
+                                .flex()
+                                .items_center()
+                                .justify_center()
+                                .flex_none()
+                                .cursor_pointer()
+                                .on_click(move |_event, window, cx| {
+                                    window.close_dialog(cx);
+                                    let preset = favorite_for_edit.clone();
+                                    home_for_edit.update(cx, |this, cx| {
+                                        this.open_edit_favorite_dialog(Some(preset), window, cx);
+                                    });
+                                })
+                                .child(app_icon(
+                                    paths::PENCIL,
+                                    Size::Small,
+                                    cx.theme().muted_foreground,
+                                )),
+                        )
+                        .child(
+                            div()
+                                .id(format!("{id_prefix}-delete"))
+                                .w(px(36.))
+                                .h(px(36.))
+                                .rounded_full()
+                                .flex()
+                                .items_center()
+                                .justify_center()
+                                .flex_none()
+                                .cursor_pointer()
+                                .on_click(move |_event, window, cx| {
+                                    window.close_dialog(cx);
+                                    let token = favorite_for_delete.token.clone();
+                                    let alias = favorite_for_delete.alias.clone();
+                                    home_for_delete.update(cx, |this, cx| {
+                                        this.open_confirm_remove_favorite_dialog(
+                                            token, alias, window, cx,
+                                        );
+                                    });
+                                })
+                                .child(app_icon(paths::TRASH, Size::Small, cx.theme().danger)),
+                        ),
+                );
+            }
+
             dialog
-                .title("收藏夹")
+                .title(dialog_title("收藏夹"))
                 .overlay(true)
                 .w(px(360.))
                 .child(
                     v_flex()
                         .w_full()
-                        .gap(px(10.))
-                        .when(favorites.is_empty(), |this| {
-                            this.child(
-                                div()
-                                    .w_full()
-                                    .text_sm()
-                                    .text_color(_cx.theme().muted_foreground)
-                                    .child("暂无收藏设备，可手动添加。"),
-                            )
-                        })
-                        .when(!favorites.is_empty(), |this| {
-                            this.children(favorites.iter().map(|favorite| {
-                                let favorite = favorite.clone();
-                                let home_for_pick = home_entity.clone();
-                                let home_for_edit = home_entity.clone();
-                                let home_for_delete = home_entity.clone();
-                                let favorite_for_edit = favorite.clone();
-                                let favorite_for_delete = favorite.clone();
-                                let row_alias = favorite.alias.clone();
-                                let row_ip = favorite.ip.clone();
-                                let row_port = favorite.port;
-                                let send_ip = row_ip.clone();
-                                let send_alias = row_alias.clone();
-                                let send_token = favorite.token.clone();
-                                let send_https = favorite.https;
-                                let row_id_token = favorite.token.clone();
-                                let id_prefix =
-                                    format!("favorite-device-{}-{}", row_id_token, dialog_nonce);
-                                h_flex()
-                                    .w_full()
-                                    .items_center()
-                                    .justify_between()
-                                    .gap(px(8.))
-                                    .child(
-                                        v_flex()
-                                            .flex_1()
-                                            .min_w(px(0.))
-                                            .gap(px(2.))
-                                            .child(
-                                                div()
-                                                    .w_full()
-                                                    .overflow_hidden()
-                                                    .truncate()
-                                                    .text_sm()
-                                                    .font_medium()
-                                                    .child(row_alias.clone()),
-                                            )
-                                            .child(
-                                                div()
-                                                    .w_full()
-                                                    .overflow_hidden()
-                                                    .truncate()
-                                                    .text_xs()
-                                                    .text_color(_cx.theme().muted_foreground)
-                                                    .child(format!("{}:{}", row_ip, row_port)),
-                                            ),
-                                    )
-                                    .child(
-                                        h_flex()
-                                            .items_center()
-                                            .gap(px(6.))
-                                            .child(
-                                                Button::new(format!("{}-send", id_prefix))
-                                                    .ghost()
-                                                    .w(px(26.))
-                                                    .h(px(26.))
-                                                    .rounded_md()
-                                                    .p(px(0.))
-                                                    .on_click(move |_event, window, cx| {
-                                                        window.close_dialog(cx);
-                                                        home_for_pick.update(cx, |this, cx| {
-                                                            this.send_state.target_device = None;
-                                                            this.send_to_favorite_device(
-                                                                send_state::FavoriteDevice {
-                                                                    token: send_token.clone(),
-                                                                    alias: send_alias.clone(),
-                                                                    ip: send_ip.clone(),
-                                                                    port: row_port,
-                                                                    https: send_https,
-                                                                    custom_alias: favorite
-                                                                        .custom_alias,
-                                                                },
-                                                                window,
-                                                                cx,
-                                                            );
-                                                        });
-                                                    })
-                                                    .child(
-                                                        Icon::default()
-                                                            .path("icons/send-horizontal.svg")
-                                                            .with_size(gpui_component::Size::Small)
-                                                            .text_color(_cx.theme().foreground),
-                                                    ),
-                                            )
-                                            .child(
-                                                Button::new(format!("{}-edit", id_prefix))
-                                                    .ghost()
-                                                    .w(px(26.))
-                                                    .h(px(26.))
-                                                    .rounded_md()
-                                                    .p(px(0.))
-                                                    .on_click(move |_event, window, cx| {
-                                                        window.close_dialog(cx);
-                                                        let preset = favorite_for_edit.clone();
-                                                        home_for_edit.update(cx, |this, cx| {
-                                                            this.open_edit_favorite_dialog(
-                                                                Some(preset.clone()),
-                                                                window,
-                                                                cx,
-                                                            );
-                                                        });
-                                                    })
-                                                    .child(
-                                                        Icon::default()
-                                                            .path("icons/settings.svg")
-                                                            .with_size(gpui_component::Size::Small)
-                                                            .text_color(_cx.theme().foreground),
-                                                    ),
-                                            )
-                                            .child(
-                                                Button::new(format!("{}-delete", id_prefix))
-                                                    .ghost()
-                                                    .w(px(26.))
-                                                    .h(px(26.))
-                                                    .rounded_md()
-                                                    .p(px(0.))
-                                                    .on_click(move |_event, window, cx| {
-                                                        window.close_dialog(cx);
-                                                        let token =
-                                                            favorite_for_delete.token.clone();
-                                                        let alias =
-                                                            favorite_for_delete.alias.clone();
-                                                        home_for_delete.update(cx, |this, cx| {
-                                                        this.open_confirm_remove_favorite_dialog(
-                                                            token.clone(),
-                                                            alias.clone(),
-                                                            window,
-                                                            cx,
-                                                        );
-                                                    });
-                                                    })
-                                                    .child(
-                                                        Icon::default()
-                                                            .path("icons/trash.svg")
-                                                            .with_size(gpui_component::Size::Small)
-                                                            .text_color(_cx.theme().danger),
-                                                    ),
-                                            ),
-                                    )
-                            }))
+                        .min_w(px(0.))
+                        .gap(px(12.))
+                        .child(if favorites.is_empty() {
+                            v_flex()
+                                .w_full()
+                                .items_center()
+                                .gap(spacing::SM)
+                                .py(px(20.))
+                                .child(
+                                    div()
+                                        .w(px(48.))
+                                        .h(px(48.))
+                                        .rounded_full()
+                                        .bg(cx.theme().muted)
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .child(app_icon(
+                                            paths::HEART,
+                                            Size::Small,
+                                            cx.theme().muted_foreground,
+                                        )),
+                                )
+                                .child(
+                                    div()
+                                        .text_sm()
+                                        .text_color(cx.theme().muted_foreground)
+                                        .child("暂无收藏设备"),
+                                )
+                                .into_any_element()
+                        } else {
+                            list.into_any_element()
                         })
                         .child(
                             Button::new("favorites-add-manual")
                                 .primary()
                                 .w_full()
+                                .h(px(44.))
                                 .on_click(move |_event, window, cx| {
                                     window.close_dialog(cx);
                                     home_for_add.update(cx, |this, cx| {
                                         this.open_edit_favorite_dialog(None, window, cx);
                                     });
                                 })
-                                .child("手动添加收藏设备"),
+                                .child("添加设备"),
                         ),
                 )
-                .footer(Self::build_alert_dialog_footer("favorites", "关闭"))
-                .button_props(gpui_component::dialog::DialogButtonProps::default().ok_text("关闭"))
         });
     }
 
@@ -226,11 +268,11 @@ impl HomePage {
                 .map(|item| item.custom_alias)
                 .unwrap_or(false);
             dialog
-                .title(if preset.is_some() {
+                .title(dialog_title(if preset.is_some() {
                     "编辑收藏设备"
                 } else {
                     "添加收藏设备"
-                })
+                }))
                 .overlay(true)
                 .w(px(360.))
                 .child(
@@ -380,7 +422,7 @@ impl HomePage {
             let home_for_ok = home_entity.clone();
             let token_for_ok = token.clone();
             dialog
-                .title("删除收藏")
+                .title(dialog_title("删除收藏"))
                 .overlay(true)
                 .w(px(340.))
                 .child(
@@ -434,7 +476,7 @@ impl HomePage {
             let alias_for_ok = alias_text.clone();
             let ip_for_ok = ip.clone();
             dialog
-                .title("确认添加收藏")
+                .title(dialog_title("确认添加收藏"))
                 .overlay(true)
                 .w(px(360.))
                 .child(

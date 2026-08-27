@@ -29,12 +29,6 @@ impl gpui::Render for HomePage {
                         }
                     }),
             )
-            .child(
-                div()
-                    .w_full()
-                    .bg(cx.theme().background)
-                    .py(px(6.))
-                    .child(self.render_bottom_nav(cx)),
-            )
+            .child(self.render_bottom_nav(cx))
     }
 }

@@ -79,6 +79,7 @@ fn sanitize_relative_file_path(name: &str) -> PathBuf {
     }
 }
 
+#[cfg_attr(not(target_env = "ohos"), allow(dead_code))]
 fn suggested_file_name(name: &str) -> String {
     let safe_path = sanitize_relative_file_path(name);
     safe_path
