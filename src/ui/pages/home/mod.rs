@@ -42,7 +42,7 @@ use crate::ui::routes;
 use gpui::{div, hsla, prelude::*, px, AnyElement, Context, Entity, IntoElement, Window};
 use gpui_component::button::{Button, ButtonCustomVariant, ButtonVariants as _};
 use gpui_component::dialog::{DialogAction, DialogClose, DialogFooter};
-use gpui_component::input::{Input, InputState};
+use gpui_component::input::{Input, InputState, Textarea, TextareaState};
 use gpui_component::notification::Notification;
 use gpui_component::select::{SelectEvent, SelectState};
 use gpui_component::{
@@ -90,7 +90,7 @@ pub struct HomePage {
     pub(super) device_model_select: Option<Entity<SelectState<Vec<&'static str>>>>,
     pub(super) network_filter_mode_select: Option<Entity<SelectState<Vec<&'static str>>>>,
     // Text input state for the message input dialog
-    pub(super) text_input_state: Option<Entity<InputState>>,
+    pub(super) text_input_state: Option<Entity<TextareaState>>,
     // Input states for the send-to-address dialog
     pub(super) send_ip_input_state: Option<Entity<InputState>>,
 }

@@ -9,7 +9,7 @@ impl HomePage {
     /// Matches LocalSend's MessageInputDialog behavior.
     pub(super) fn open_text_input_dialog(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let input_state = cx.new(|cx| {
-            InputState::new(window, cx)
+            TextareaState::new(window, cx)
                 .auto_grow(3, 5)
                 .placeholder("输入文本内容")
                 .soft_wrap(true)
@@ -29,7 +29,7 @@ impl HomePage {
                 .child(
                     div()
                         .w_full()
-                        .child(Input::new(&input_state).appearance(true)),
+                        .child(Textarea::new(&input_state).appearance(true)),
                 )
                 .button_props(
                     gpui_component::dialog::DialogButtonProps::default()

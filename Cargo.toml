@@ -11,9 +11,9 @@ crate-type = ["cdylib"]
 [dependencies]
 gpui = { path = "../zed/crates/gpui" }
 gpui_platform = { path = "../zed/crates/gpui_platform" }
-gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "bd28642309b823b2b1f66973a0dbc714d9e7d91c" }
+gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "9890a77c2d427f05b2512f05ddc6cce84686f9a6" }
 gpui-router = { version = "0.3" }
-gpui-component-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "bd28642309b823b2b1f66973a0dbc714d9e7d91c" }
+gpui-component-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "9890a77c2d427f05b2512f05ddc6cce84686f9a6" }
 openharmony-ability = { version = "1.0.0-beta.2" }
 openharmony-ability-derive = { version = "1.0.0-beta.1" }
 openharmony-ability-plugin-files = { version = "1.0.0-beta.1" }
@@ -74,6 +74,9 @@ napi-build-ohos = { version = "=1.2.0" }
 gpui = { path = "../zed/crates/gpui" }
 gpui_platform = { path = "../zed/crates/gpui_platform" }
 gpui_macros = { path = "../zed/crates/gpui_macros" }
+# gpui-router 0.3.0 and its upstream HEAD require this RenderOnce
+# disambiguation when built against the current GPUI main branch.
+gpui-router = { path = "vendor/gpui-router" }
 
 [patch."https://github.com/zed-industries/zed.git"]
 gpui = { path = "../zed/crates/gpui" }

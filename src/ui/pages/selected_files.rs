@@ -12,7 +12,7 @@ use crate::ui::routes;
 use crate::ui::theme::{radius, sizing, spacing};
 use crate::ui::utils::format_file_size;
 use gpui::{div, hsla, prelude::*, px, AnyElement, Context, Entity, Hsla, Window};
-use gpui_component::input::{Input, InputState};
+use gpui_component::input::{Textarea, TextareaState};
 use gpui_component::notification::Notification;
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
@@ -115,7 +115,7 @@ impl SelectedFilesPage {
         cx: &mut Context<Self>,
     ) {
         let input_state = cx.new(|cx| {
-            InputState::new(window, cx)
+            TextareaState::new(window, cx)
                 .auto_grow(3, 5)
                 .placeholder("输入文本内容")
                 .default_value(initial)
@@ -132,7 +132,7 @@ impl SelectedFilesPage {
                 .child(
                     div()
                         .w_full()
-                        .child(Input::new(&input_state).appearance(true)),
+                        .child(Textarea::new(&input_state).appearance(true)),
                 )
                 .button_props(
                     gpui_component::dialog::DialogButtonProps::default()
