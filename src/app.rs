@@ -40,6 +40,18 @@ impl AppRoot {
         pathname.is_empty() || pathname == routes::HOME
     }
 
+    fn uses_muted_page_background(pathname: &str) -> bool {
+        matches!(
+            pathname,
+            routes::RECEIVE_HISTORY
+                | routes::SETTINGS_ABOUT
+                | routes::SETTINGS_CHANGELOG
+                | routes::SETTINGS_DONATE
+                | routes::SETTINGS_OPEN_SOURCE_LICENSES
+                | routes::SEND_FILES
+        )
+    }
+
     pub fn new(
         cx: &mut Context<Self>,
         app_state: Entity<AppState>,
@@ -340,11 +352,20 @@ impl gpui::Render for AppRoot {
             }));
 
         let insets = crate::ui::safe_area::current(cx);
+        let pathname = RouterState::global(cx).location.pathname.as_ref();
+        let page_background = if Self::uses_muted_page_background(pathname) {
+            cx.theme().muted.opacity(0.45)
+        } else {
+            cx.theme().background
+        };
 
         v_flex()
             .relative()
             .size_full()
-            .bg(cx.theme().background)
+            // This layer extends below the system bars. Routed pages only own
+            // their content background, while AppRoot owns the immersive
+            // fullscreen color exposed by the safe-area padding.
+            .bg(page_background)
             .child(
                 div()
                     .size_full()

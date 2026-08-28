@@ -67,7 +67,6 @@ impl gpui::Render for ChangelogPage {
 
         v_flex()
             .size_full()
-            .bg(cx.theme().muted.opacity(0.45))
             .child(page_header(
                 "更新日志",
                 back_icon_button("changelog-back", cx, |this, _window, cx| {
