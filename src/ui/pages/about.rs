@@ -143,7 +143,6 @@ impl gpui::Render for AboutPage {
 
         v_flex()
             .size_full()
-            .bg(cx.theme().muted.opacity(0.45))
             .child(page_header(
                 "关于",
                 back_icon_button("about-back", cx, |this, _window, cx| {

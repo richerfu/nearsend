@@ -574,7 +574,6 @@ impl gpui::Render for SelectedFilesPage {
 
         v_flex()
             .size_full()
-            .bg(cx.theme().muted.opacity(0.45))
             .child(page_header(
                 "选择",
                 back_icon_button("files-back", cx, |this, window, cx| {

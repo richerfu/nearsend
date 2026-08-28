@@ -128,7 +128,6 @@ impl gpui::Render for DonatePage {
 
         v_flex()
             .size_full()
-            .bg(cx.theme().muted.opacity(0.45))
             .child(page_header(
                 "捐赠",
                 back_icon_button("donate-back", cx, |this, _window, cx| {

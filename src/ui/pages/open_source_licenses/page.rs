@@ -163,7 +163,6 @@ impl gpui::Render for OpenSourceLicensesPage {
 
         v_flex()
             .size_full()
-            .bg(cx.theme().muted.opacity(0.45))
             .child(page_header(
                 "开源协议",
                 back_icon_button("open-source-licenses-back", cx, |this, _window, cx| {

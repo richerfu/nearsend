@@ -87,7 +87,6 @@ impl gpui::Render for HistoryPage {
 
         v_flex()
             .size_full()
-            .bg(cx.theme().muted.opacity(0.45))
             .child(page_header(
                 "历史",
                 back_icon_button("history-back", cx, |this, window, cx| {
