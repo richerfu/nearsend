@@ -6,6 +6,12 @@ import { PermissionPlugin } from "@ohos-rs/ability-plugin-permission";
 import { NearSendPlatformPlugin } from "../bridge/NearSendPlatformPlugin";
 
 const NATIVE_MODULE_NAME = "near_send";
+const SAFE_AREA_TYPES: window.AvoidAreaType[] = [
+  window.AvoidAreaType.TYPE_SYSTEM,
+  window.AvoidAreaType.TYPE_CUTOUT,
+  window.AvoidAreaType.TYPE_SYSTEM_GESTURE,
+  window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR,
+];
 
 export default class EntryAbility extends NativeAbility {
   public moduleName: string = NATIVE_MODULE_NAME;
@@ -30,6 +36,23 @@ export default class EntryAbility extends NativeAbility {
     windowStage: window.WindowStage,
   ): Promise<void> {
     try {
+      const mainWindow = windowStage.getMainWindowSync();
+      // Let GPUI paint behind the system bars. Page content is inset centrally
+      // by AppRoot instead of relying on ArkUI to offset every XComponent page.
+      await mainWindow.setWindowLayoutFullScreen(true);
+
+      // The framework subscribes to later avoid-area changes when the
+      // XComponent is attached. Seed the current values before its first frame
+      // so GPUI can lay out the initial page with the correct safe area too.
+      for (const type of SAFE_AREA_TYPES) {
+        try {
+          const area = mainWindow.getWindowAvoidArea(type);
+          this.forEachLifecycle((lifecycle) =>
+            lifecycle.windowStageEventCallback.onAvoidAreaChange({ type, area }),
+          );
+        } catch (_error) {}
+      }
+
       await windowStage.loadContent("pages/Index");
     } catch (error) {
       throw new Error(`Unable to load Nearsend WindowStage content: ${String(error)}`);

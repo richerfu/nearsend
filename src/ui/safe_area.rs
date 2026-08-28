@@ -1,4 +1,4 @@
-//! HarmonyOS visual avoid-area insets for page chrome.
+//! HarmonyOS visual avoid-area insets for the shared GPUI page root.
 
 use crate::GlobalOpenHarmonyApp;
 use gpui::{px, App, Pixels};
@@ -12,10 +12,11 @@ pub struct SafeAreaInsets {
     pub left: Pixels,
 }
 
-/// Extra inset so page chrome sits below the status bar / home indicator.
+/// Insets that keep every routed page clear of system bars and display cutouts.
 ///
-/// The XComponent may already be offset by `content_rect`; only the remaining
-/// overlap against the system avoid area is applied, plus a small breathing gap.
+/// The entry window normally uses fullscreen layout. The content-rect delta is
+/// still subtracted defensively so a platform fallback to non-fullscreen layout
+/// cannot apply the same safe area twice.
 pub fn current(cx: &App) -> SafeAreaInsets {
     let Some(app) = cx.try_global::<GlobalOpenHarmonyApp>() else {
         return fallback();

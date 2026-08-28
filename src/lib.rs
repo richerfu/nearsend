@@ -94,7 +94,9 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
                 ..Default::default()
             },
             |window, cx| {
-                window.set_safe_area_avoidance(false);
+                // GPUI owns keyboard avoidance. Visual system-bar/cutout
+                // avoidance is applied once around every route in AppRoot.
+                window.set_safe_area_avoidance(true);
                 let view = cx.new(|cx| {
                     let server = cx.new(|_| core::server::ServerManager::new(53317));
 
