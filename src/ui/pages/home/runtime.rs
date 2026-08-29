@@ -50,7 +50,7 @@ impl HomePage {
         let auto_finish = self.settings_state.auto_finish;
         let favorite_tokens = self.send_state.favorite_tokens.clone();
 
-        self.receive_inbox_state.update(cx, |state, _| {
+        self.receive_inbox_state.update(cx, |state, state_cx| {
             for event in events {
                 match &event {
                     crate::core::receive_events::IncomingTransferEvent::Prepared {
@@ -162,20 +162,23 @@ impl HomePage {
                 }
                 state.apply_event(event);
             }
+            state_cx.notify();
         });
 
         if should_auto_finish_receive {
-            self.receive_inbox_state
-                .update(cx, |state, _| state.clear());
+            self.receive_inbox_state.update(cx, |state, state_cx| {
+                state.clear();
+                state_cx.notify();
+            });
             if RouterState::global(cx).location.pathname == routes::RECEIVE_INCOMING {
                 self.navigate_to(routes::HOME, cx);
-                cx.notify();
             }
         }
 
         for entry in history_entries {
-            let _ = self.history_state.update(cx, |state, _| {
+            let _ = self.history_state.update(cx, |state, state_cx| {
                 state.add_entry(entry);
+                state_cx.notify();
             });
         }
 
@@ -185,8 +188,8 @@ impl HomePage {
                 routes::RECEIVE_INCOMING
             );
             self.navigate_to(routes::RECEIVE_INCOMING, cx);
-            cx.notify();
         }
+        cx.notify();
     }
 
     pub(super) fn sync_selected_files_from_shared(&mut self, cx: &mut Context<Self>) {

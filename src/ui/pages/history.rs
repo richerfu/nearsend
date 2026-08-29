@@ -181,7 +181,10 @@ impl HistoryPage {
                 .footer(build_confirm_dialog_footer("history-clear", "删除", "取消"))
                 .on_ok(move |_event, _window, cx| {
                     if let Some(ref state) = history_state {
-                        state.update(cx, |s, _cx| s.clear());
+                        state.update(cx, |s, state_cx| {
+                            s.clear();
+                            state_cx.notify();
+                        });
                     }
                     true
                 })
@@ -234,8 +237,9 @@ impl HistoryPage {
                 ))
                 .on_ok(move |_event, _window, cx| {
                     if let Some(ref state) = history_state {
-                        state.update(cx, |s, _cx| {
+                        state.update(cx, |s, state_cx| {
                             s.remove_entry(&entry_id);
+                            state_cx.notify();
                         });
                     }
                     true
@@ -641,7 +645,7 @@ fn open_history_entry(
             saved_uri: None,
             text_content: Some(content),
         };
-        inbox.update(cx, move |state, _| {
+        inbox.update(cx, move |state, state_cx| {
             state.active = Some(ReceiveSession {
                 session_id,
                 sender_alias,
@@ -655,6 +659,7 @@ fn open_history_entry(
                 is_message_only: true,
                 selected_file_ids: Vec::new(),
             });
+            state_cx.notify();
         });
         if let Some(root) = root {
             let _ = root.update(cx, |root, cx| {

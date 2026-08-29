@@ -150,12 +150,13 @@ impl SelectedFilesPage {
                     if text.is_empty() {
                         return false;
                     }
-                    send_state_for_ok.update(cx, |state, _| {
+                    send_state_for_ok.update(cx, |state, state_cx| {
                         if index == usize::MAX {
                             state.add_text(text.clone());
                         } else {
                             state.update_text(index, text.clone());
                         }
+                        state_cx.notify();
                     });
                     true
                 })
@@ -290,10 +291,15 @@ impl SelectedFilesPage {
                     if text.is_empty() {
                         return;
                     }
-                    let _ = page_entity.update(cx, |this, cx| {
-                        this.send_selection_state.update(cx, |state, _| {
-                            state.add_text(text.clone());
+                    let _ = window_handle.update(cx, |_, window, cx| {
+                        let _ = page_entity.update(cx, |this, cx| {
+                            this.send_selection_state.update(cx, |state, state_cx| {
+                                state.add_text(text.clone());
+                                state_cx.notify();
+                            });
+                            cx.notify();
                         });
+                        window.refresh();
                     });
                 }
                 ClipboardPickOutcome::Empty => {
@@ -376,10 +382,17 @@ impl SelectedFilesPage {
             match outcome {
                 PathPickOutcome::Success(picked) => {
                     let mut added = 0usize;
-                    let _ = send_selection_state.update(cx, |state, _| {
+                    let _ = send_selection_state.update(cx, |state, state_cx| {
                         added = state.add_picker_paths_recursive(picked.clone());
+                        if added > 0 {
+                            state_cx.notify();
+                        }
                     });
                     if added > 0 {
+                        let _ = window_handle.update(cx, |_, window, cx| {
+                            let _ = page_entity.update(cx, |_this, cx| cx.notify());
+                            window.refresh();
+                        });
                         return;
                     }
                     let _ = window_handle.update(cx, |_, window, cx| {
@@ -553,8 +566,9 @@ fn render_file_row(
             cx.theme().danger,
             cx,
             move |this, window, cx| {
-                let remaining = this.send_selection_state.update(cx, |state, _| {
+                let remaining = this.send_selection_state.update(cx, |state, state_cx| {
                     state.remove(index);
+                    state_cx.notify();
                     state.items().len()
                 });
                 if remaining == 0 {
@@ -636,8 +650,9 @@ impl gpui::Render for SelectedFilesPage {
                                                     |this, _event, window, cx| {
                                                         this.send_selection_state.update(
                                                             cx,
-                                                            |state, _| {
+                                                            |state, state_cx| {
                                                                 state.clear();
+                                                                state_cx.notify();
                                                             },
                                                         );
                                                         this.go_back(window, cx);

@@ -1411,88 +1411,96 @@ impl HomePage {
                         });
                     }
                     SendUiMessage::UpdateStatus { status, message } => {
-                        let _ = home_entity.update(cx, |this, cx| {
-                            if this.send_state.session_status == SendSessionStatus::CancelledByUser
-                                && status != SendSessionStatus::CancelledByUser
-                            {
-                                return;
-                            }
-                            this.send_state.session_status = status;
-                            this.send_state.session_status_text = message.clone();
-                            this.send_state.pending_send = !matches!(
-                                status,
-                                SendSessionStatus::Idle
-                                    | SendSessionStatus::Completed
-                                    | SendSessionStatus::Declined
-                                    | SendSessionStatus::RecipientBusy
-                                    | SendSessionStatus::TooManyAttempts
-                                    | SendSessionStatus::CancelledByUser
-                                    | SendSessionStatus::Failed
-                            );
-                            if matches!(
-                                status,
-                                SendSessionStatus::Completed
-                                    | SendSessionStatus::Declined
-                                    | SendSessionStatus::RecipientBusy
-                                    | SendSessionStatus::TooManyAttempts
-                                    | SendSessionStatus::CancelledByUser
-                                    | SendSessionStatus::Failed
-                            ) {
-                                this.send_state.active_send_cancel_flag = None;
-                                this.send_state.active_send_context = None;
-                                this.send_state.active_transfer_id = None;
-                            }
+                        let _ = window_handle.update(cx, |_, window, cx| {
+                            let _ = home_entity.update(cx, |this, cx| {
+                                if this.send_state.session_status
+                                    == SendSessionStatus::CancelledByUser
+                                    && status != SendSessionStatus::CancelledByUser
+                                {
+                                    return;
+                                }
+                                this.send_state.session_status = status;
+                                this.send_state.session_status_text = message.clone();
+                                this.send_state.pending_send = !matches!(
+                                    status,
+                                    SendSessionStatus::Idle
+                                        | SendSessionStatus::Completed
+                                        | SendSessionStatus::Declined
+                                        | SendSessionStatus::RecipientBusy
+                                        | SendSessionStatus::TooManyAttempts
+                                        | SendSessionStatus::CancelledByUser
+                                        | SendSessionStatus::Failed
+                                );
+                                if matches!(
+                                    status,
+                                    SendSessionStatus::Completed
+                                        | SendSessionStatus::Declined
+                                        | SendSessionStatus::RecipientBusy
+                                        | SendSessionStatus::TooManyAttempts
+                                        | SendSessionStatus::CancelledByUser
+                                        | SendSessionStatus::Failed
+                                ) {
+                                    this.send_state.active_send_cancel_flag = None;
+                                    this.send_state.active_send_context = None;
+                                    this.send_state.active_transfer_id = None;
+                                }
 
-                            if status == SendSessionStatus::Completed {
-                                let timestamp = SystemTime::now()
-                                    .duration_since(UNIX_EPOCH)
-                                    .map(|d| d.as_secs())
-                                    .unwrap_or(0);
-                                for file in &sent_files_for_history {
-                                    let is_text_item = file.text_content.is_some();
-                                    let message_text = if is_text_item {
-                                        file.text_content
-                                            .clone()
-                                            .filter(|t| !t.trim().is_empty())
-                                            .unwrap_or_else(|| file.name.clone())
-                                    } else {
-                                        file.name.clone()
-                                    };
-                                    let entry = HistoryEntry {
-                                        id: uuid::Uuid::new_v4().to_string(),
-                                        file_name: message_text.clone(),
-                                        file_size: file.size,
-                                        file_path: if is_text_item {
-                                            std::path::PathBuf::new()
+                                if status == SendSessionStatus::Completed {
+                                    let timestamp = SystemTime::now()
+                                        .duration_since(UNIX_EPOCH)
+                                        .map(|d| d.as_secs())
+                                        .unwrap_or(0);
+                                    for file in &sent_files_for_history {
+                                        let is_text_item = file.text_content.is_some();
+                                        let message_text = if is_text_item {
+                                            file.text_content
+                                                .clone()
+                                                .filter(|t| !t.trim().is_empty())
+                                                .unwrap_or_else(|| file.name.clone())
                                         } else {
-                                            file.path.clone()
-                                        },
-                                        file_uri: file.source_uri.clone(),
-                                        kind: if is_text_item {
-                                            HistoryEntryKind::Text
-                                        } else {
-                                            HistoryEntryKind::File
-                                        },
-                                        text_content: if is_text_item {
-                                            Some(message_text)
-                                        } else {
-                                            None
-                                        },
-                                        direction: TransferDirection::Send,
-                                        device_name: target_device_name.clone(),
-                                        timestamp,
-                                        status: TransferStatus::Completed,
-                                    };
-                                    let _ = history_state.update(cx, |state, _| {
-                                        state.add_entry(entry);
-                                    });
+                                            file.name.clone()
+                                        };
+                                        let entry = HistoryEntry {
+                                            id: uuid::Uuid::new_v4().to_string(),
+                                            file_name: message_text.clone(),
+                                            file_size: file.size,
+                                            file_path: if is_text_item {
+                                                std::path::PathBuf::new()
+                                            } else {
+                                                file.path.clone()
+                                            },
+                                            file_uri: file.source_uri.clone(),
+                                            kind: if is_text_item {
+                                                HistoryEntryKind::Text
+                                            } else {
+                                                HistoryEntryKind::File
+                                            },
+                                            text_content: if is_text_item {
+                                                Some(message_text)
+                                            } else {
+                                                None
+                                            },
+                                            direction: TransferDirection::Send,
+                                            device_name: target_device_name.clone(),
+                                            timestamp,
+                                            status: TransferStatus::Completed,
+                                        };
+                                        let _ = history_state.update(cx, |state, state_cx| {
+                                            state.add_entry(entry);
+                                            state_cx.notify();
+                                        });
+                                    }
+                                    if matches!(this.send_state.send_mode, SendMode::Single) {
+                                        this.send_selection_state.update(cx, |state, state_cx| {
+                                            state.clear();
+                                            state_cx.notify();
+                                        });
+                                        this.sync_selected_files_from_shared(cx);
+                                    }
                                 }
-                                if matches!(this.send_state.send_mode, SendMode::Single) {
-                                    this.send_selection_state.update(cx, |state, _| {
-                                        state.clear();
-                                    });
-                                }
-                            }
+                                cx.notify();
+                            });
+                            window.refresh();
                         });
                     }
                     SendUiMessage::RequestPin {

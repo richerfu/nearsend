@@ -47,10 +47,13 @@ impl HomePage {
                 .on_ok(move |_event, _window, cx| {
                     let text = input_for_ok.read(cx).value().to_string();
                     if !text.is_empty() {
-                        home_for_ok.update(cx, |this, _cx| {
-                            this.send_selection_state.update(_cx, |state, _| {
+                        home_for_ok.update(cx, |this, cx| {
+                            this.send_selection_state.update(cx, |state, state_cx| {
                                 state.add_text(text.clone());
+                                state_cx.notify();
                             });
+                            this.sync_selected_files_from_shared(cx);
+                            cx.notify();
                         });
                     }
                     true
@@ -315,10 +318,14 @@ impl HomePage {
             };
             if let Some(path) = picked {
                 let path_text = path.to_string_lossy().to_string();
-                let _ = home_entity.update(cx, |this, cx| {
-                    this.settings_state.destination = Some(path_text);
-                    this.sync_server_config_to_runtime(cx);
-                    this.persist_settings();
+                let _ = window_handle.update(cx, |_, window, cx| {
+                    let _ = home_entity.update(cx, |this, cx| {
+                        this.settings_state.destination = Some(path_text);
+                        this.sync_server_config_to_runtime(cx);
+                        this.persist_settings();
+                        cx.notify();
+                    });
+                    window.refresh();
                 });
             } else {
                 let _ = window_handle.update(cx, |_, window, cx| {

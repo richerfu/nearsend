@@ -70,10 +70,20 @@ impl HomePage {
             match outcome {
                 PathPickOutcome::Success(picked) => {
                     let mut added = 0usize;
-                    let _ = send_selection_state.update(cx, |state, _| {
+                    let _ = send_selection_state.update(cx, |state, state_cx| {
                         added = state.add_picker_paths_recursive(picked.clone());
+                        if added > 0 {
+                            state_cx.notify();
+                        }
                     });
                     if added > 0 {
+                        let _ = window_handle.update(cx, |_, window, cx| {
+                            let _ = home_entity.update(cx, |this, cx| {
+                                this.sync_selected_files_from_shared(cx);
+                                cx.notify();
+                            });
+                            window.refresh();
+                        });
                         return;
                     }
                     let _ = window_handle.update(cx, |_, window, cx| {
@@ -145,10 +155,16 @@ impl HomePage {
                     if text.is_empty() {
                         return;
                     }
-                    let _ = home_entity.update(cx, |this, cx| {
-                        this.send_selection_state.update(cx, |state, _| {
-                            state.add_text(text.clone());
+                    let _ = window_handle.update(cx, |_, window, cx| {
+                        let _ = home_entity.update(cx, |this, cx| {
+                            this.send_selection_state.update(cx, |state, state_cx| {
+                                state.add_text(text.clone());
+                                state_cx.notify();
+                            });
+                            this.sync_selected_files_from_shared(cx);
+                            cx.notify();
                         });
+                        window.refresh();
                     });
                 }
                 ClipboardPickOutcome::Empty => {
