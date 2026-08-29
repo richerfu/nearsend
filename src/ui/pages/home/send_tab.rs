@@ -198,9 +198,15 @@ fn render_selected_files_card(
                                         .flex_none()
                                         .cursor_pointer()
                                         .on_click(cx.listener(|this, _event, _window, cx| {
-                                            this.send_selection_state.update(cx, |state, _| {
-                                                state.clear();
-                                            });
+                                            this.send_selection_state.update(
+                                                cx,
+                                                |state, state_cx| {
+                                                    state.clear();
+                                                    state_cx.notify();
+                                                },
+                                            );
+                                            this.sync_selected_files_from_shared(cx);
+                                            cx.notify();
                                         }))
                                         .child(app_icon(
                                             paths::X,

@@ -530,8 +530,9 @@ impl gpui::Render for ReceiveIncomingPage {
                                                                     .when(show_waiting_actions, |this| {
                                                                         this.cursor_pointer().on_click(cx.listener(
                                                                             move |this, _e, _window, cx| {
-                                                                                this.inbox_state.update(cx, |state, _| {
+                                                                                this.inbox_state.update(cx, |state, state_cx| {
                                                                                     state.toggle_file_selected(&file_id);
+                                                                                    state_cx.notify();
                                                                                 });
                                                                             },
                                                                         ))
@@ -697,7 +698,10 @@ impl gpui::Render for ReceiveIncomingPage {
                                         session_id_for_decline.clone(),
                                         crate::core::receive_events::IncomingTransferDecision::Decline,
                                     );
-                                    this.inbox_state.update(cx, |s, _| s.clear());
+                                    this.inbox_state.update(cx, |s, state_cx| {
+                                        s.clear();
+                                        state_cx.notify();
+                                    });
                                     if let Some(root) = &this.root {
                                         let _ = root.update(cx, |this, cx| {
                                             this.go_back_or_navigate(routes::HOME, cx);
@@ -733,7 +737,10 @@ impl gpui::Render for ReceiveIncomingPage {
                                         ),
                                     );
                                     this.inbox_state
-                                        .update(cx, |state, _| state.mark_decision_submitted());
+                                        .update(cx, |state, state_cx| {
+                                            state.mark_decision_submitted();
+                                            state_cx.notify();
+                                        });
                                     window.refresh();
                                 })),
                         ),
@@ -762,7 +769,10 @@ impl gpui::Render for ReceiveIncomingPage {
                                     crate::core::receive_events::request_incoming_cancel(
                                         session_id_for_cancel.clone(),
                                     );
-                                    this.inbox_state.update(cx, |state, _| state.clear());
+                                    this.inbox_state.update(cx, |state, state_cx| {
+                                        state.clear();
+                                        state_cx.notify();
+                                    });
                                     if let Some(root) = &this.root {
                                         let _ = root.update(cx, |this, cx| {
                                             this.go_back_or_navigate(routes::HOME, cx);
@@ -809,7 +819,10 @@ impl gpui::Render for ReceiveIncomingPage {
                                             );
                                         }
                                     }
-                                    this.inbox_state.update(cx, |s, _| s.clear());
+                                    this.inbox_state.update(cx, |s, state_cx| {
+                                        s.clear();
+                                        state_cx.notify();
+                                    });
                                     if let Some(root) = &this.root {
                                         let _ = root.update(cx, |this, cx| {
                                             this.go_back_or_navigate(routes::HOME, cx);
