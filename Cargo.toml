@@ -8,6 +8,15 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 
+# Keep device debug builds responsive without changing rendered output.
+# NearSend retains debug info, assertions, and overflow checks, while rendering,
+# layout, text, and GPU dependencies use optimized machine code.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
 [dependencies]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "8fd5825db571d1bfd8504672940736787ea3acf2", version = "=0.2.2" }
 gpui_platform = { git = "https://github.com/ohos-rs/zed.git", rev = "8fd5825db571d1bfd8504672940736787ea3acf2" }
