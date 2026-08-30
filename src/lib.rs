@@ -21,6 +21,9 @@ mod ui;
 
 use ui::router_history::RouterHistoryState;
 
+/// Canonical application version used by every in-app version label.
+pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 /// Global OpenHarmony app wrapper for accessing back press functionality
 pub struct GlobalOpenHarmonyApp(OpenHarmonyApp);
 

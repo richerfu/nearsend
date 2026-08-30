@@ -654,7 +654,10 @@ pub fn render_settings_content(
                 .text_xs()
                 .text_color(cx.theme().muted_foreground)
                 .text_center()
-                .child("Version 0.1.0 · \u{00a9} 2025 NearSend"),
+                .child(format!(
+                    "Version {} · \u{00a9} 2025 NearSend",
+                    crate::APP_VERSION
+                )),
         )
         .into_any_element();
 

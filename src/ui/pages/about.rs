@@ -118,7 +118,7 @@ impl gpui::Render for AboutPage {
                             .text_sm()
                             .font_semibold()
                             .text_color(cx.theme().foreground)
-                            .child(format!("v{}", env!("CARGO_PKG_VERSION"))),
+                            .child(format!("v{}", crate::APP_VERSION)),
                     ),
             )
             .child(
