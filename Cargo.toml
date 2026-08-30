@@ -11,6 +11,15 @@ crate-type = ["cdylib"]
 [features]
 fps = ["dep:gpui-fps"]
 
+# Keep device debug builds responsive without changing rendered output.
+# NearSend retains debug info, assertions, and overflow checks, while rendering,
+# layout, text, and GPU dependencies use optimized machine code.
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
 [dependencies]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", default-features = false }
 gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "a494a0df03e62ded90017d2bb78e3f66a2ce80bb" }
