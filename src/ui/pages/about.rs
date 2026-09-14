@@ -24,10 +24,10 @@ fn info_card(
     body: impl IntoElement,
     cx: &mut Context<AboutPage>,
 ) -> impl IntoElement {
-    surface_card(cx)
-        .id(id.into())
-        .p(px(14.))
-        .child(v_flex().w_full().gap(px(8.))
+    surface_card(cx).id(id.into()).p(px(14.)).child(
+        v_flex()
+            .w_full()
+            .gap(px(8.))
             .child(
                 div()
                     .text_base()
@@ -36,7 +36,7 @@ fn info_card(
                     .child(title),
             )
             .child(body),
-        )
+    )
 }
 
 impl gpui::Render for AboutPage {

@@ -159,22 +159,18 @@ impl gpui::Render for ReceiveDialog {
                                                     .items_center()
                                                     .justify_center()
                                                     .when(is_selected, |this| {
-                                                        this.child(
-                                                            app_icon(
-                                                                paths::CHECK,
-                                                                Size::XSmall,
-                                                                cx.theme().primary_foreground,
-                                                            ),
-                                                        )
+                                                        this.child(app_icon(
+                                                            paths::CHECK,
+                                                            Size::XSmall,
+                                                            cx.theme().primary_foreground,
+                                                        ))
                                                     }),
                                             )
-                                            .child(
-                                                app_icon(
-                                                    paths::FILE,
-                                                    Size::Small,
-                                                    cx.theme().muted_foreground,
-                                                ),
-                                            )
+                                            .child(app_icon(
+                                                paths::FILE,
+                                                Size::Small,
+                                                cx.theme().muted_foreground,
+                                            ))
                                             .child(
                                                 v_flex()
                                                     .flex_1()

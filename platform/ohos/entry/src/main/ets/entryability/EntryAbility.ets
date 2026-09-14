@@ -9,10 +9,7 @@ import * as nearSendNative from "libnear_send.so";
 import { NearSendPlatformPlugin } from "../bridge/NearSendPlatformPlugin";
 
 const NATIVE_MODULE_NAME = "near_send";
-const SHARE_ACTIONS: string[] = [
-  "ohos.want.action.sendData",
-  "ohos.want.action.sendMultipleData",
-];
+const SHARE_ACTIONS: string[] = ["ohos.want.action.sendData", "ohos.want.action.sendMultipleData"];
 const PARAMS_STREAM = "ability.params.stream";
 const SAFE_AREA_TYPES: window.AvoidAreaType[] = [
   window.AvoidAreaType.TYPE_SYSTEM,
@@ -31,18 +28,12 @@ export default class EntryAbility extends NativeAbility {
     new LazyPlugin(() => new NearSendPlatformPlugin()),
   ];
 
-  override onCreate(
-    want: Want,
-    launchParam: AbilityConstant.LaunchParam,
-  ): void {
+  override onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     super.onCreate(want, launchParam);
     this.handleShareWant(want);
   }
 
-  override onNewWant(
-    want: Want,
-    launchParam: AbilityConstant.LaunchParam,
-  ): void {
+  override onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     super.onNewWant(want, launchParam);
     this.handleShareWant(want);
   }
@@ -104,9 +95,7 @@ export default class EntryAbility extends NativeAbility {
     return context;
   }
 
-  protected override async loadWindowStageContent(
-    windowStage: window.WindowStage,
-  ): Promise<void> {
+  protected override async loadWindowStageContent(windowStage: window.WindowStage): Promise<void> {
     try {
       const mainWindow = windowStage.getMainWindowSync();
       // Let GPUI paint behind the system bars. Page content is inset centrally

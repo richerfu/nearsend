@@ -92,17 +92,21 @@ impl gpui::Render for ProgressPage {
             TransferStatus::Completed | TransferStatus::Failed | TransferStatus::Cancelled
         );
 
-        let trailing = if self.direction == TransferDirection::Send
-            && status != TransferStatus::InProgress
-        {
-            header_icon_button("progress-retry", paths::REFRESH, cx, |_this, window, _cx| {
-                crate::core::send_retry_events::request_send_retry();
-                window.refresh();
-            })
-            .into_any_element()
-        } else {
-            div().w(px(40.)).h(px(40.)).into_any_element()
-        };
+        let trailing =
+            if self.direction == TransferDirection::Send && status != TransferStatus::InProgress {
+                header_icon_button(
+                    "progress-retry",
+                    paths::REFRESH,
+                    cx,
+                    |_this, window, _cx| {
+                        crate::core::send_retry_events::request_send_retry();
+                        window.refresh();
+                    },
+                )
+                .into_any_element()
+            } else {
+                div().w(px(40.)).h(px(40.)).into_any_element()
+            };
 
         v_flex()
             .size_full()
@@ -222,40 +226,50 @@ impl gpui::Render for ProgressPage {
                 ),
             )
             // Bottom action button
-            .child(div().w_full().px(spacing::PAGE).py(px(15.)).child(if is_done {
-                Button::new("progress-done")
-                    .primary()
+            .child(
+                div()
                     .w_full()
-                    .on_click(cx.listener(|this, _event, window, cx| {
-                        if let Some(root) = &this.root {
-                            let _ = root.update(cx, |this, cx| {
-                                this.go_back_or_navigate(routes::HOME, cx);
-                            });
-                        } else {
-                            if let Some(entry) =
-                                crate::ui::router_history::RouterHistoryState::global_mut(cx)
-                                    .history
-                                    .go_back()
-                            {
-                                RouterState::global_mut(cx).location.pathname = entry.pathname;
-                            } else {
-                                RouterState::global_mut(cx).location.pathname = routes::HOME.into();
-                            }
-                        }
-                        window.refresh();
-                    }))
-                    .child("完成")
-            } else {
-                Button::new("progress-cancel")
-                    .with_variant(gpui_component::button::ButtonVariant::Danger)
-                    .outline()
-                    .w_full()
-                    .on_click(cx.listener(|_this, _event, window, _cx| {
-                        crate::core::send_cancel_events::request_send_cancel();
-                        window.refresh();
-                    }))
-                    .child("取消")
-            }))
+                    .px(spacing::PAGE)
+                    .py(px(15.))
+                    .child(if is_done {
+                        Button::new("progress-done")
+                            .primary()
+                            .w_full()
+                            .on_click(cx.listener(|this, _event, window, cx| {
+                                if let Some(root) = &this.root {
+                                    let _ = root.update(cx, |this, cx| {
+                                        this.go_back_or_navigate(routes::HOME, cx);
+                                    });
+                                } else {
+                                    if let Some(entry) =
+                                        crate::ui::router_history::RouterHistoryState::global_mut(
+                                            cx,
+                                        )
+                                        .history
+                                        .go_back()
+                                    {
+                                        RouterState::global_mut(cx).location.pathname =
+                                            entry.pathname;
+                                    } else {
+                                        RouterState::global_mut(cx).location.pathname =
+                                            routes::HOME.into();
+                                    }
+                                }
+                                window.refresh();
+                            }))
+                            .child("完成")
+                    } else {
+                        Button::new("progress-cancel")
+                            .with_variant(gpui_component::button::ButtonVariant::Danger)
+                            .outline()
+                            .w_full()
+                            .on_click(cx.listener(|_this, _event, window, _cx| {
+                                crate::core::send_cancel_events::request_send_cancel();
+                                window.refresh();
+                            }))
+                            .child("取消")
+                    }),
+            )
     }
 }
 

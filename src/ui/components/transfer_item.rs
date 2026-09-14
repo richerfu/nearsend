@@ -83,7 +83,11 @@ impl gpui::RenderOnce for TransferItem {
                             .items_center()
                             .gap(spacing::SM)
                             .w_full()
-                            .child(app_icon(paths::FILE, Size::Small, cx.theme().muted_foreground))
+                            .child(app_icon(
+                                paths::FILE,
+                                Size::Small,
+                                cx.theme().muted_foreground,
+                            ))
                             .child(
                                 v_flex()
                                     .flex_1()
@@ -128,7 +132,11 @@ impl gpui::RenderOnce for TransferItem {
                                                     handler(&transfer_id, window, cx);
                                                 }
                                             })
-                                            .child(app_icon(paths::X, Size::Small, cx.theme().danger)),
+                                            .child(app_icon(
+                                                paths::X,
+                                                Size::Small,
+                                                cx.theme().danger,
+                                            )),
                                     )
                                 },
                             )

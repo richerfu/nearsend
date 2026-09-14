@@ -59,10 +59,7 @@ function requireEmptyRequest(payload: BridgeTypedValue, action: string): void {
 }
 
 function parseClipboardWriteRequest(payload: BridgeTypedValue): ClipboardWriteRequest {
-  if (
-    payload.typeName !== CLIPBOARD_WRITE_REQUEST_TYPE ||
-    typeof payload.value !== "object"
-  ) {
+  if (payload.typeName !== CLIPBOARD_WRITE_REQUEST_TYPE || typeof payload.value !== "object") {
     throw new Error(`write-clipboard requires bridge type ${CLIPBOARD_WRITE_REQUEST_TYPE}`);
   }
   const request = payload.value as ClipboardWriteRequest;
