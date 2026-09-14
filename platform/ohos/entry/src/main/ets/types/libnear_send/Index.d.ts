@@ -149,6 +149,9 @@ export declare function disposeBridge(bridgeOwner: string): void
 
 export declare function disposeRender(renderOwner: string): void
 
+/** Queues content received from the HarmonyOS system share panel. */
+export declare function enqueueSystemShare(uris: Array<string>, texts: Array<string>): void
+
 export declare function init(bindings: object, bridgeOwner: string, context?: AbilityInitContext): ApplicationLifecycle
 
 export declare function onBackPressIntercept(): boolean
