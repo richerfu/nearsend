@@ -29,22 +29,19 @@ fn info_card(
     body: impl IntoElement,
     cx: &mut Context<DonatePage>,
 ) -> impl IntoElement {
-    surface_card(cx)
-        .id(id.into())
-        .p(px(14.))
-        .child(
-            v_flex()
-                .w_full()
-                .gap(px(8.))
-                .child(
-                    div()
-                        .text_base()
-                        .font_semibold()
-                        .text_color(cx.theme().foreground)
-                        .child(title),
-                )
-                .child(body),
-        )
+    surface_card(cx).id(id.into()).p(px(14.)).child(
+        v_flex()
+            .w_full()
+            .gap(px(8.))
+            .child(
+                div()
+                    .text_base()
+                    .font_semibold()
+                    .text_color(cx.theme().foreground)
+                    .child(title),
+            )
+            .child(body),
+    )
 }
 
 fn info_item(

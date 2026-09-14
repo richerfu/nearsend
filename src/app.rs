@@ -32,6 +32,7 @@ pub struct AppRoot {
     receive_incoming_entity: Entity<ReceiveIncomingPage>,
     web_send_entity: Entity<WebSendPage>,
     incoming_event_listener_started: bool,
+    system_share_listener_started: bool,
     back_press_can_intercept: Arc<AtomicBool>,
 }
 
@@ -118,6 +119,7 @@ impl AppRoot {
             receive_incoming_entity,
             web_send_entity,
             incoming_event_listener_started: false,
+            system_share_listener_started: false,
             back_press_can_intercept: back_press_can_intercept.clone(),
         };
 
@@ -234,6 +236,30 @@ impl gpui::Render for AppRoot {
                     .update(cx, |this, cx| {
                         let _ = this.home_entity.update(cx, |home, cx| {
                             home.poll_incoming_events(cx);
+                        });
+                        cx.notify();
+                    })
+                    .is_err()
+                {
+                    break;
+                }
+            })
+            .detach();
+        }
+
+        // A cold-start share can arrive before AppRoot exists, so always drain
+        // once before installing the notification-driven listener.
+        let _ = self.home_entity.update(cx, |home, cx| {
+            home.poll_system_shares(cx);
+        });
+        if !self.system_share_listener_started {
+            self.system_share_listener_started = true;
+            cx.spawn(async move |this, cx| loop {
+                crate::platform::system_share::wait_for_system_share().await;
+                if this
+                    .update(cx, |this, cx| {
+                        let _ = this.home_entity.update(cx, |home, cx| {
+                            home.poll_system_shares(cx);
                         });
                         cx.notify();
                     })

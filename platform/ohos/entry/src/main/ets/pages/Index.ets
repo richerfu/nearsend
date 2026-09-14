@@ -11,7 +11,7 @@ struct Index {
 
   build() {
     RelativeContainer() {
-      DefaultXComponent({ moduleName: NATIVE_MODULE_NAME });
+      DefaultXComponent({ moduleName: NATIVE_MODULE_NAME })
     }
     .height("100%")
     .width("100%");

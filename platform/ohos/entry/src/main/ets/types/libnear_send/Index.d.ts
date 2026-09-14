@@ -2,175 +2,184 @@
 /* eslint-disable */
 
 export interface PermissionRequestPayload {
-  permissions: Array<string>
+  permissions: Array<string>;
 }
 
 export interface PermissionResponsePayload {
-  codes: Array<number>
+  codes: Array<number>;
 }
 
 /**
-  * One suffix filter group: a display name plus `;`-separated suffixes (e.g. `"md"`).
-  * The pattern stays structured; the ArkTS plugin converts it to the picker grammar.
-  */
+ * One suffix filter group: a display name plus `;`-separated suffixes (e.g. `"md"`).
+ * The pattern stays structured; the ArkTS plugin converts it to the picker grammar.
+ */
 export interface FileDialogFilter {
-  name?: string
-  pattern?: string
+  name?: string;
+  pattern?: string;
 }
 
 export interface FileDialogOptions {
   /** One of [`dialog_type`] constants. */
-  dialogType: string
-  allowMany: boolean
-  defaultLocation?: string
-  filters: Array<FileDialogFilter>
+  dialogType: string;
+  allowMany: boolean;
+  defaultLocation?: string;
+  filters: Array<FileDialogFilter>;
 }
 
 export interface FileDialogResponse {
   /** Selected file URIs. */
-  files: Array<string>
+  files: Array<string>;
   /** Selected filter index, or -1 when the platform does not report one. */
-  filter: number
+  filter: number;
 }
 
 export interface AbilityInitContext {
-  basePath?: string
-  prefPath?: string
-  preferredLocales?: string
-  moduleName?: string
+  basePath?: string;
+  prefPath?: string;
+  preferredLocales?: string;
+  moduleName?: string;
 }
 
 export interface ApplicationLifecycle {
-  bridgePlugins: Array<BridgePluginDeclaration>
-  environmentCallback: EnvironmentCallback
-  windowStageEventCallback: WindowStageEventCallback
-  keyboardEventCallback: KeyboardCallback
+  bridgePlugins: Array<BridgePluginDeclaration>;
+  environmentCallback: EnvironmentCallback;
+  windowStageEventCallback: WindowStageEventCallback;
+  keyboardEventCallback: KeyboardCallback;
 }
 
 /**
-  * Structural declaration exported to ArkTS after the native module has configured its Rust
-  * plugin registry. The host uses this to select the matching factory automatically and to
-  * validate the parts of the contract that affect scheduling. Request and response ABI identity
-  * remains pinned by each named N-API type.
-  */
+ * Structural declaration exported to ArkTS after the native module has configured its Rust
+ * plugin registry. The host uses this to select the matching factory automatically and to
+ * validate the parts of the contract that affect scheduling. Request and response ABI identity
+ * remains pinned by each named N-API type.
+ */
 export interface BridgePluginDeclaration {
-  id: string
-  execution: string
-  requires: Array<string>
+  id: string;
+  execution: string;
+  requires: Array<string>;
 }
 
 export interface EnvironmentCallback {
-  onConfigurationUpdated: () => void
-  onMemoryLevel: (arg: number) => void
+  onConfigurationUpdated: () => void;
+  onMemoryLevel: (arg: number) => void;
 }
 
 export interface KeyboardCallback {
-  onKeyboardHeightChange: (arg: number) => void
+  onKeyboardHeightChange: (arg: number) => void;
 }
 
 export interface NodeAcknowledgement {
-  accepted: boolean
+  accepted: boolean;
 }
 
 /** Appends the node of `child_handle` under the node of `parent_handle`. */
 export interface NodeAppendChildRequest {
-  parentHandle: number
-  childHandle: number
+  parentHandle: number;
+  childHandle: number;
 }
 
 /** Request marker for `create-container`: the response carries the new handle. */
-export interface NodeCreateContainerRequest {
-
-}
+export interface NodeCreateContainerRequest {}
 
 /** Detaches a handle-owned node from its parent and disposes it. */
 export interface NodeDisposeRequest {
-  handle: number
+  handle: number;
 }
 
 /** Opaque handle of a container `FrameNode` created in ArkTS. */
 export interface NodeHandleResponse {
-  handle: number
+  handle: number;
 }
 
 /** Appends a handle-owned node to this module's component root. */
 export interface NodeMountIntoRootRequest {
-  handle: number
+  handle: number;
 }
 
 export interface WindowStageEventCallback {
-  onWindowStageCreate: () => void
-  onWindowStageDestroy: () => void
-  onAbilityCreate: (arg: string) => void
-  onAbilityDestroy: () => void
-  onAbilitySaveState: () => void
-  onAbilityRestoreState: () => void
-  onWindowStageEvent: (arg: number) => void
-  onWindowSizeChange: (arg: object) => void
-  onWindowRectChange: (arg: object) => void
-  onAvoidAreaChange: (arg: object) => void
+  onWindowStageCreate: () => void;
+  onWindowStageDestroy: () => void;
+  onAbilityCreate: (arg: string) => void;
+  onAbilityDestroy: () => void;
+  onAbilitySaveState: () => void;
+  onAbilityRestoreState: () => void;
+  onWindowStageEvent: (arg: number) => void;
+  onWindowSizeChange: (arg: object) => void;
+  onWindowRectChange: (arg: object) => void;
+  onAvoidAreaChange: (arg: object) => void;
 }
 
 export interface AcceptedResponse {
-  accepted: boolean
+  accepted: boolean;
 }
 
 export interface ClipboardReadResponse {
-  text: string
+  text: string;
 }
 
 export interface ClipboardWriteRequest {
-  text: string
+  text: string;
 }
 
-export interface EmptyRequest {
-
-}
+export interface EmptyRequest {}
 
 export interface OpenFileRequest {
-  uri: string
+  uri: string;
 }
 
 export interface SaveFileRequest {
-  fileName: string
+  fileName: string;
 }
 
 export interface UriResponse {
-  uri: string
+  uri: string;
 }
 
-export declare function disposeAllRenders(): void
+export declare function disposeAllRenders(): void;
 
 /**
-  * r" Releases the Ability-session transport without touching this module's independent
-  * r" DefaultXComponent render owner. Stale owners are ignored.
-  */
-export declare function disposeBridge(bridgeOwner: string): void
+ * r" Releases the Ability-session transport without touching this module's independent
+ * r" DefaultXComponent render owner. Stale owners are ignored.
+ */
+export declare function disposeBridge(bridgeOwner: string): void;
 
-export declare function disposeRender(renderOwner: string): void
+export declare function disposeRender(renderOwner: string): void;
 
-export declare function init(bindings: object, bridgeOwner: string, context?: AbilityInitContext): ApplicationLifecycle
+/** Queues content received from the HarmonyOS system share panel. */
+export declare function enqueueSystemShare(uris: Array<string>, texts: Array<string>): void;
 
-export declare function onBackPressIntercept(): boolean
+export declare function init(
+  bindings: object,
+  bridgeOwner: string,
+  context?: AbilityInitContext,
+): ApplicationLifecycle;
+
+export declare function onBackPressIntercept(): boolean;
 
 /** r" ArkTS-only lifecycle transitions, currently UI-context readiness transitions. */
-export declare function onBridgeLifecycle(kind: string): void
+export declare function onBridgeLifecycle(kind: string): void;
 
 /**
-  * r" Synchronous ArkTS platform callback -> Rust plugin decision port.
-  * r"
-  * r" The N-API value is scoped to this call and the returned value must be produced
-  * r" before ArkTS resumes the originating platform callback. It is the dedicated
-  * r" typed inbound event port for ArkTS plugins.
-  */
-export declare function onBridgeSyncEvent(pluginId: string, event: string, requestTypeName: string, responseTypeName: string, value: unknown): unknown
+ * r" Synchronous ArkTS platform callback -> Rust plugin decision port.
+ * r"
+ * r" The N-API value is scoped to this call and the returned value must be produced
+ * r" before ArkTS resumes the originating platform callback. It is the dedicated
+ * r" typed inbound event port for ArkTS plugins.
+ */
+export declare function onBridgeSyncEvent(
+  pluginId: string,
+  event: string,
+  requestTypeName: string,
+  responseTypeName: string,
+  value: unknown,
+): unknown;
 
-export declare function render(slot: NodeContent, renderOwner: string): void
+export declare function render(slot: NodeContent, renderOwner: string): void;
 
 export interface TerminateRequest {
-  code: number
+  code: number;
 }
 
 export interface TerminateResponse {
-  accepted: boolean
+  accepted: boolean;
 }

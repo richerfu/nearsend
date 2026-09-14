@@ -3,6 +3,50 @@
 use super::*;
 
 impl HomePage {
+    pub(crate) fn poll_system_shares(&mut self, cx: &mut Context<Self>) {
+        let requests = crate::platform::system_share::drain_system_shares();
+        if requests.is_empty() {
+            return;
+        }
+
+        let mut texts = Vec::new();
+        let mut picked = Vec::new();
+        for request in requests {
+            texts.extend(request.texts);
+            picked.extend(request.uris.into_iter().filter_map(|uri| {
+                let resolved = crate::platform::file_picker::picker_uri_to_path_with_uri(&uri);
+                if resolved.is_none() {
+                    log::warn!("unable to resolve system-shared URI: {uri}");
+                }
+                resolved
+            }));
+        }
+
+        let mut added = 0usize;
+        self.send_selection_state.update(cx, |state, state_cx| {
+            for text in texts {
+                state.add_text(text);
+                added += 1;
+            }
+            added += state.add_picker_paths_recursive(picked);
+            if added > 0 {
+                state_cx.notify();
+            }
+        });
+        if added == 0 {
+            log::warn!("system share contained no readable file or text content");
+            return;
+        }
+
+        self.sync_selected_files_from_shared(cx);
+        self.current_tab = TabType::Send;
+        crate::ui::router_history::RouterHistoryState::global_mut(cx)
+            .history
+            .reset(crate::ui::router_history::HistoryEntry::new(routes::HOME));
+        RouterState::global_mut(cx).location.pathname = routes::HOME.into();
+        cx.notify();
+    }
+
     #[allow(dead_code)]
     pub(super) fn send_mode_label(mode: SendMode) -> &'static str {
         match mode {
