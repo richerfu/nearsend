@@ -7,3 +7,5 @@ package/libs
 *.har
 *.so
 keys/
+
+sign-info/
