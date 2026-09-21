@@ -4,6 +4,7 @@ use super::{HomePage, NetworkFilterMode, SendMode};
 use crate::ui::components::logo::Logo;
 use crate::ui::components::switch::Switch;
 use crate::ui::icons::{app_icon, paths};
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
 use crate::ui::theme::{radius, spacing};
 use gpui::{
@@ -229,9 +230,11 @@ fn render_refresh_icon(spinning: bool, animations: bool, cx: &mut Context<HomePa
 
 pub fn render_settings_content(
     app: &mut HomePage,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<HomePage>,
 ) -> AnyElement {
+    let layout = ResponsiveLayout::current(window, cx);
+    let desktop = layout.is_desktop();
     let advanced = app.settings_state.advanced;
     let animations = app.settings_state.animations;
     let server_running = app.settings_state.server_running;
@@ -662,19 +665,52 @@ pub fn render_settings_content(
         .into_any_element();
 
     // -- Assemble page --
-    let mut content = v_flex()
-        .w_full()
-        .px(spacing::PAGE)
-        .pt(px(12.))
-        .pb(px(12.))
-        .gap(spacing::MD);
-
-    content = content
-        .child(receive)
-        .when(advanced, |this| this.child(send))
-        .child(network)
-        .child(other)
-        .child(about);
+    let content = if desktop {
+        v_flex()
+            .w_full()
+            .max_w(layout.content_width)
+            .mx_auto()
+            .px(layout.page_padding)
+            .py(px(24.))
+            .gap(spacing::MD)
+            .child(
+                h_flex()
+                    .w_full()
+                    .items_start()
+                    .gap(spacing::MD)
+                    .child(
+                        v_flex()
+                            .flex_1()
+                            .min_w(px(0.))
+                            .gap(spacing::MD)
+                            .child(receive)
+                            .when(advanced, |this| this.child(send)),
+                    )
+                    .child(
+                        v_flex()
+                            .flex_1()
+                            .min_w(px(0.))
+                            .gap(spacing::MD)
+                            .child(network)
+                            .child(other),
+                    ),
+            )
+            .child(about)
+            .into_any_element()
+    } else {
+        v_flex()
+            .w_full()
+            .px(layout.page_padding)
+            .pt(px(12.))
+            .pb(px(12.))
+            .gap(spacing::MD)
+            .child(receive)
+            .when(advanced, |this| this.child(send))
+            .child(network)
+            .child(other)
+            .child(about)
+            .into_any_element()
+    };
 
     div()
         .size_full()

@@ -1,8 +1,9 @@
 //! Changelog page rendered from project `changelog.md`.
 
 use crate::ui::components::chrome::{back_icon_button, page_header, surface_card};
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
-use crate::ui::theme::{radius, spacing};
+use crate::ui::theme::radius;
 use gpui::{div, prelude::*, px, Context, Entity, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{h_flex, v_flex, ActiveTheme as _, StyledExt as _};
@@ -62,7 +63,8 @@ impl ChangelogPage {
 }
 
 impl gpui::Render for ChangelogPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let layout = ResponsiveLayout::current(window, cx);
         let sections = parse_changelog(CHANGELOG);
 
         v_flex()
@@ -80,77 +82,84 @@ impl gpui::Render for ChangelogPage {
                 cx,
             ))
             .child(
-                div().flex_1().w_full().overflow_y_scrollbar().child(
-                    v_flex()
-                        .w_full()
-                        .px(spacing::PAGE)
-                        .pt(px(12.))
-                        .pb(px(12.))
-                        .gap(px(12.))
-                        .children(sections.into_iter().enumerate().map(|(index, section)| {
-                            let is_latest = index == 0;
-                            surface_card(cx).p(px(14.)).child(
-                                v_flex()
-                                    .w_full()
-                                    .gap(px(10.))
-                                    .child(
-                                        h_flex()
-                                            .w_full()
-                                            .items_center()
-                                            .gap(px(8.))
-                                            .child(
-                                                div()
-                                                    .text_base()
-                                                    .font_semibold()
-                                                    .text_color(cx.theme().foreground)
-                                                    .child(section.version.clone()),
-                                            )
-                                            .when(is_latest, |this| {
-                                                this.child(
-                                                    div()
-                                                        .px(px(8.))
-                                                        .py(px(2.))
-                                                        .rounded(radius::FULL)
-                                                        .bg(cx.theme().primary.opacity(0.14))
-                                                        .child(
-                                                            div()
-                                                                .text_xs()
-                                                                .font_medium()
-                                                                .text_color(cx.theme().primary)
-                                                                .child("当前"),
-                                                        ),
-                                                )
-                                            }),
-                                    )
-                                    .child(v_flex().w_full().gap(px(8.)).children(
-                                        section.items.into_iter().map(|item| {
+                div()
+                    .flex_1()
+                    .min_h(px(0.))
+                    .w_full()
+                    .overflow_y_scrollbar()
+                    .child(
+                        v_flex()
+                            .w_full()
+                            .max_w(layout.content_max_width(880.))
+                            .mx_auto()
+                            .px(layout.page_padding)
+                            .pt(px(12.))
+                            .pb(px(12.))
+                            .gap(px(12.))
+                            .children(sections.into_iter().enumerate().map(|(index, section)| {
+                                let is_latest = index == 0;
+                                surface_card(cx).p(px(14.)).child(
+                                    v_flex()
+                                        .w_full()
+                                        .gap(px(10.))
+                                        .child(
                                             h_flex()
                                                 .w_full()
-                                                .items_start()
+                                                .items_center()
                                                 .gap(px(8.))
                                                 .child(
                                                     div()
-                                                        .mt(px(8.))
-                                                        .w(px(5.))
-                                                        .h(px(5.))
-                                                        .rounded_full()
-                                                        .bg(cx.theme().muted_foreground)
-                                                        .flex_none(),
+                                                        .text_base()
+                                                        .font_semibold()
+                                                        .text_color(cx.theme().foreground)
+                                                        .child(section.version.clone()),
                                                 )
-                                                .child(
-                                                    div()
-                                                        .flex_1()
-                                                        .min_w(px(0.))
-                                                        .text_sm()
-                                                        .line_height(px(22.))
-                                                        .text_color(cx.theme().muted_foreground)
-                                                        .child(item),
-                                                )
-                                        }),
-                                    )),
-                            )
-                        })),
-                ),
+                                                .when(is_latest, |this| {
+                                                    this.child(
+                                                        div()
+                                                            .px(px(8.))
+                                                            .py(px(2.))
+                                                            .rounded(radius::FULL)
+                                                            .bg(cx.theme().primary.opacity(0.14))
+                                                            .child(
+                                                                div()
+                                                                    .text_xs()
+                                                                    .font_medium()
+                                                                    .text_color(cx.theme().primary)
+                                                                    .child("当前"),
+                                                            ),
+                                                    )
+                                                }),
+                                        )
+                                        .child(v_flex().w_full().gap(px(8.)).children(
+                                            section.items.into_iter().map(|item| {
+                                                h_flex()
+                                                    .w_full()
+                                                    .items_start()
+                                                    .gap(px(8.))
+                                                    .child(
+                                                        div()
+                                                            .mt(px(8.))
+                                                            .w(px(5.))
+                                                            .h(px(5.))
+                                                            .rounded_full()
+                                                            .bg(cx.theme().muted_foreground)
+                                                            .flex_none(),
+                                                    )
+                                                    .child(
+                                                        div()
+                                                            .flex_1()
+                                                            .min_w(px(0.))
+                                                            .text_sm()
+                                                            .line_height(px(22.))
+                                                            .text_color(cx.theme().muted_foreground)
+                                                            .child(item),
+                                                    )
+                                            }),
+                                        )),
+                                )
+                            })),
+                    ),
             )
     }
 }

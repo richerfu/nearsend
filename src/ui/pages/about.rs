@@ -1,8 +1,8 @@
 //! About page: project introduction and metadata.
 
 use crate::ui::components::chrome::{back_icon_button, page_header, surface_card};
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
-use crate::ui::theme::spacing;
 use gpui::{div, prelude::*, px, Context, Entity, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{h_flex, v_flex, ActiveTheme as _, StyledExt as _};
@@ -40,7 +40,8 @@ fn info_card(
 }
 
 impl gpui::Render for AboutPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let layout = ResponsiveLayout::current(window, cx);
         let intro = div()
             .text_sm()
             .line_height(px(22.))
@@ -156,23 +157,30 @@ impl gpui::Render for AboutPage {
                 cx,
             ))
             .child(
-                v_flex()
+                div()
                     .flex_1()
                     .min_h(px(0.))
+                    .w_full()
                     .overflow_y_scrollbar()
-                    .px(spacing::PAGE)
-                    .py(px(12.))
-                    .gap(px(12.))
-                    .child(info_card("about-intro", "项目简介", intro, cx))
-                    .child(info_card(
-                        "about-capabilities",
-                        "核心能力",
-                        capabilities,
-                        cx,
-                    ))
-                    .child(info_card("about-stack", "技术栈", stack, cx))
-                    .child(info_card("about-meta", "应用信息", metadata, cx))
-                    .child(div().h(px(24.))),
+                    .child(
+                        v_flex()
+                            .w_full()
+                            .max_w(layout.content_max_width(800.))
+                            .mx_auto()
+                            .px(layout.page_padding)
+                            .py(px(12.))
+                            .gap(px(12.))
+                            .child(info_card("about-intro", "项目简介", intro, cx))
+                            .child(info_card(
+                                "about-capabilities",
+                                "核心能力",
+                                capabilities,
+                                cx,
+                            ))
+                            .child(info_card("about-stack", "技术栈", stack, cx))
+                            .child(info_card("about-meta", "应用信息", metadata, cx))
+                            .child(div().h(px(24.))),
+                    ),
             )
     }
 }

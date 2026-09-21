@@ -2,8 +2,9 @@ use crate::state::{
     app_state::AppState, receive_inbox_state::ReceiveInboxState, transfer_state::TransferDirection,
 };
 use crate::ui::icons::{app_icon, paths};
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
-use crate::ui::theme::{radius, spacing};
+use crate::ui::theme::radius;
 use gpui::{div, hsla, prelude::*, px, Context, Entity, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{
@@ -76,7 +77,9 @@ impl ReceiveIncomingPage {
 }
 
 impl gpui::Render for ReceiveIncomingPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let layout = ResponsiveLayout::current(window, cx);
+        let content_width = layout.content_max_width(760.);
         let session = self.inbox_state.read(cx).active.clone();
         let sender_alias = session
             .as_ref()
@@ -266,14 +269,15 @@ impl gpui::Render for ReceiveIncomingPage {
             .child(
                 div()
                     .flex_1()
+                    .min_h(px(0.))
                     .w_full()
                     .overflow_y_scrollbar()
                     .child(
                         v_flex()
                             .w_full()
-                            .max_w(px(760.))
+                            .max_w(content_width)
                             .mx_auto()
-                            .px(spacing::PAGE)
+                            .px(layout.page_padding)
                             .pt(px(20.))
                             .pb(px(20.))
                             .items_center()
@@ -679,7 +683,10 @@ impl gpui::Render for ReceiveIncomingPage {
                 this.child(
                     h_flex()
                         .w_full()
-                        .px(px(20.))
+                        .flex_none()
+                        .max_w(content_width)
+                        .mx_auto()
+                        .px(layout.page_padding)
                         .pt(px(14.))
                         .pb(px(26.))
                         .gap(px(12.))
@@ -751,8 +758,11 @@ impl gpui::Render for ReceiveIncomingPage {
                 this.child(
                     h_flex()
                         .w_full()
+                        .flex_none()
+                        .max_w(content_width)
+                        .mx_auto()
                         .justify_center()
-                        .px(px(20.))
+                        .px(layout.page_padding)
                         .pt(px(14.))
                         .pb(px(26.))
                         .border_t_1()
@@ -797,8 +807,11 @@ impl gpui::Render for ReceiveIncomingPage {
                 this.child(
                     h_flex()
                         .w_full()
+                        .flex_none()
+                        .max_w(content_width)
+                        .mx_auto()
                         .justify_center()
-                        .px(px(20.))
+                        .px(layout.page_padding)
                         .pt(px(14.))
                         .pb(px(26.))
                         .border_t_1()

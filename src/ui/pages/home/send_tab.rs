@@ -9,6 +9,7 @@ use crate::ui::components::{
     opacity_slideshow::OpacitySlideshow,
 };
 use crate::ui::icons::{app_icon, paths};
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
 use crate::ui::theme::{radius, spacing};
 use crate::ui::utils::format_file_size;
@@ -301,9 +302,11 @@ fn render_selected_files_card(
 
 pub fn render_send_content(
     app: &mut HomePage,
-    _window: &mut Window,
+    window: &mut Window,
     cx: &mut Context<HomePage>,
 ) -> AnyElement {
+    let layout = ResponsiveLayout::current(window, cx);
+    let desktop = layout.is_desktop();
     app.hydrate_nearby_devices_from_cache(cx);
 
     if !app.send_state.has_scanned_once
@@ -335,7 +338,15 @@ pub fn render_send_content(
                 v_flex()
                     .w_full()
                     .min_w(px(0.))
-                    .pt(px(20.))
+                    .max_w(layout.content_width)
+                    .mx_auto()
+                    .px(if desktop {
+                        layout.page_padding
+                    } else {
+                        px(0.)
+                    })
+                    .pt(if desktop { px(24.) } else { px(20.) })
+                    .pb(if desktop { px(24.) } else { px(0.) })
                     .child(
                 v_flex()
                     .w_full()

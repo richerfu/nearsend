@@ -8,8 +8,9 @@ use crate::ui::components::chrome::{
     page_header,
 };
 use crate::ui::icons::{app_icon, paths};
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
-use crate::ui::theme::{radius, sizing, spacing};
+use crate::ui::theme::{radius, sizing};
 use crate::ui::utils::format_file_size;
 use gpui::{div, hsla, prelude::*, px, AnyElement, Context, Entity, Hsla, Window};
 use gpui_component::input::{Textarea, TextareaState};
@@ -580,7 +581,8 @@ fn render_file_row(
 }
 
 impl gpui::Render for SelectedFilesPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl gpui::IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl gpui::IntoElement {
+        let layout = ResponsiveLayout::current(window, cx);
         let files = self.send_selection_state.read(cx).items().to_vec();
         let total_size = self.send_selection_state.read(cx).total_size();
         let file_count = files.len();
@@ -608,7 +610,9 @@ impl gpui::Render for SelectedFilesPage {
                         v_flex()
                             .w_full()
                             .min_w(px(0.))
-                            .px(spacing::PAGE)
+                            .max_w(layout.content_max_width(960.))
+                            .mx_auto()
+                            .px(layout.page_padding)
                             .pt(px(12.))
                             .pb(px(12.))
                             .gap(px(12.))
@@ -703,8 +707,10 @@ impl gpui::Render for SelectedFilesPage {
             .child(
                 div()
                     .w_full()
+                    .max_w(layout.content_max_width(960.))
+                    .mx_auto()
                     .flex_none()
-                    .px(spacing::PAGE)
+                    .px(layout.page_padding)
                     .pt(px(10.))
                     .pb(px(12.))
                     .border_t_1()

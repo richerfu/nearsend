@@ -3,8 +3,9 @@
 use super::data::{get_third_party_libs, ThirdPartyLib};
 use crate::ui::components::chrome::{back_icon_button, page_header};
 use crate::ui::icons::{app_icon, paths};
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
-use crate::ui::theme::{radius, spacing};
+use crate::ui::theme::radius;
 use gpui::{div, prelude::*, px, radians, AnyElement, Context, Entity, ScrollHandle, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{h_flex, v_flex, ActiveTheme as _, Size, StyledExt as _};
@@ -151,6 +152,7 @@ fn render_license_row(
 
 impl gpui::Render for OpenSourceLicensesPage {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let layout = ResponsiveLayout::current(window, cx);
         let libs = get_third_party_libs();
         let libs_count = libs.len();
         let expanded = self.expanded.clone();
@@ -191,7 +193,9 @@ impl gpui::Render for OpenSourceLicensesPage {
                                 v_flex()
                                     .w_full()
                                     .min_w(px(0.))
-                                    .px(spacing::PAGE)
+                                    .max_w(layout.content_max_width(960.))
+                                    .mx_auto()
+                                    .px(layout.page_padding)
                                     .pt(px(12.))
                                     .pb(px(12.))
                                     .gap(px(8.))

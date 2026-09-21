@@ -9,6 +9,7 @@ use crate::ui::components::chrome::{
 };
 use crate::ui::components::transfer_item::TransferItem;
 use crate::ui::icons::{app_icon, paths};
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
 use crate::ui::theme::spacing;
 use gpui::{div, prelude::*, px, Context, Entity, Window};
@@ -43,7 +44,8 @@ impl ProgressPage {
 }
 
 impl gpui::Render for ProgressPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl gpui::IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl gpui::IntoElement {
+        let layout = ResponsiveLayout::current(window, cx);
         let direction_label = match self.direction {
             TransferDirection::Send => "发送中",
             TransferDirection::Receive => "接收中",
@@ -138,98 +140,108 @@ impl gpui::Render for ProgressPage {
             ))
             // Content
             .child(
-                div().flex_1().w_full().overflow_y_scrollbar().child(
-                    v_flex()
-                        .w_full()
-                        .px(spacing::PAGE)
-                        .py(px(20.))
-                        .gap(spacing::MD)
-                        // Overall progress
-                        .child(
-                            v_flex()
-                                .gap(spacing::SM)
-                                .child(
-                                    h_flex()
-                                        .justify_between()
-                                        .child(
+                div()
+                    .flex_1()
+                    .min_h(px(0.))
+                    .w_full()
+                    .overflow_y_scrollbar()
+                    .child(
+                        v_flex()
+                            .w_full()
+                            .max_w(layout.content_max_width(960.))
+                            .mx_auto()
+                            .px(layout.page_padding)
+                            .py(px(20.))
+                            .gap(spacing::MD)
+                            // Overall progress
+                            .child(
+                                v_flex()
+                                    .gap(spacing::SM)
+                                    .child(
+                                        h_flex()
+                                            .justify_between()
+                                            .child(
+                                                div()
+                                                    .text_sm()
+                                                    .text_color(cx.theme().muted_foreground)
+                                                    .child(file_count_text),
+                                            )
+                                            .child(
+                                                div()
+                                                    .text_sm()
+                                                    .text_color(cx.theme().muted_foreground)
+                                                    .child(format!("{:.0}%", progress_val * 100.0)),
+                                            ),
+                                    )
+                                    .child(
+                                        Progress::new("overall-progress")
+                                            .value((progress_val * 100.0) as f32)
+                                            .w_full(),
+                                    )
+                                    .when(!current_file_name.is_empty(), |this| {
+                                        this.child(
                                             div()
-                                                .text_sm()
-                                                .text_color(cx.theme().muted_foreground)
-                                                .child(file_count_text),
+                                                .text_base()
+                                                .font_semibold()
+                                                .text_color(cx.theme().foreground)
+                                                .overflow_hidden()
+                                                .truncate()
+                                                .child(format!("当前文件：{}", current_file_name)),
                                         )
-                                        .child(
+                                    })
+                                    .when(!speed_text.is_empty(), |this| {
+                                        this.child(
                                             div()
-                                                .text_sm()
+                                                .text_xs()
                                                 .text_color(cx.theme().muted_foreground)
-                                                .child(format!("{:.0}%", progress_val * 100.0)),
-                                        ),
-                                )
-                                .child(
-                                    Progress::new("overall-progress")
-                                        .value((progress_val * 100.0) as f32)
-                                        .w_full(),
-                                )
-                                .when(!current_file_name.is_empty(), |this| {
-                                    this.child(
-                                        div()
-                                            .text_base()
-                                            .font_semibold()
-                                            .text_color(cx.theme().foreground)
-                                            .overflow_hidden()
-                                            .truncate()
-                                            .child(format!("当前文件：{}", current_file_name)),
-                                    )
-                                })
-                                .when(!speed_text.is_empty(), |this| {
-                                    this.child(
-                                        div()
-                                            .text_xs()
-                                            .text_color(cx.theme().muted_foreground)
-                                            .child(speed_text),
-                                    )
-                                }),
-                        )
-                        // Per-file list
-                        .when_some(transfer.clone(), |this, t| {
-                            this.children(t.files.iter().map(|file| {
-                                let file_transfer = TransferInfo {
-                                    id: file.file_id.clone(),
-                                    device_name: t.device_name.clone(),
-                                    status: file.status,
-                                    direction: t.direction,
-                                    progress: if file.file_size > 0 {
-                                        file.bytes_transferred as f64 / file.file_size as f64
-                                    } else {
-                                        0.0
-                                    },
-                                    bytes_sent: file.bytes_transferred,
-                                    total_bytes: file.file_size,
-                                    file_name: file.file_name.clone(),
-                                    speed_bytes_per_sec: 0,
-                                    eta_seconds: None,
-                                    files: vec![],
-                                };
-                                div()
-                                    .mb(spacing::SM)
-                                    .child(TransferItem::new(file_transfer))
-                            }))
-                        })
-                        // Empty state
-                        .when(transfer.is_none(), |this| {
-                            this.child(empty_state(
-                                paths::UPLOAD,
-                                "暂无传输",
-                                "开始发送或接收后会在这里显示进度",
-                                cx,
-                            ))
-                        }),
-                ),
+                                                .child(speed_text),
+                                        )
+                                    }),
+                            )
+                            // Per-file list
+                            .when_some(transfer.clone(), |this, t| {
+                                this.children(t.files.iter().map(|file| {
+                                    let file_transfer = TransferInfo {
+                                        id: file.file_id.clone(),
+                                        device_name: t.device_name.clone(),
+                                        status: file.status,
+                                        direction: t.direction,
+                                        progress: if file.file_size > 0 {
+                                            file.bytes_transferred as f64 / file.file_size as f64
+                                        } else {
+                                            0.0
+                                        },
+                                        bytes_sent: file.bytes_transferred,
+                                        total_bytes: file.file_size,
+                                        file_name: file.file_name.clone(),
+                                        speed_bytes_per_sec: 0,
+                                        eta_seconds: None,
+                                        files: vec![],
+                                    };
+                                    div()
+                                        .mb(spacing::SM)
+                                        .child(TransferItem::new(file_transfer))
+                                }))
+                            })
+                            // Empty state
+                            .when(transfer.is_none(), |this| {
+                                this.child(empty_state(
+                                    paths::UPLOAD,
+                                    "暂无传输",
+                                    "开始发送或接收后会在这里显示进度",
+                                    cx,
+                                ))
+                            }),
+                    ),
             )
             // Bottom action button
             .child(
                 div()
                     .w_full()
-                    .px(spacing::PAGE)
+                    .flex_none()
+                    .max_w(layout.content_max_width(960.))
+                    .mx_auto()
+                    .px(layout.page_padding)
                     .py(px(15.))
                     .child(if is_done {
                         Button::new("progress-done")

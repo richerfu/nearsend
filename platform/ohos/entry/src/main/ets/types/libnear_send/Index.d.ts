@@ -148,6 +148,9 @@ export declare function disposeRender(renderOwner: string): void;
 /** Queues content received from the HarmonyOS system share panel. */
 export declare function enqueueSystemShare(uris: Array<string>, texts: Array<string>): void;
 
+/** Reports the HarmonyOS product type before GPUI creates its first frame. */
+export declare function setDeviceType(deviceType: string): void;
+
 export declare function init(
   bindings: object,
   bridgeOwner: string,
