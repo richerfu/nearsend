@@ -247,6 +247,14 @@ pub fn render_settings_content(
     let quick_save_favorites = app.settings_state.quick_save_favorites;
     let auto_finish = app.settings_state.auto_finish;
     let save_to_history = app.settings_state.save_to_history;
+    let supports_save_directory = crate::platform::file_picker::is_system_file_picker_supported();
+    let save_directory = app
+        .settings_state
+        .destination
+        .as_deref()
+        .filter(|path| !path.trim().is_empty())
+        .unwrap_or("未设置")
+        .to_string();
 
     // -- Receive section --
     let require_pin = app.settings_state.require_pin;
@@ -334,6 +342,17 @@ pub fn render_settings_content(
         auto_finish_entry,
         save_to_history_entry,
     ];
+    if supports_save_directory {
+        receive_children.push(render_value_entry(
+            "保存目录",
+            &save_directory,
+            "receive-save-directory",
+            cx,
+            |this, window, cx| {
+                this.pick_receive_destination(window, cx);
+            },
+        ));
+    }
     if require_pin {
         receive_children.push(r2);
     }
