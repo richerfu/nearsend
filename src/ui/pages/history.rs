@@ -9,8 +9,9 @@ use crate::ui::components::chrome::{
     back_icon_button, dialog_title, empty_state, header_icon_button, page_header, section_title,
 };
 use crate::ui::icons::{app_icon, paths};
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
-use crate::ui::theme::{radius, spacing};
+use crate::ui::theme::radius;
 use chrono::{Datelike, Local, TimeZone as _, Timelike};
 use gpui::{div, prelude::*, px, AnyElement, App, Context, Entity, Hsla, SharedString, Window};
 use gpui_component::scroll::ScrollableElement as _;
@@ -54,7 +55,8 @@ impl HistoryPage {
 }
 
 impl gpui::Render for HistoryPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl gpui::IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl gpui::IntoElement {
+        let layout = ResponsiveLayout::current(window, cx);
         let entries = if let Some(ref state) = self.history_state {
             state.read(cx).entries().to_vec()
         } else {
@@ -111,14 +113,15 @@ impl gpui::Render for HistoryPage {
             .child(
                 div()
                     .flex_1()
+                    .min_h(px(0.))
                     .w_full()
                     .overflow_y_scrollbar()
                     .child(if has_entries {
                         v_flex()
                             .w_full()
-                            .max_w(px(960.))
+                            .max_w(layout.content_max_width(960.))
                             .mx_auto()
-                            .px(spacing::PAGE)
+                            .px(layout.page_padding)
                             .pt(px(12.))
                             .pb(px(12.))
                             .gap(px(16.))

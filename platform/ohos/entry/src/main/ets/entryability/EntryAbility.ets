@@ -1,5 +1,6 @@
 import window from "@ohos.window";
 import { AbilityConstant, Want } from "@kit.AbilityKit";
+import { deviceInfo } from "@kit.BasicServicesKit";
 import { systemShare } from "@kit.ShareKit";
 import { LazyPlugin, NativeAbility } from "@ohos-rs/ability";
 import { AppControlPlugin } from "@ohos-rs/ability-plugin-app-control";
@@ -11,12 +12,19 @@ import { NearSendPlatformPlugin } from "../bridge/NearSendPlatformPlugin";
 const NATIVE_MODULE_NAME = "near_send";
 const SHARE_ACTIONS: string[] = ["ohos.want.action.sendData", "ohos.want.action.sendMultipleData"];
 const PARAMS_STREAM = "ability.params.stream";
+const DESKTOP_MIN_WIDTH_VP = 720;
+const DESKTOP_MIN_HEIGHT_VP = 520;
 const SAFE_AREA_TYPES: window.AvoidAreaType[] = [
   window.AvoidAreaType.TYPE_SYSTEM,
   window.AvoidAreaType.TYPE_CUTOUT,
   window.AvoidAreaType.TYPE_SYSTEM_GESTURE,
   window.AvoidAreaType.TYPE_NAVIGATION_INDICATOR,
 ];
+
+interface AvoidAreaChangePayload {
+  type: window.AvoidAreaType;
+  area: window.AvoidArea;
+}
 
 export default class EntryAbility extends NativeAbility {
   public moduleName: string = NATIVE_MODULE_NAME;
@@ -29,6 +37,7 @@ export default class EntryAbility extends NativeAbility {
   ];
 
   override onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    nearSendNative.setDeviceType(deviceInfo.deviceType);
     super.onCreate(want, launchParam);
     this.handleShareWant(want);
   }
@@ -98,6 +107,19 @@ export default class EntryAbility extends NativeAbility {
   protected override async loadWindowStageContent(windowStage: window.WindowStage): Promise<void> {
     try {
       const mainWindow = windowStage.getMainWindowSync();
+      const deviceType = deviceInfo.deviceType.trim().toLowerCase();
+      if (deviceType === "2in1" || deviceType === "pc") {
+        try {
+          await mainWindow.setWindowLimits({
+            minWidth: DESKTOP_MIN_WIDTH_VP,
+            minHeight: DESKTOP_MIN_HEIGHT_VP,
+            pixelUnit: window.PixelUnit.VP,
+          });
+        } catch (error) {
+          console.warn(`[NearSend] Unable to apply desktop window limits: ${String(error)}`);
+        }
+      }
+
       // Let GPUI paint behind the system bars. Page content is inset centrally
       // by AppRoot instead of relying on ArkUI to offset every XComponent page.
       await mainWindow.setWindowLayoutFullScreen(true);
@@ -108,8 +130,9 @@ export default class EntryAbility extends NativeAbility {
       for (const type of SAFE_AREA_TYPES) {
         try {
           const area = mainWindow.getWindowAvoidArea(type);
+          const payload: AvoidAreaChangePayload = { type, area };
           this.forEachLifecycle((lifecycle) =>
-            lifecycle.windowStageEventCallback.onAvoidAreaChange({ type, area }),
+            lifecycle.windowStageEventCallback.onAvoidAreaChange(payload),
           );
         } catch (_error) {}
       }

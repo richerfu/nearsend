@@ -2,8 +2,8 @@
 
 use crate::ui::components::chrome::{back_icon_button, page_header, surface_card};
 use crate::ui::icons::{app_icon, paths};
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
-use crate::ui::theme::spacing;
 use gpui::{div, prelude::*, px, AnyElement, Context, Entity, Window};
 use gpui_component::scroll::ScrollableElement as _;
 use gpui_component::{h_flex, v_flex, ActiveTheme as _, Size, StyledExt as _};
@@ -89,7 +89,8 @@ fn info_item(
 }
 
 impl gpui::Render for DonatePage {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let layout = ResponsiveLayout::current(window, cx);
         let intro = div()
             .text_sm()
             .line_height(px(22.))
@@ -138,16 +139,23 @@ impl gpui::Render for DonatePage {
                 cx,
             ))
             .child(
-                v_flex()
+                div()
                     .flex_1()
                     .min_h(px(0.))
+                    .w_full()
                     .overflow_y_scrollbar()
-                    .px(spacing::PAGE)
-                    .py(px(12.))
-                    .gap(px(12.))
-                    .child(info_card("donate-intro", "支持项目", intro, cx))
-                    .child(info_card("donate-contact", "个人信息", contact_info, cx))
-                    .child(div().h(px(24.))),
+                    .child(
+                        v_flex()
+                            .w_full()
+                            .max_w(layout.content_max_width(760.))
+                            .mx_auto()
+                            .px(layout.page_padding)
+                            .py(px(12.))
+                            .gap(px(12.))
+                            .child(info_card("donate-intro", "支持项目", intro, cx))
+                            .child(info_card("donate-contact", "个人信息", contact_info, cx))
+                            .child(div().h(px(24.))),
+                    ),
             )
     }
 }

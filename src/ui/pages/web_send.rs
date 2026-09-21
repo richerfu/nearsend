@@ -5,8 +5,8 @@ use crate::ui::components::chrome::{
 use crate::ui::components::switch::Switch;
 use crate::ui::icons::{app_icon, paths};
 use crate::ui::pages::HomePage;
+use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
-use crate::ui::theme::spacing;
 use gpui::{div, hsla, prelude::*, px, Context, Entity, Window};
 use gpui_component::input::{Input, InputState};
 use gpui_component::notification::Notification;
@@ -431,7 +431,8 @@ fn build_alert_dialog_footer(id_prefix: &str, ok_text: &str) -> DialogFooter {
 }
 
 impl gpui::Render for WebSendPage {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let layout = ResponsiveLayout::current(window, cx);
         self.ensure_share_link(cx);
         let links = self.share_links.clone();
         let error = self.error_text.clone();
@@ -470,10 +471,17 @@ impl gpui::Render for WebSendPage {
                 cx,
             ))
             .child(
-                div().flex_1().w_full().overflow_y_scrollbar().child(
+                div()
+                    .flex_1()
+                    .min_h(px(0.))
+                    .w_full()
+                    .overflow_y_scrollbar()
+                    .child(
                     v_flex()
                         .w_full()
-                        .px(spacing::PAGE)
+                        .max_w(layout.content_max_width(960.))
+                        .mx_auto()
+                        .px(layout.page_padding)
                         .py(px(16.))
                         .gap(px(12.))
                         .when_some(error.clone(), |this, err| {

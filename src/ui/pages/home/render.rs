@@ -1,6 +1,7 @@
 //! Home page render shell.
 
 use super::*;
+use crate::ui::responsive::ResponsiveLayout;
 
 impl gpui::Render for HomePage {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -13,22 +14,41 @@ impl gpui::Render for HomePage {
             self.start_services(cx);
         }
 
-        v_flex()
-            .size_full()
-            .bg(cx.theme().background)
-            .child(
-                div()
-                    .flex_1()
-                    .w_full()
-                    .overflow_hidden()
-                    .child(match self.current_tab {
-                        TabType::Receive => receive_tab::render_receive_content(self, window, cx),
-                        TabType::Send => send_tab::render_send_content(self, window, cx),
-                        TabType::Settings => {
-                            settings_tab::render_settings_content(self, window, cx)
-                        }
-                    }),
-            )
-            .child(self.render_bottom_nav(cx))
+        let layout = ResponsiveLayout::current(window, cx);
+        let content = match self.current_tab {
+            TabType::Receive => receive_tab::render_receive_content(self, window, cx),
+            TabType::Send => send_tab::render_send_content(self, window, cx),
+            TabType::Settings => settings_tab::render_settings_content(self, window, cx),
+        };
+
+        if layout.is_desktop() {
+            h_flex()
+                .size_full()
+                .bg(cx.theme().muted.opacity(0.35))
+                .child(self.render_side_nav(cx))
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w(px(0.))
+                        .h_full()
+                        .overflow_hidden()
+                        .child(content),
+                )
+                .into_any_element()
+        } else {
+            v_flex()
+                .size_full()
+                .bg(cx.theme().background)
+                .child(
+                    div()
+                        .flex_1()
+                        .min_h(px(0.))
+                        .w_full()
+                        .overflow_hidden()
+                        .child(content),
+                )
+                .child(self.render_bottom_nav(cx))
+                .into_any_element()
+        }
     }
 }

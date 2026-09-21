@@ -1,4 +1,4 @@
-//! Mobile-first theme tokens aligned with shadcn + HarmonyOS spacing.
+//! Responsive shadcn-aligned theme tokens for HarmonyOS.
 
 use gpui::{hsla, App, Hsla};
 use gpui_component::theme::Theme;
@@ -44,6 +44,7 @@ pub mod sizing {
     pub const HEADER_HEIGHT: gpui::Pixels = px(52.);
     pub const ICON_BUTTON: gpui::Pixels = px(40.);
     pub const TOUCH: gpui::Pixels = px(44.);
+    pub const SIDEBAR_WIDTH: gpui::Pixels = px(236.);
 }
 
 /// Brand green from the NearSend logo.

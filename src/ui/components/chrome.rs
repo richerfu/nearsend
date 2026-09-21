@@ -40,6 +40,7 @@ pub fn page_header(
     h_flex()
         .w_full()
         .h(sizing::HEADER_HEIGHT)
+        .flex_none()
         .px(spacing::PAGE)
         .items_center()
         .gap(px(4.))
