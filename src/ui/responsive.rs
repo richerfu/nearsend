@@ -1,38 +1,11 @@
-//! Responsive layout selection for phone and 2-in-1 windows.
+//! Responsive layout selection for phone, tablet, and 2-in-1 windows.
 
+use crate::platform::device::{current_device_class, DeviceClass};
 use crate::GlobalOpenHarmonyApp;
 use gpui::{px, App, Pixels, Window};
-use napi_derive_ohos::napi;
-use std::sync::{OnceLock, RwLock};
 
 const DESKTOP_BREAKPOINT: f32 = 840.0;
 const POINTER_DESKTOP_BREAKPOINT: f32 = 840.0;
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-enum DeviceClass {
-    Phone,
-    TwoInOne,
-    #[default]
-    Other,
-}
-
-static DEVICE_CLASS: OnceLock<RwLock<DeviceClass>> = OnceLock::new();
-
-#[napi]
-pub fn set_device_type(device_type: String) {
-    let normalized = device_type.trim().to_ascii_lowercase();
-    let device_class = match normalized.as_str() {
-        "phone" | "default" => DeviceClass::Phone,
-        "2in1" | "pc" => DeviceClass::TwoInOne,
-        _ => DeviceClass::Other,
-    };
-    if let Ok(mut current) = DEVICE_CLASS
-        .get_or_init(|| RwLock::new(DeviceClass::Other))
-        .write()
-    {
-        *current = device_class;
-    }
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum LayoutMode {
@@ -54,11 +27,7 @@ impl ResponsiveLayout {
             .try_global::<GlobalOpenHarmonyApp>()
             .map(|app| app.0.config().has_pointer_device)
             .unwrap_or(false);
-        let device_class = DEVICE_CLASS
-            .get_or_init(|| RwLock::new(DeviceClass::Other))
-            .read()
-            .map(|current| *current)
-            .unwrap_or_default();
+        let device_class = current_device_class();
         let mode = classify_layout(width, has_pointer, device_class);
 
         match mode {
@@ -91,6 +60,7 @@ fn classify_layout(width: f32, has_pointer: bool, device_class: DeviceClass) -> 
     let desktop_width = match device_class {
         DeviceClass::Phone => f32::INFINITY,
         DeviceClass::TwoInOne => POINTER_DESKTOP_BREAKPOINT,
+        DeviceClass::Tablet => DESKTOP_BREAKPOINT,
         DeviceClass::Other if has_pointer => POINTER_DESKTOP_BREAKPOINT,
         DeviceClass::Other => DESKTOP_BREAKPOINT,
     };
@@ -134,6 +104,10 @@ mod tests {
         );
         assert_eq!(
             classify_layout(840.0, true, DeviceClass::Other),
+            LayoutMode::Desktop
+        );
+        assert_eq!(
+            classify_layout(840.0, false, DeviceClass::Tablet),
             LayoutMode::Desktop
         );
     }

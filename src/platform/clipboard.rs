@@ -14,12 +14,6 @@ fn has_permission(permission: &str) -> bool {
     {
         check_self_permission(permission)
     }
-
-    #[cfg(not(target_env = "ohos"))]
-    {
-        let _ = permission;
-        true
-    }
 }
 
 pub fn has_read_clipboard_permission() -> bool {

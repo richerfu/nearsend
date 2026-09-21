@@ -297,8 +297,16 @@ impl HomePage {
         });
     }
 
-    #[allow(dead_code)]
     pub(super) fn pick_receive_destination(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if !crate::platform::file_picker::is_system_file_picker_supported() {
+            self.open_simple_notice_dialog(
+                crate::platform::file_picker::SYSTEM_FILE_PICKER_UNSUPPORTED_MESSAGE,
+                window,
+                cx,
+            );
+            return;
+        }
+
         let window_handle = window.window_handle();
         let home_entity = cx.entity();
         let tokio_handle = self.app_state.read(cx).tokio_handle.clone();
@@ -306,19 +314,12 @@ impl HomePage {
             .spawn(async move { crate::platform::file_picker::pick_save_directory().await });
         cx.spawn(async move |_this, cx| {
             let picked = match join.await {
-                Ok(Ok(path)) => path,
-                Ok(Err(err)) => {
-                    log::error!("pick receive destination failed: {}", err);
-                    None
-                }
-                Err(err) => {
-                    log::error!("pick receive destination task failed: {}", err);
-                    None
-                }
+                Ok(result) => result.map_err(|err| err.to_string()),
+                Err(err) => Err(format!("选择保存目录任务失败: {err}")),
             };
-            if let Some(path) = picked {
-                let path_text = path.to_string_lossy().to_string();
-                let _ = window_handle.update(cx, |_, window, cx| {
+            let _ = window_handle.update(cx, |_, window, cx| match picked {
+                Ok(Some(path)) => {
+                    let path_text = path.to_string_lossy().to_string();
                     let _ = home_entity.update(cx, |this, cx| {
                         this.settings_state.destination = Some(path_text);
                         this.sync_server_config_to_runtime(cx);
@@ -326,18 +327,30 @@ impl HomePage {
                         cx.notify();
                     });
                     window.refresh();
-                });
-            } else {
-                let _ = window_handle.update(cx, |_, window, cx| {
+                }
+                Ok(None) => {
                     let _ = home_entity.update(cx, |this, cx| {
                         this.open_simple_notice_dialog(
-                            "未选择接收目录，保持当前配置。",
+                            "未选择保存目录，保持当前配置。",
                             window,
                             cx,
                         );
                     });
-                });
-            }
+                }
+                Err(error) => {
+                    log::error!("pick receive destination failed: {error}");
+                    let message = if error.contains(
+                        crate::platform::file_picker::SYSTEM_FILE_PICKER_UNSUPPORTED_MESSAGE,
+                    ) {
+                        crate::platform::file_picker::SYSTEM_FILE_PICKER_UNSUPPORTED_MESSAGE
+                    } else {
+                        "选择保存目录失败。"
+                    };
+                    let _ = home_entity.update(cx, |this, cx| {
+                        this.open_simple_notice_dialog(message, window, cx);
+                    });
+                }
+            });
         })
         .detach();
     }

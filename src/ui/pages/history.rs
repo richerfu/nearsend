@@ -72,8 +72,8 @@ impl gpui::Render for HistoryPage {
             "history-open-folder",
             paths::FOLDER,
             cx,
-            |this, window, cx| {
-                this.open_notice_dialog("打开目录功能即将接入。", window, cx);
+            move |this, window, cx| {
+                this.open_history_directory(window, cx);
             },
         ));
         if has_entries {
@@ -158,6 +158,44 @@ impl gpui::Render for HistoryPage {
 impl HistoryPage {
     fn open_notice_dialog(&self, message: &str, window: &mut Window, cx: &mut Context<Self>) {
         open_notice_dialog(message, window, cx);
+    }
+
+    fn open_history_directory(&self, window: &mut Window, cx: &mut Context<Self>) {
+        if !crate::platform::file_picker::is_system_file_picker_supported() {
+            self.open_notice_dialog(
+                crate::platform::file_picker::SYSTEM_FILE_PICKER_UNSUPPORTED_MESSAGE,
+                window,
+                cx,
+            );
+            return;
+        }
+
+        let settings = crate::ui::pages::SettingsPageState::load_or_default();
+        let Some(directory) = settings
+            .destination
+            .as_deref()
+            .map(str::trim)
+            .filter(|path| !path.is_empty())
+            .map(std::path::PathBuf::from)
+        else {
+            self.open_notice_dialog("请先在设置中选择保存目录。", window, cx);
+            return;
+        };
+
+        #[cfg(target_env = "ohos")]
+        {
+            let window_handle = window.window_handle();
+            cx.spawn(async move |_this, cx| {
+                let result = crate::platform::file_opener::open_saved_directory(&directory).await;
+                if let Err(error) = result {
+                    log::warn!("failed to open configured save directory: {error}");
+                    let _ = window_handle.update(cx, |_, window, cx| {
+                        open_notice_dialog("系统打开保存目录失败。", window, cx);
+                    });
+                }
+            })
+            .detach();
+        }
     }
 
     fn open_clear_history_dialog(&self, window: &mut Window, cx: &mut Context<Self>) {
@@ -706,23 +744,6 @@ fn open_history_entry(
             }
         })
         .detach();
-    }
-
-    #[cfg(not(target_env = "ohos"))]
-    {
-        let open_result =
-            if let Some(uri) = entry.file_uri.as_ref().filter(|u| !u.trim().is_empty()) {
-                crate::platform::file_opener::open_saved_uri(uri)
-            } else if entry.file_path.exists() {
-                crate::platform::file_opener::open_saved_file(&entry.file_path)
-            } else {
-                open_notice_dialog("文件不存在或已被移动。", window, cx);
-                return;
-            };
-        if let Err(err) = open_result {
-            log::warn!("failed to open file from history: {err}");
-            open_notice_dialog("系统打开文件失败。", window, cx);
-        }
     }
 }
 
