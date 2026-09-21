@@ -1,5 +1,5 @@
 use crate::state::transfer_state::{TransferInfo, TransferStatus};
-use crate::ui::icons::{app_icon, paths};
+use crate::ui::icons::{app_icon, loading_icon, paths};
 use crate::ui::theme::{radius, sizing, spacing};
 use gpui::{div, prelude::*, px, Window};
 use gpui_component::{
@@ -67,6 +67,18 @@ impl gpui::RenderOnce for TransferItem {
         let on_cancel = self.on_cancel.clone();
         let on_open = self.on_open.clone();
         let transfer_id_open = self.transfer.id.clone();
+        let status_icon = if matches!(
+            self.transfer.status,
+            TransferStatus::Pending | TransferStatus::InProgress
+        ) {
+            loading_icon(
+                format!("transfer-loading-{}", self.transfer.id),
+                Size::XSmall,
+                status_color,
+            )
+        } else {
+            app_icon(status_icon_path, Size::XSmall, status_color).into_any_element()
+        };
 
         div()
             .bg(cx.theme().background)
@@ -107,11 +119,7 @@ impl gpui::RenderOnce for TransferItem {
                                         h_flex()
                                             .gap(px(6.))
                                             .items_center()
-                                            .child(app_icon(
-                                                status_icon_path,
-                                                Size::XSmall,
-                                                status_color,
-                                            ))
+                                            .child(status_icon)
                                             .child(
                                                 div()
                                                     .text_xs()
