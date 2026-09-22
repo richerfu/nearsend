@@ -73,6 +73,10 @@ napi-build-ohos = { version = "=1.2.0" }
 [patch.crates-io]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2" }
 gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42" }
+# `openharmony-ability` 1.0.0-beta.2 recursively calls `hide_keyboard`
+# from the native IME Hide callback. Keep the platform dependency local until
+# the upstream callback is made notification-only.
+openharmony-ability = { path = "vendor/openharmony-ability" }
 gpui-pre = { path = "vendor/gpui-pre-adapters/gpui" }
 gpui-pre-macros = { path = "vendor/gpui-pre-adapters/gpui-macros" }
 gpui-pre-sum-tree = { path = "vendor/gpui-pre-adapters/sum-tree" }

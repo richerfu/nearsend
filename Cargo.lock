@@ -4446,8 +4446,6 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 [[package]]
 name = "openharmony-ability"
 version = "1.0.0-beta.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6fa54305105683c0fb7986ab22f935f007066bf7c69b46b55913cac055e2e522"
 dependencies = [
  "futures-channel",
  "napi-derive-ohos",
