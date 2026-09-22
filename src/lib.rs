@@ -1,10 +1,10 @@
 use gpui::{
-    hsla, px, size, Anchor, App, AppContext, Application, Bounds, Global, WindowBounds,
-    WindowOptions,
+    hsla, px, size, Anchor, App, AppContext, Application, ApplicationHandle, Bounds, Global,
+    WindowBounds, WindowOptions,
 };
 use gpui_component::theme::Theme;
 use gpui_component::Root;
-use gpui_component_assets::Assets as ComponentAssets;
+use gpui_kit_assets::Assets as ComponentAssets;
 
 use log::LevelFilter;
 use ohos_hilog_binding::log::Config;
@@ -20,6 +20,12 @@ mod state;
 mod ui;
 
 use ui::router_history::RouterHistoryState;
+
+thread_local! {
+    static GPUI_APPLICATION: std::cell::RefCell<Option<ApplicationHandle>> = const {
+        std::cell::RefCell::new(None)
+    };
+}
 
 /// Canonical application version used by every in-app version label.
 pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -53,12 +59,10 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
     let inner_app = app.clone();
     // Initialize and run GPUI application
     // The event loop is automatically integrated by the platform
-    let application = Application::with_platform(gpui_platform::current_platform(false))
+    let application = Application::with_platform(gpui_ohos::current_platform(app.clone(), false))
         .with_assets(assets::NearSendAssets(ComponentAssets));
-    #[cfg(target_env = "ohos")]
-    let application = application.with_ohos_app(app.clone());
 
-    application.run(move |cx: &mut App| {
+    let application_handle = application.run_embedded(move |cx: &mut App| {
         cx.set_global(GlobalOpenHarmonyApp(app.clone()));
 
         gpui_component::init(cx);
@@ -97,9 +101,6 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
                 ..Default::default()
             },
             |window, cx| {
-                // GPUI owns keyboard avoidance. Visual system-bar/cutout
-                // avoidance is applied once around every route in AppRoot.
-                window.set_safe_area_avoidance(true);
                 let view = cx.new(|cx| {
                     let server = cx.new(|_| core::server::ServerManager::new(53317));
 
@@ -131,5 +132,9 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
         )
         .unwrap();
         cx.activate(true);
+    });
+
+    GPUI_APPLICATION.with(|application| {
+        application.replace(Some(application_handle));
     });
 }

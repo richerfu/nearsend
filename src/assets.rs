@@ -1,5 +1,5 @@
 use gpui::{AssetSource, Result, SharedString};
-use gpui_component_assets::Assets as ComponentAssets;
+use gpui_kit_assets::Assets as ComponentAssets;
 use std::borrow::Cow;
 
 /// Asset source that adds near-send icons on top of gpui-component assets.
