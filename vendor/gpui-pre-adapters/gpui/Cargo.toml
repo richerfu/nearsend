@@ -1,0 +1,22 @@
+[package]
+name = "gpui-pre"
+version = "0.3.6"
+edition = "2021"
+publish = false
+
+[features]
+default = []
+bench = ["gpui_current/bench"]
+bench-support = ["gpui_current/bench-support"]
+inspector = ["gpui_current/inspector"]
+leak-detection = ["gpui_current/leak-detection"]
+profiler = ["gpui_current/profiler"]
+screen-capture = ["gpui_current/screen-capture"]
+stacker = ["gpui_current/stacker"]
+test-support = ["gpui_current/test-support"]
+wayland = ["gpui_current/wayland"]
+windows-manifest = ["gpui_current/windows-manifest"]
+x11 = ["gpui_current/x11"]
+
+[dependencies]
+gpui_current = { package = "gpui", git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", default-features = false }

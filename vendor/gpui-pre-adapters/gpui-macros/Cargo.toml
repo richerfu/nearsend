@@ -1,0 +1,11 @@
+[package]
+name = "gpui-pre-macros"
+version = "0.3.6"
+edition = "2021"
+publish = false
+
+[features]
+inspector = ["gpui_macros_current/inspector"]
+
+[dependencies]
+gpui_macros_current = { package = "gpui_macros", git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42" }
