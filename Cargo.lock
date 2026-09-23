@@ -2283,7 +2283,7 @@ dependencies = [
 [[package]]
 name = "gpui-ohos"
 version = "0.1.0"
-source = "git+https://github.com/ohos-rs/gpui-ohos.git?rev=1c6097ddf8e3a0693347669c85c89fcef3685027#1c6097ddf8e3a0693347669c85c89fcef3685027"
+source = "git+https://github.com/ohos-rs/gpui-ohos.git?rev=72bc9d38df2a9deb29517fba157656b93ba43658#72bc9d38df2a9deb29517fba157656b93ba43658"
 dependencies = [
  "anyhow",
  "bytemuck",
