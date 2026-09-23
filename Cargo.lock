@@ -2283,7 +2283,7 @@ dependencies = [
 [[package]]
 name = "gpui-ohos"
 version = "0.1.0"
-source = "git+https://github.com/ohos-rs/gpui-ohos.git?rev=a2f4062702825e8e607e0802d00d6d2393955cec#a2f4062702825e8e607e0802d00d6d2393955cec"
+source = "git+https://github.com/ohos-rs/gpui-ohos.git?rev=8a3c5ba3a4cf04a1d59a9b970f187cf5f8ea7f25#8a3c5ba3a4cf04a1d59a9b970f187cf5f8ea7f25"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4525,7 +4525,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 [[package]]
 name = "openharmony-ability"
 version = "1.0.0-beta.2"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=f79612979165fe9ebf14f90db075540befcc67eb#f79612979165fe9ebf14f90db075540befcc67eb"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=9199e1915671078e332036836cc4abb4fcd70aa2#9199e1915671078e332036836cc4abb4fcd70aa2"
 dependencies = [
  "futures-channel",
  "log",
@@ -4549,7 +4549,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-derive"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=f79612979165fe9ebf14f90db075540befcc67eb#f79612979165fe9ebf14f90db075540befcc67eb"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=9199e1915671078e332036836cc4abb4fcd70aa2#9199e1915671078e332036836cc4abb4fcd70aa2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4559,7 +4559,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-app-control"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=f79612979165fe9ebf14f90db075540befcc67eb#f79612979165fe9ebf14f90db075540befcc67eb"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=9199e1915671078e332036836cc4abb4fcd70aa2#9199e1915671078e332036836cc4abb4fcd70aa2"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4569,7 +4569,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-clipboard"
 version = "1.0.0-beta.0"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=f79612979165fe9ebf14f90db075540befcc67eb#f79612979165fe9ebf14f90db075540befcc67eb"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=9199e1915671078e332036836cc4abb4fcd70aa2#9199e1915671078e332036836cc4abb4fcd70aa2"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4579,7 +4579,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-files"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=f79612979165fe9ebf14f90db075540befcc67eb#f79612979165fe9ebf14f90db075540befcc67eb"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=9199e1915671078e332036836cc4abb4fcd70aa2#9199e1915671078e332036836cc4abb4fcd70aa2"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4589,7 +4589,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-permission"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=f79612979165fe9ebf14f90db075540befcc67eb#f79612979165fe9ebf14f90db075540befcc67eb"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=9199e1915671078e332036836cc4abb4fcd70aa2#9199e1915671078e332036836cc4abb4fcd70aa2"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4599,7 +4599,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-process"
 version = "1.0.0-beta.0"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=f79612979165fe9ebf14f90db075540befcc67eb#f79612979165fe9ebf14f90db075540befcc67eb"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=9199e1915671078e332036836cc4abb4fcd70aa2#9199e1915671078e332036836cc4abb4fcd70aa2"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4609,7 +4609,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-url"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=f79612979165fe9ebf14f90db075540befcc67eb#f79612979165fe9ebf14f90db075540befcc67eb"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=9199e1915671078e332036836cc4abb4fcd70aa2#9199e1915671078e332036836cc4abb4fcd70aa2"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4619,7 +4619,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-window"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=f79612979165fe9ebf14f90db075540befcc67eb#f79612979165fe9ebf14f90db075540befcc67eb"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=9199e1915671078e332036836cc4abb4fcd70aa2#9199e1915671078e332036836cc4abb4fcd70aa2"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",

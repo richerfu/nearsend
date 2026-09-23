@@ -13,14 +13,14 @@ ohos-multiwindow-smoke = []
 
 [dependencies]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2", default-features = false }
-gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "a2f4062702825e8e607e0802d00d6d2393955cec" }
+gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "8a3c5ba3a4cf04a1d59a9b970f187cf5f8ea7f25" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
 gpui-router = { version = "0.3" }
 gpui-kit-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
-openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "f79612979165fe9ebf14f90db075540befcc67eb" }
-openharmony-ability-derive = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "f79612979165fe9ebf14f90db075540befcc67eb" }
-openharmony-ability-plugin-files = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "f79612979165fe9ebf14f90db075540befcc67eb" }
-openharmony-ability-plugin-permission = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "f79612979165fe9ebf14f90db075540befcc67eb" }
+openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "9199e1915671078e332036836cc4abb4fcd70aa2" }
+openharmony-ability-derive = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "9199e1915671078e332036836cc4abb4fcd70aa2" }
+openharmony-ability-plugin-files = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "9199e1915671078e332036836cc4abb4fcd70aa2" }
+openharmony-ability-plugin-permission = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "9199e1915671078e332036836cc4abb4fcd70aa2" }
 
 napi-ohos = { version = "=1.2.0" }
 napi-derive-ohos = { version = "=1.2.0" }

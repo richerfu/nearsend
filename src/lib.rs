@@ -26,6 +26,8 @@ struct MultiWindowSmoke {
     clicks: u32,
     clipboard: String,
     picker: String,
+    focus: gpui::FocusHandle,
+    key_input: String,
 }
 
 #[cfg(feature = "ohos-multiwindow-smoke")]
@@ -96,6 +98,21 @@ impl gpui::Render for MultiWindowSmoke {
                         })
                         .detach();
                     })),
+            )
+            .child(
+                gpui::div()
+                    .id("multi-window-keyboard")
+                    .track_focus(&self.focus)
+                    .child(format!("Keyboard check: {}", self.key_input))
+                    .on_click(cx.listener(|this, _event, window, cx| {
+                        window.focus(&this.focus, cx);
+                    }))
+                    .on_key_down(
+                        cx.listener(|this, event: &gpui::KeyDownEvent, _window, cx| {
+                            this.key_input = format!("{:?}", event.keystroke);
+                            cx.notify();
+                        }),
+                    ),
             )
     }
 }
@@ -225,10 +242,12 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
                 ..Default::default()
             },
             |_window, cx| {
-                cx.new(|_| MultiWindowSmoke {
+                cx.new(|cx| MultiWindowSmoke {
                     clicks: 0,
                     clipboard: "tap to test".into(),
                     picker: "tap to test".into(),
+                    focus: cx.focus_handle(),
+                    key_input: "click here, then press a key".into(),
                 })
             },
         )
