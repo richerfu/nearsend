@@ -114,6 +114,14 @@ impl gpui::Render for MultiWindowSmoke {
                         }),
                     ),
             )
+            .child(
+                gpui::div()
+                    .id("multi-window-resize")
+                    .child("Resize window to 500 x 300")
+                    .on_click(cx.listener(|_this, _event, window, _cx| {
+                        window.resize(size(px(500.), px(300.)));
+                    })),
+            )
     }
 }
 

@@ -13,7 +13,7 @@ ohos-multiwindow-smoke = []
 
 [dependencies]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2", default-features = false }
-gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "8a3c5ba3a4cf04a1d59a9b970f187cf5f8ea7f25" }
+gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "70647e97719558530bae004471572e21e3afce2e" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
 gpui-router = { version = "0.3" }
 gpui-kit-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
