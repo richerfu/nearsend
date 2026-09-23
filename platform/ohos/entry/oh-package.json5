@@ -8,9 +8,12 @@
   "dependencies": {
     "@ohos-rs/ability": "file:../vendor/openharmony-ability/native_ability",
     "@ohos-rs/ability-plugin-app-control": "file:../vendor/openharmony-ability/plugins/app-control",
+    "@ohos-rs/ability-plugin-clipboard": "file:../vendor/openharmony-ability/plugins/clipboard",
     "@ohos-rs/ability-plugin-files": "file:../vendor/openharmony-ability/plugins/files",
     "@ohos-rs/ability-plugin-permission": "file:../vendor/openharmony-ability/plugins/permission",
+    "@ohos-rs/ability-plugin-process": "file:../vendor/openharmony-ability/plugins/process",
     "@ohos-rs/ability-plugin-url": "file:../vendor/openharmony-ability/plugins/url",
+    "@ohos-rs/ability-plugin-window": "file:../vendor/openharmony-ability/plugins/window",
     "libnear_send.so": "file:./src/main/ets/types/libnear_send"
   }
 }

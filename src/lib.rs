@@ -21,6 +21,85 @@ mod ui;
 
 use ui::router_history::RouterHistoryState;
 
+#[cfg(feature = "ohos-multiwindow-smoke")]
+struct MultiWindowSmoke {
+    clicks: u32,
+    clipboard: String,
+    picker: String,
+}
+
+#[cfg(feature = "ohos-multiwindow-smoke")]
+impl gpui::Render for MultiWindowSmoke {
+    fn render(
+        &mut self,
+        _window: &mut gpui::Window,
+        cx: &mut gpui::Context<Self>,
+    ) -> impl gpui::IntoElement {
+        use gpui::prelude::*;
+        gpui::div()
+            .size_full()
+            .bg(gpui::rgb(0xfafafa))
+            .p(px(24.))
+            .pt(px(72.))
+            .flex()
+            .flex_col()
+            .gap_4()
+            .child(
+                gpui::div()
+                    .id("multi-window-click")
+                    .child(format!("Second GPUI window — clicks: {}", self.clicks))
+                    .on_click(cx.listener(|this, _event, _window, cx| {
+                        this.clicks += 1;
+                        cx.notify();
+                    })),
+            )
+            .child(
+                gpui::div()
+                    .id("multi-window-clipboard")
+                    .child(format!("Clipboard check: {}", self.clipboard))
+                    .on_click(cx.listener(|this, _event, _window, cx| {
+                        cx.write_to_clipboard(gpui::ClipboardItem::new_string(
+                            "gpui-ohos clipboard smoke".into(),
+                        ));
+                        let read = cx.read_from_clipboard_async();
+                        this.clipboard = "reading".into();
+                        cx.notify();
+                        cx.spawn(async move |this, cx| {
+                            let result = read.await;
+                            let _ = this.update(cx, |this, cx| {
+                                this.clipboard = format!("{result:?}");
+                                cx.notify();
+                            });
+                        })
+                        .detach();
+                    })),
+            )
+            .child(
+                gpui::div()
+                    .id("multi-window-picker")
+                    .child(format!("Open file picker: {}", self.picker))
+                    .on_click(cx.listener(|this, _event, _window, cx| {
+                        let dialog = cx.prompt_for_paths(gpui::PathPromptOptions {
+                            files: true,
+                            directories: false,
+                            multiple: false,
+                            prompt: None,
+                        });
+                        this.picker = "opening".into();
+                        cx.notify();
+                        cx.spawn(async move |this, cx| {
+                            let result = dialog.await;
+                            let _ = this.update(cx, |this, cx| {
+                                this.picker = format!("{result:?}");
+                                cx.notify();
+                            });
+                        })
+                        .detach();
+                    })),
+            )
+    }
+}
+
 thread_local! {
     static GPUI_APPLICATION: std::cell::RefCell<Option<ApplicationHandle>> = const {
         std::cell::RefCell::new(None)
@@ -37,7 +116,12 @@ impl Global for GlobalOpenHarmonyApp {}
 
 #[openharmony_ability_derive::ability]
 pub fn openharmony_app(app: OpenHarmonyApp) {
-    ohos_hilog_binding::log::init_once(Config::default().with_max_level(LevelFilter::Debug));
+    let log_level = if cfg!(feature = "ohos-multiwindow-smoke") {
+        LevelFilter::Info
+    } else {
+        LevelFilter::Debug
+    };
+    ohos_hilog_binding::log::init_once(Config::default().with_max_level(log_level));
     if let Err(error) = app.register_plugin(PermissionBridgePlugin) {
         log::error!("Failed to register OpenHarmony permission plugin: {error}");
     }
@@ -128,6 +212,24 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
                     app::AppRoot::new(cx, app_state, device_state, transfer_state, history_state)
                 });
                 cx.new(|cx| Root::new(view, window, cx).window_shadow_size(px(0.)))
+            },
+        )
+        .unwrap();
+        #[cfg(feature = "ohos-multiwindow-smoke")]
+        cx.open_window(
+            WindowOptions {
+                window_bounds: Some(WindowBounds::Windowed(Bounds::new(
+                    gpui::point(px(520.), px(320.)),
+                    size(px(600.), px(360.)),
+                ))),
+                ..Default::default()
+            },
+            |_window, cx| {
+                cx.new(|_| MultiWindowSmoke {
+                    clicks: 0,
+                    clipboard: "tap to test".into(),
+                    picker: "tap to test".into(),
+                })
             },
         )
         .unwrap();

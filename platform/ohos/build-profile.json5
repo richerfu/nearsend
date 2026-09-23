@@ -65,6 +65,18 @@
       "srcPath": "./vendor/openharmony-ability/plugins/files"
     },
     {
+      "name": "plugin_clipboard",
+      "srcPath": "./vendor/openharmony-ability/plugins/clipboard"
+    },
+    {
+      "name": "plugin_process",
+      "srcPath": "./vendor/openharmony-ability/plugins/process"
+    },
+    {
+      "name": "plugin_window",
+      "srcPath": "./vendor/openharmony-ability/plugins/window"
+    },
+    {
       "name": "plugin_permission",
       "srcPath": "./vendor/openharmony-ability/plugins/permission"
     },

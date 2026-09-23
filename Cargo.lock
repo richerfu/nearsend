@@ -1322,7 +1322,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users 0.5.2",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1568,7 +1568,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2283,7 +2283,7 @@ dependencies = [
 [[package]]
 name = "gpui-ohos"
 version = "0.1.0"
-source = "git+https://github.com/ohos-rs/gpui-ohos.git?rev=72bc9d38df2a9deb29517fba157656b93ba43658#72bc9d38df2a9deb29517fba157656b93ba43658"
+source = "git+https://github.com/ohos-rs/gpui-ohos.git?rev=7a4150b2cef4ca1e816726d1c0c5f944dfe8f669#7a4150b2cef4ca1e816726d1c0c5f944dfe8f669"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -2293,9 +2293,15 @@ dependencies = [
  "gpui",
  "itertools 0.14.0",
  "log",
+ "ohos-fileshare-binding",
+ "ohos-fileuri-binding",
  "openharmony-ability",
  "openharmony-ability-plugin-app-control",
+ "openharmony-ability-plugin-clipboard",
+ "openharmony-ability-plugin-files",
+ "openharmony-ability-plugin-process",
  "openharmony-ability-plugin-url",
+ "openharmony-ability-plugin-window",
  "parking_lot",
  "profiling",
  "raw-window-handle",
@@ -3810,7 +3816,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4410,9 +4416,8 @@ dependencies = [
 
 [[package]]
 name = "ohos-xcomponent-binding"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ab4ad6a89cf56a1f29522822fa7830dafcba8d041f662de5874908ab553823a"
+version = "0.4.1"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=5087a63a0bc05d728940f26feb97f143fa48128a#5087a63a0bc05d728940f26feb97f143fa48128a"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4452,7 +4457,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 [[package]]
 name = "openharmony-ability"
 version = "1.0.0-beta.2"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=e96d0bf526935de40480f5073517458ad905b243#e96d0bf526935de40480f5073517458ad905b243"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=5087a63a0bc05d728940f26feb97f143fa48128a#5087a63a0bc05d728940f26feb97f143fa48128a"
 dependencies = [
  "futures-channel",
  "log",
@@ -4476,7 +4481,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-derive"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=e96d0bf526935de40480f5073517458ad905b243#e96d0bf526935de40480f5073517458ad905b243"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=5087a63a0bc05d728940f26feb97f143fa48128a#5087a63a0bc05d728940f26feb97f143fa48128a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4486,7 +4491,17 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-app-control"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=e96d0bf526935de40480f5073517458ad905b243#e96d0bf526935de40480f5073517458ad905b243"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=5087a63a0bc05d728940f26feb97f143fa48128a#5087a63a0bc05d728940f26feb97f143fa48128a"
+dependencies = [
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-clipboard"
+version = "1.0.0-beta.0"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=5087a63a0bc05d728940f26feb97f143fa48128a#5087a63a0bc05d728940f26feb97f143fa48128a"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4496,7 +4511,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-files"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=e96d0bf526935de40480f5073517458ad905b243#e96d0bf526935de40480f5073517458ad905b243"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=5087a63a0bc05d728940f26feb97f143fa48128a#5087a63a0bc05d728940f26feb97f143fa48128a"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4506,7 +4521,17 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-permission"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=e96d0bf526935de40480f5073517458ad905b243#e96d0bf526935de40480f5073517458ad905b243"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=5087a63a0bc05d728940f26feb97f143fa48128a#5087a63a0bc05d728940f26feb97f143fa48128a"
+dependencies = [
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-process"
+version = "1.0.0-beta.0"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=5087a63a0bc05d728940f26feb97f143fa48128a#5087a63a0bc05d728940f26feb97f143fa48128a"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4516,7 +4541,17 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-url"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?rev=e96d0bf526935de40480f5073517458ad905b243#e96d0bf526935de40480f5073517458ad905b243"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=5087a63a0bc05d728940f26feb97f143fa48128a#5087a63a0bc05d728940f26feb97f143fa48128a"
+dependencies = [
+ "napi-derive-ohos",
+ "napi-ohos",
+ "openharmony-ability",
+]
+
+[[package]]
+name = "openharmony-ability-plugin-window"
+version = "1.0.0-beta.1"
+source = "git+https://github.com/richerfu/openharmony-ability.git?rev=5087a63a0bc05d728940f26feb97f143fa48128a#5087a63a0bc05d728940f26feb97f143fa48128a"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -5033,7 +5068,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5683,7 +5718,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5751,7 +5786,7 @@ dependencies = [
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6615,10 +6650,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -7723,7 +7758,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

@@ -4,9 +4,12 @@ import { deviceInfo } from "@kit.BasicServicesKit";
 import { systemShare } from "@kit.ShareKit";
 import { LazyPlugin, NativeAbility } from "@ohos-rs/ability";
 import { AppControlPlugin } from "@ohos-rs/ability-plugin-app-control";
+import { ClipboardPlugin } from "@ohos-rs/ability-plugin-clipboard";
 import { FilesPlugin } from "@ohos-rs/ability-plugin-files";
 import { PermissionPlugin } from "@ohos-rs/ability-plugin-permission";
+import { ProcessPlugin } from "@ohos-rs/ability-plugin-process";
 import { UrlPlugin } from "@ohos-rs/ability-plugin-url";
+import { WindowPlugin } from "@ohos-rs/ability-plugin-window";
 import * as nearSendNative from "libnear_send.so";
 import { NearSendPlatformPlugin } from "../bridge/NearSendPlatformPlugin";
 
@@ -33,8 +36,11 @@ export default class EntryAbility extends NativeAbility {
   public bridgePlugins = [
     new LazyPlugin(() => new PermissionPlugin()),
     new LazyPlugin(() => new AppControlPlugin()),
+    new LazyPlugin(() => new ClipboardPlugin()),
     new LazyPlugin(() => new FilesPlugin()),
+    new LazyPlugin(() => new ProcessPlugin()),
     new LazyPlugin(() => new UrlPlugin()),
+    new LazyPlugin(() => new WindowPlugin()),
     new LazyPlugin(() => new NearSendPlatformPlugin()),
   ];
 
