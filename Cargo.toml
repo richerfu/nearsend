@@ -13,14 +13,14 @@ ohos-multiwindow-smoke = []
 
 [dependencies]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2", default-features = false }
-gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "7a4150b2cef4ca1e816726d1c0c5f944dfe8f669" }
+gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "a2f4062702825e8e607e0802d00d6d2393955cec" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
 gpui-router = { version = "0.3" }
 gpui-kit-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
-openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "5087a63a0bc05d728940f26feb97f143fa48128a" }
-openharmony-ability-derive = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "5087a63a0bc05d728940f26feb97f143fa48128a" }
-openharmony-ability-plugin-files = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "5087a63a0bc05d728940f26feb97f143fa48128a" }
-openharmony-ability-plugin-permission = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "5087a63a0bc05d728940f26feb97f143fa48128a" }
+openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "f79612979165fe9ebf14f90db075540befcc67eb" }
+openharmony-ability-derive = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "f79612979165fe9ebf14f90db075540befcc67eb" }
+openharmony-ability-plugin-files = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "f79612979165fe9ebf14f90db075540befcc67eb" }
+openharmony-ability-plugin-permission = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "f79612979165fe9ebf14f90db075540befcc67eb" }
 
 napi-ohos = { version = "=1.2.0" }
 napi-derive-ohos = { version = "=1.2.0" }
@@ -74,7 +74,10 @@ napi-build-ohos = { version = "=1.2.0" }
 
 # 强制 patch 所有来源的依赖，确保统一使用固定 revision 的 Zed 实现。
 [patch.crates-io]
-ohos-xcomponent-binding = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "5087a63a0bc05d728940f26feb97f143fa48128a" }
+ohos-xcomponent-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-xcomponent-sys = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-arkui-input-sys = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-arkui-input-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2" }
 gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42" }
 gpui-pre = { path = "vendor/gpui-pre-adapters/gpui" }
