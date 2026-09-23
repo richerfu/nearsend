@@ -6,6 +6,7 @@ import { LazyPlugin, NativeAbility } from "@ohos-rs/ability";
 import { AppControlPlugin } from "@ohos-rs/ability-plugin-app-control";
 import { FilesPlugin } from "@ohos-rs/ability-plugin-files";
 import { PermissionPlugin } from "@ohos-rs/ability-plugin-permission";
+import { UrlPlugin } from "@ohos-rs/ability-plugin-url";
 import * as nearSendNative from "libnear_send.so";
 import { NearSendPlatformPlugin } from "../bridge/NearSendPlatformPlugin";
 
@@ -33,6 +34,7 @@ export default class EntryAbility extends NativeAbility {
     new LazyPlugin(() => new PermissionPlugin()),
     new LazyPlugin(() => new AppControlPlugin()),
     new LazyPlugin(() => new FilesPlugin()),
+    new LazyPlugin(() => new UrlPlugin()),
     new LazyPlugin(() => new NearSendPlatformPlugin()),
   ];
 

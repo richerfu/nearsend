@@ -6,6 +6,20 @@ A LocalSend protocol-compatible client built with GPUI and gpui-component.
 
 NearSend is a cross-platform file sharing application that implements the LocalSend protocol v2.0. It allows you to securely share files and messages with nearby devices over your local network without requiring an internet connection.
 
+## OpenHarmony build
+
+The OpenHarmony project uses the `openharmony-ability` fork pinned as a Git submodule. After cloning this branch, run:
+
+```sh
+git submodule update --init platform/ohos/vendor/openharmony-ability
+ohrs build --arch arm64
+cd platform/ohos
+ohpm install --all
+hvigorw assembleHap --mode module -p product=default
+```
+
+The signed package is generated at `platform/ohos/entry/build/default/outputs/default/entry-default-signed.hap` when a signing configuration is available.
+
 ## Credits
 
 - [LocalSend Protocol](https://github.com/localsend/protocol)

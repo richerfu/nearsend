@@ -10,14 +10,14 @@ crate-type = ["cdylib"]
 
 [dependencies]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2", default-features = false }
-gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "e7c4c4e05d9abfe52e0e75f00147be3818a2f8bf" }
+gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "72bc9d38df2a9deb29517fba157656b93ba43658" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
 gpui-router = { version = "0.3" }
 gpui-kit-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
-openharmony-ability = { version = "1.0.0-beta.2" }
-openharmony-ability-derive = { version = "1.0.0-beta.1" }
-openharmony-ability-plugin-files = { version = "1.0.0-beta.1" }
-openharmony-ability-plugin-permission = { version = "1.0.0-beta.1" }
+openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "e96d0bf526935de40480f5073517458ad905b243" }
+openharmony-ability-derive = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "e96d0bf526935de40480f5073517458ad905b243" }
+openharmony-ability-plugin-files = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "e96d0bf526935de40480f5073517458ad905b243" }
+openharmony-ability-plugin-permission = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "e96d0bf526935de40480f5073517458ad905b243" }
 
 napi-ohos = { version = "=1.2.0" }
 napi-derive-ohos = { version = "=1.2.0" }
@@ -73,10 +73,6 @@ napi-build-ohos = { version = "=1.2.0" }
 [patch.crates-io]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2" }
 gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42" }
-# `openharmony-ability` 1.0.0-beta.2 recursively calls `hide_keyboard`
-# from the native IME Hide callback. Keep the platform dependency local until
-# the upstream callback is made notification-only.
-openharmony-ability = { path = "vendor/openharmony-ability" }
 gpui-pre = { path = "vendor/gpui-pre-adapters/gpui" }
 gpui-pre-macros = { path = "vendor/gpui-pre-adapters/gpui-macros" }
 gpui-pre-sum-tree = { path = "vendor/gpui-pre-adapters/sum-tree" }

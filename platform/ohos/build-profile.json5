@@ -51,6 +51,26 @@
           ]
         }
       ]
+    },
+    {
+      "name": "native_ability",
+      "srcPath": "./vendor/openharmony-ability/native_ability"
+    },
+    {
+      "name": "plugin_app_control",
+      "srcPath": "./vendor/openharmony-ability/plugins/app-control"
+    },
+    {
+      "name": "plugin_files",
+      "srcPath": "./vendor/openharmony-ability/plugins/files"
+    },
+    {
+      "name": "plugin_permission",
+      "srcPath": "./vendor/openharmony-ability/plugins/permission"
+    },
+    {
+      "name": "plugin_url",
+      "srcPath": "./vendor/openharmony-ability/plugins/url"
     }
   ]
 }
