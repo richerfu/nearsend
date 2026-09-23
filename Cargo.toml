@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2", default-features = false }
-gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "72bc9d38df2a9deb29517fba157656b93ba43658" }
+gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "1c6097ddf8e3a0693347669c85c89fcef3685027" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
 gpui-router = { version = "0.3" }
 gpui-kit-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
