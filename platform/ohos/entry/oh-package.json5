@@ -9,6 +9,7 @@
     "@ohos-rs/ability": "file:../vendor/openharmony-ability/native_ability",
     "@ohos-rs/ability-plugin-app-control": "file:../vendor/openharmony-ability/plugins/app-control",
     "@ohos-rs/ability-plugin-clipboard": "file:../vendor/openharmony-ability/plugins/clipboard",
+    "@ohos-rs/ability-plugin-credentials": "file:../vendor/openharmony-ability/plugins/credentials",
     "@ohos-rs/ability-plugin-files": "file:../vendor/openharmony-ability/plugins/files",
     "@ohos-rs/ability-plugin-permission": "file:../vendor/openharmony-ability/plugins/permission",
     "@ohos-rs/ability-plugin-process": "file:../vendor/openharmony-ability/plugins/process",

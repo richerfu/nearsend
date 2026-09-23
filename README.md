@@ -13,6 +13,7 @@ The OpenHarmony project uses the `openharmony-ability` fork pinned as a Git subm
 ```sh
 git submodule update --init platform/ohos/vendor/openharmony-ability
 ohrs build --arch arm64
+cp target/aarch64-unknown-linux-ohos/debug/libnear_send.so platform/ohos/entry/libs/arm64-v8a/libnear_send.so
 cd platform/ohos
 ohpm install --all
 hvigorw assembleHap --mode module -p product=default

@@ -5,6 +5,7 @@ import { systemShare } from "@kit.ShareKit";
 import { LazyPlugin, NativeAbility } from "@ohos-rs/ability";
 import { AppControlPlugin } from "@ohos-rs/ability-plugin-app-control";
 import { ClipboardPlugin } from "@ohos-rs/ability-plugin-clipboard";
+import { CredentialsPlugin } from "@ohos-rs/ability-plugin-credentials";
 import { FilesPlugin } from "@ohos-rs/ability-plugin-files";
 import { PermissionPlugin } from "@ohos-rs/ability-plugin-permission";
 import { ProcessPlugin } from "@ohos-rs/ability-plugin-process";
@@ -26,6 +27,7 @@ const SAFE_AREA_TYPES: window.AvoidAreaType[] = [
 ];
 
 interface AvoidAreaChangePayload {
+  windowId: number;
   type: window.AvoidAreaType;
   area: window.AvoidArea;
 }
@@ -37,6 +39,7 @@ export default class EntryAbility extends NativeAbility {
     new LazyPlugin(() => new PermissionPlugin()),
     new LazyPlugin(() => new AppControlPlugin()),
     new LazyPlugin(() => new ClipboardPlugin()),
+    new LazyPlugin(() => new CredentialsPlugin()),
     new LazyPlugin(() => new FilesPlugin()),
     new LazyPlugin(() => new ProcessPlugin()),
     new LazyPlugin(() => new UrlPlugin()),
@@ -138,7 +141,7 @@ export default class EntryAbility extends NativeAbility {
       for (const type of SAFE_AREA_TYPES) {
         try {
           const area = mainWindow.getWindowAvoidArea(type);
-          const payload: AvoidAreaChangePayload = { type, area };
+          const payload: AvoidAreaChangePayload = { windowId: 0, type, area };
           this.forEachLifecycle((lifecycle) =>
             lifecycle.windowStageEventCallback.onAvoidAreaChange(payload),
           );

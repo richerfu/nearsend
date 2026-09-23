@@ -26,6 +26,8 @@ struct MultiWindowSmoke {
     clicks: u32,
     clipboard: String,
     picker: String,
+    capture: String,
+    capture_stream: Option<Box<dyn gpui::ScreenCaptureStream>>,
     focus: gpui::FocusHandle,
     key_input: String,
 }
@@ -93,6 +95,65 @@ impl gpui::Render for MultiWindowSmoke {
                             let result = dialog.await;
                             let _ = this.update(cx, |this, cx| {
                                 this.picker = format!("{result:?}");
+                                cx.notify();
+                            });
+                        })
+                        .detach();
+                    })),
+            )
+            .child(
+                gpui::div()
+                    .id("multi-window-capture")
+                    .child(format!("Screen capture: {}", self.capture))
+                    .on_click(cx.listener(|this, _event, _window, cx| {
+                        if this.capture_stream.take().is_some() {
+                            this.capture = "stopped".into();
+                            cx.notify();
+                            return;
+                        }
+                        let sources = cx.screen_capture_sources();
+                        let executor = cx.foreground_executor().clone();
+                        this.capture = "requesting consent".into();
+                        cx.notify();
+                        cx.spawn(async move |this, cx| {
+                            let result: anyhow::Result<Box<dyn gpui::ScreenCaptureStream>> =
+                                async {
+                                    let source = sources
+                                        .await??
+                                        .into_iter()
+                                        .next()
+                                        .ok_or_else(|| anyhow::anyhow!("No capture display"))?;
+                                    let count =
+                                        std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+                                    let stream = source
+                                        .stream(
+                                            &executor,
+                                            Box::new(move |frame| {
+                                                let number = count.fetch_add(
+                                                    1,
+                                                    std::sync::atomic::Ordering::Relaxed,
+                                                ) + 1;
+                                                if number <= 3 {
+                                                    log::info!(
+                                                        "OHOS screen capture frame {number}: {}x{}",
+                                                        frame.0.width(),
+                                                        frame.0.height()
+                                                    );
+                                                }
+                                            }),
+                                        )
+                                        .await??;
+                                    Ok(stream)
+                                }
+                                .await;
+                            let _ = this.update(cx, |this, cx| {
+                                match result {
+                                    Ok(stream) => {
+                                        this.capture_stream = Some(stream);
+                                        this.capture = "requested; tap to stop".into();
+                                    }
+                                    Err(error) => this.capture = format!("error: {error}"),
+                                }
                                 cx.notify();
                             });
                         })
@@ -254,6 +315,8 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
                     clicks: 0,
                     clipboard: "tap to test".into(),
                     picker: "tap to test".into(),
+                    capture: "tap to test".into(),
+                    capture_stream: None,
                     focus: cx.focus_handle(),
                     key_input: "click here, then press a key".into(),
                 })
