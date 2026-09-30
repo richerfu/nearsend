@@ -8,7 +8,7 @@ use crate::ui::components::chrome::{
     back_icon_button, empty_state, header_icon_button, page_header,
 };
 use crate::ui::components::transfer_item::TransferItem;
-use crate::ui::icons::{app_icon, paths};
+use crate::ui::icons::{app_icon, loading_icon, paths};
 use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
 use crate::ui::theme::spacing;
@@ -93,6 +93,7 @@ impl gpui::Render for ProgressPage {
             status,
             TransferStatus::Completed | TransferStatus::Failed | TransferStatus::Cancelled
         );
+        let is_loading = matches!(status, TransferStatus::Pending | TransferStatus::InProgress);
 
         let trailing =
             if self.direction == TransferDirection::Send && status != TransferStatus::InProgress {
@@ -134,7 +135,16 @@ impl gpui::Render for ProgressPage {
                 h_flex()
                     .items_center()
                     .gap(px(4.))
-                    .child(app_icon(direction_icon, Size::Small, cx.theme().foreground))
+                    .child(if is_loading {
+                        loading_icon(
+                            "transfer-progress-loading",
+                            Size::Small,
+                            cx.theme().foreground,
+                        )
+                    } else {
+                        app_icon(direction_icon, Size::Small, cx.theme().foreground)
+                            .into_any_element()
+                    })
                     .child(trailing),
                 cx,
             ))

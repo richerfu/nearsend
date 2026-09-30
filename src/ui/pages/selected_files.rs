@@ -335,6 +335,15 @@ impl SelectedFilesPage {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if !crate::platform::file_picker::is_system_file_picker_supported() {
+            self.open_notice_dialog(
+                crate::platform::file_picker::SYSTEM_FILE_PICKER_UNSUPPORTED_MESSAGE,
+                window,
+                cx,
+            );
+            return;
+        }
+
         let window_handle = window.window_handle();
         let page_entity = cx.entity();
         let send_selection_state = self.send_selection_state.clone();

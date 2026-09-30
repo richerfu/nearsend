@@ -398,6 +398,14 @@ impl HomePage {
             .destination
             .as_ref()
             .map(std::path::PathBuf::from);
+        #[cfg(target_env = "ohos")]
+        if let Some(directory) = default_save_directory.as_deref() {
+            if let Err(error) =
+                crate::platform::file_picker::activate_saved_directory_permission(directory)
+            {
+                log::warn!("failed to activate configured save directory: {error}");
+            }
+        }
         server_entity.update(cx, |server, _| {
             server.set_receive_pin_config(require_pin, receive_pin, &tokio_handle);
             server.set_default_save_directory(default_save_directory, &tokio_handle);
