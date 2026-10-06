@@ -1,0 +1,14 @@
+{
+  "pid": 3963,
+  "duration_seconds": 30.586,
+  "cpu_seconds": 4.67,
+  "cpu_percent_one_core": 15.268,
+  "samples_cpu_percent_one_core": [
+    6.574,
+    18.688,
+    20.336
+  ],
+  "target": "127.0.0.1:10001",
+  "bundle": "com.richerfu.nearsend",
+  "label": "scrollfix-phone-rotating-home"
+}

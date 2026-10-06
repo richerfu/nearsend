@@ -1,0 +1,34 @@
+[
+  {
+    "kind": "phone",
+    "package": "baseline",
+    "injected_physical_delta_y": -12,
+    "page_physical_translation_y": -4,
+    "translation_fit_error": 0.0,
+    "hold_to_release_pixel_difference": 0.0
+  },
+  {
+    "kind": "phone",
+    "package": "fixed",
+    "injected_physical_delta_y": -12,
+    "page_physical_translation_y": -12,
+    "translation_fit_error": 0.0,
+    "hold_to_release_pixel_difference": 0.0
+  },
+  {
+    "kind": "2in1",
+    "package": "baseline",
+    "injected_physical_delta_y": -12,
+    "page_physical_translation_y": 0,
+    "translation_fit_error": 0.0,
+    "hold_to_release_pixel_difference": 0.0
+  },
+  {
+    "kind": "2in1",
+    "package": "fixed",
+    "injected_physical_delta_y": -12,
+    "page_physical_translation_y": -12,
+    "translation_fit_error": 0.0,
+    "hold_to_release_pixel_difference": 0.0
+  }
+]

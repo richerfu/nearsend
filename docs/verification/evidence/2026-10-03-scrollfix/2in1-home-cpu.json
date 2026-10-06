@@ -1,0 +1,14 @@
+{
+  "pid": 17571,
+  "duration_seconds": 30.462,
+  "cpu_seconds": 4.76,
+  "cpu_percent_one_core": 15.626,
+  "samples_cpu_percent_one_core": [
+    7.175,
+    19.241,
+    20.307
+  ],
+  "target": "127.0.0.1:10002",
+  "bundle": "com.richerfu.nearsend",
+  "label": "scrollfix-2in1-rotating-home"
+}

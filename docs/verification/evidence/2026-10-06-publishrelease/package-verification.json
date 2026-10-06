@@ -1,0 +1,35 @@
+{
+  "artifacts": [
+    {
+      "artifact": "dist/NearSend-1.2.1-publishrelease.hap",
+      "sha256": "31f1b78cf6bf827dcd2271d2b8ec1e1428d859c0b108ada5f646f24630b831ef",
+      "bytes": 39058479,
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "profile_type": "release",
+      "same_tested_native_sections": true,
+      "native_section_count": 22,
+      "same_tested_arkts_abc": true
+    },
+    {
+      "artifact": "dist/NearSend-1.2.1-publishrelease.app",
+      "sha256": "75d4f467ac4ec2906f7bd186be7dbf1aa7f8909338914cac7bc7a912c5439661",
+      "bytes": 16268953,
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "profile_type": "release",
+      "same_tested_native_sections": true,
+      "native_section_count": 22,
+      "same_tested_arkts_abc": true
+    }
+  ],
+  "gpui_core_modified": false,
+  "system_pan_owns_recognition_and_velocity": true,
+  "app_embedded_hap_matches_code_and_resources": true,
+  "pack_info_semantically_equal": true,
+  "only_direct_hap_extra_entry": ".pages.info"
+}

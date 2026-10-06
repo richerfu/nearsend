@@ -1,0 +1,122 @@
+{
+  "target": "127.0.0.1:10002",
+  "kind": "2in1",
+  "pid": "4855",
+  "rounds": [
+    {
+      "index": 0,
+      "velocity": 300,
+      "direction": "up",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 1,
+      "velocity": 1800,
+      "direction": "down",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 2,
+      "velocity": 3500,
+      "direction": "up",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 3,
+      "velocity": 300,
+      "direction": "down",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 4,
+      "velocity": 1800,
+      "direction": "up",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 5,
+      "velocity": 3500,
+      "direction": "down",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 6,
+      "velocity": 300,
+      "direction": "up",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 7,
+      "velocity": 1800,
+      "direction": "down",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 8,
+      "velocity": 3500,
+      "direction": "up",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 9,
+      "velocity": 300,
+      "direction": "down",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 10,
+      "velocity": 1800,
+      "direction": "up",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 11,
+      "velocity": 3500,
+      "direction": "down",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 12,
+      "velocity": 300,
+      "direction": "up",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 13,
+      "velocity": 1800,
+      "direction": "down",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 14,
+      "velocity": 3500,
+      "direction": "up",
+      "screenshot_ok": true,
+      "same_pid": true
+    },
+    {
+      "index": 15,
+      "velocity": 300,
+      "direction": "down",
+      "screenshot_ok": true,
+      "same_pid": true
+    }
+  ],
+  "new_fault_files": [],
+  "final_pid": "4855",
+  "passed_process_and_capture_checks": true
+}

@@ -1,0 +1,14 @@
+{
+  "pid": 9207,
+  "duration_seconds": 30.089,
+  "cpu_seconds": 1.56,
+  "cpu_percent_one_core": 5.185,
+  "samples_cpu_percent_one_core": [
+    6.281,
+    4.587,
+    4.686
+  ],
+  "target": "127.0.0.1:10002",
+  "bundle": "com.richerfu.nearsend",
+  "label": "final-2in1-rotating-home-15fps"
+}

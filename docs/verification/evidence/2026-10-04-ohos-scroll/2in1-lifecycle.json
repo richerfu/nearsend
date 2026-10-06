@@ -1,0 +1,49 @@
+{
+  "kind": "2in1",
+  "initial_pid": "15765",
+  "rows": [
+    {
+      "scenario": "home-start",
+      "pid": "15765",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-10s",
+      "pid": "15765",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-21s",
+      "pid": "15765",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "screen-off",
+      "pid": "15765",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "screen-on-restored",
+      "pid": "15765",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "background",
+      "pid": "15765",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "foreground-restored",
+      "pid": "15765",
+      "same_pid": true,
+      "new_faults": []
+    }
+  ],
+  "checks_passed": true
+}

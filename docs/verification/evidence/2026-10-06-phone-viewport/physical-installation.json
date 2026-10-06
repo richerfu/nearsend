@@ -1,0 +1,14 @@
+{
+  "checked_at": "2026-10-06T04:36:49.618327+00:00",
+  "device_model": "ALN-AL00",
+  "installed": true,
+  "launched": true,
+  "signer": "default",
+  "artifact": "dist/NearSend-1.2.1-ohos-viewport-default-release.hap",
+  "sha256": "1fb40f8c1e34ae985af2c07b7797ae48d3a5257174cf6dea4aebb5e505b0c136",
+  "versionName": "1.2.1",
+  "versionCode": 1002001,
+  "debug": false,
+  "pid": "34804",
+  "mode": "replace"
+}

@@ -1,0 +1,46 @@
+{
+  "artifacts": [
+    {
+      "file": "dist/NearSend-1.2.1-ohos-scroll-default-release.hap",
+      "bytes": 39066816,
+      "sha256": "264d19779d443396272f5366bdfdd0f2a3590a8d497117f4f2259b256b9ab831",
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "native_sections_match_tested_hap": true,
+      "checked_sections": 22,
+      "abc_sha256": "c4b44a6254cd3bcc0a5a3b85dbcb3e6cfa238010de0ebdf3918456d7c1820eda",
+      "profile_type": "debug"
+    },
+    {
+      "file": "dist/NearSend-1.2.1-ohos-scroll-publishrelease.hap",
+      "bytes": 39064366,
+      "sha256": "8d53b5b7e8658099310afa2e11395f828beeb39e4b8f19f35dbaacb26da80f59",
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "native_sections_match_tested_hap": true,
+      "checked_sections": 22,
+      "abc_sha256": "c4b44a6254cd3bcc0a5a3b85dbcb3e6cfa238010de0ebdf3918456d7c1820eda",
+      "profile_type": "release"
+    },
+    {
+      "file": "dist/NearSend-1.2.1-ohos-scroll-publishrelease.app",
+      "bytes": 16271664,
+      "sha256": "d5d317e9c9ded77e40b730924baae9157aeda254503a4cf7566b8f07938f3b1e",
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "native_sections_match_tested_hap": true,
+      "checked_sections": 22,
+      "abc_sha256": "c4b44a6254cd3bcc0a5a3b85dbcb3e6cfa238010de0ebdf3918456d7c1820eda",
+      "profile_type": "release"
+    }
+  ],
+  "same_arkts_abc": true,
+  "gpui_source": "git+https://github.com/ohos-rs/zed.git?rev=f45c7c22d0#f45c7c22d0c04fb12527e71bbbee1dc6bdbdee0a",
+  "local_gpui_core_patch": false
+}

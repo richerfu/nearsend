@@ -1,0 +1,45 @@
+{
+  "artifacts": [
+    {
+      "artifact": "dist/NearSend-1.2.1-ohos-system-pan-default-release.hap",
+      "sha256": "e26a3169c9b21c1cfecef1a2f1c2244064b5376bba779937ece532c7e0310e0b",
+      "bytes": 39060925,
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "profile_type": "debug",
+      "same_tested_native_sections": true,
+      "native_section_count": 22,
+      "same_tested_arkts_abc": true
+    },
+    {
+      "artifact": "dist/NearSend-1.2.1-ohos-system-pan-publishrelease.hap",
+      "sha256": "7d3f54faec4d8cb8e6a8ccf36c95fff5ad7ee0e4bdade86c6ca625b78f84fbff",
+      "bytes": 39058474,
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "profile_type": "release",
+      "same_tested_native_sections": true,
+      "native_section_count": 22,
+      "same_tested_arkts_abc": true
+    },
+    {
+      "artifact": "dist/NearSend-1.2.1-ohos-system-pan-publishrelease.app",
+      "sha256": "f5f7e99f62be6b1c0fadc6af95d71df69379b2bdb0aad6818f9edf3570e9602f",
+      "bytes": 16270316,
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "profile_type": "release",
+      "same_tested_native_sections": true,
+      "native_section_count": 22,
+      "same_tested_arkts_abc": true
+    }
+  ],
+  "gpui_core_modified": false,
+  "system_pan_owns_recognition_and_velocity": true
+}

@@ -1,0 +1,12 @@
+{
+  "checked_at": "2026-10-03T17:58:34.434404+00:00",
+  "artifact": "dist/NearSend-1.2.1-ohos-scroll-default-release.hap",
+  "artifact_sha256": "264d19779d443396272f5366bdfdd0f2a3590a8d497117f4f2259b256b9ab831",
+  "physical_device_connected": false,
+  "installed_to_physical_device": false,
+  "hdc_targets": [
+    "127.0.0.1:10001",
+    "127.0.0.1:10002"
+  ],
+  "simulators_installed_and_launched": true
+}

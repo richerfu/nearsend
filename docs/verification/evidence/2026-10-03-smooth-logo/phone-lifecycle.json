@@ -1,0 +1,127 @@
+{
+  "kind": "phone",
+  "initial_pid": "23619",
+  "rows": [
+    {
+      "scenario": "home-start",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-20s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-40s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-60s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-81s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-101s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-122s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-142s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-163s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-183s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-204s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-224s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-244s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-265s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-285s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-305s",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "screen-off",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "screen-on-restored",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "background",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "foreground-restored",
+      "pid": "23619",
+      "same_pid": true,
+      "new_faults": []
+    }
+  ],
+  "checks_passed": true
+}

@@ -1,0 +1,14 @@
+{
+  "pid": 13196,
+  "duration_seconds": 30.091,
+  "cpu_seconds": 1.37,
+  "cpu_percent_one_core": 4.553,
+  "samples_cpu_percent_one_core": [
+    4.784,
+    4.387,
+    4.487
+  ],
+  "target": "127.0.0.1:10001",
+  "bundle": "com.richerfu.nearsend",
+  "label": "final-phone-rotating-home-15fps"
+}

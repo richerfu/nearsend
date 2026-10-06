@@ -1,0 +1,24 @@
+{
+  "simulator_physical_size": [
+    1320,
+    2856
+  ],
+  "scale": 3.5,
+  "old_probe_pid": "23402",
+  "new_probe_pid": "676",
+  "old_viewport_heights_logical_px": [
+    788.0,
+    816.0
+  ],
+  "new_viewport_heights_logical_px": [
+    816.0
+  ],
+  "old_safe_bottom_logical_px": [
+    28.0
+  ],
+  "new_safe_bottom_logical_px": [
+    28.0
+  ],
+  "extra_height_removed_physical_px": 98,
+  "positive_keyboard_smoke_test": "blocked_by_input_method_first_use_agreement_not_accepted"
+}

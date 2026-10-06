@@ -1,0 +1,32 @@
+{
+  "kind": "phone",
+  "initial_pid": "10759",
+  "rows": [
+    {
+      "scenario": "animated-home",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "screen-off",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "screen-restored",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "background",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "foreground",
+      "same_pid": true,
+      "new_faults": []
+    }
+  ],
+  "passed": true
+}

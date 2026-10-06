@@ -1,0 +1,10 @@
+{
+  "phone": {
+    "mean_logo_pixel_difference": 12.219782954998008,
+    "animation_moved": true
+  },
+  "2in1": {
+    "mean_logo_pixel_difference": 7.064426065162908,
+    "animation_moved": true
+  }
+}

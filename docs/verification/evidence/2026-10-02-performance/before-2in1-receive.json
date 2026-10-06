@@ -1,0 +1,14 @@
+{
+  "pid": 3968,
+  "duration_seconds": 30.097,
+  "cpu_seconds": 6.22,
+  "cpu_percent_one_core": 20.666,
+  "samples_cpu_percent_one_core": [
+    20.335,
+    21.735,
+    19.929
+  ],
+  "target": "127.0.0.1:10002",
+  "bundle": "com.richerfu.nearsend",
+  "label": "before-2in1-receive"
+}

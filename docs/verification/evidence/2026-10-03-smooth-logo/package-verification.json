@@ -1,0 +1,44 @@
+{
+  "artifacts": [
+    {
+      "file": "dist/NearSend-1.2.1-scrollfix-smooth-default-release.hap",
+      "bytes": 39061824,
+      "sha256": "bf872242ab47cf214b712295617578df8b75a0922db5713b4e08ec06a05059fe",
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "native_sections_match_tested_hap": true,
+      "checked_sections": 22,
+      "abc_sha256": "c4b44a6254cd3bcc0a5a3b85dbcb3e6cfa238010de0ebdf3918456d7c1820eda",
+      "profile_type": "debug"
+    },
+    {
+      "file": "dist/NearSend-1.2.1-scrollfix-smooth-publishrelease.hap",
+      "bytes": 39059368,
+      "sha256": "37b17f5fc8f5ae06ab523297f916f4491d7d7aec0edc63d0a6297002fde8c8bc",
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "native_sections_match_tested_hap": true,
+      "checked_sections": 22,
+      "abc_sha256": "c4b44a6254cd3bcc0a5a3b85dbcb3e6cfa238010de0ebdf3918456d7c1820eda",
+      "profile_type": "release"
+    },
+    {
+      "file": "dist/NearSend-1.2.1-scrollfix-smooth-publishrelease.app",
+      "bytes": 16268618,
+      "sha256": "26d39f833be9265dd5402fad20b3fb39fa44a591fce05a52e6806428831fff8a",
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "native_sections_match_tested_hap": true,
+      "checked_sections": 22,
+      "abc_sha256": "c4b44a6254cd3bcc0a5a3b85dbcb3e6cfa238010de0ebdf3918456d7c1820eda",
+      "profile_type": "release"
+    }
+  ],
+  "same_arkts_abc": true
+}

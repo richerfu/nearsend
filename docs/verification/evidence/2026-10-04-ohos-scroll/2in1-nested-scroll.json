@@ -1,0 +1,67 @@
+{
+  "kind": "2in1",
+  "inner_pan": {
+    "header": 0.0,
+    "below": 0.0,
+    "inner": 6.495257
+  },
+  "top_boundary_pans": [
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 9.543397
+    },
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 9.110846
+    },
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 7.384581
+    },
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 7.419755
+    },
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 7.404803
+    },
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 5.556429
+    },
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 5.78708
+    },
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 7.401488
+    },
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 6.495257
+    },
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 0.0
+    },
+    {
+      "header": 0.0,
+      "below": 0.0,
+      "inner": 0.0
+    }
+  ],
+  "outside_pan_header_mean_pixel_difference": 14.206879,
+  "passed": true
+}

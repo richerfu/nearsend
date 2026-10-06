@@ -1,0 +1,49 @@
+{
+  "kind": "phone",
+  "initial_pid": "21029",
+  "rows": [
+    {
+      "scenario": "home-start",
+      "pid": "21029",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-10s",
+      "pid": "21029",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "animated-home-20s",
+      "pid": "21029",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "screen-off",
+      "pid": "21029",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "screen-on-restored",
+      "pid": "21029",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "background",
+      "pid": "21029",
+      "same_pid": true,
+      "new_faults": []
+    },
+    {
+      "scenario": "foreground-restored",
+      "pid": "21029",
+      "same_pid": true,
+      "new_faults": []
+    }
+  ],
+  "checks_passed": true
+}

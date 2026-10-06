@@ -1,0 +1,12 @@
+{
+  "pid": 13196,
+  "duration_seconds": 10.036,
+  "cpu_seconds": 0.01,
+  "cpu_percent_one_core": 0.1,
+  "samples_cpu_percent_one_core": [
+    0.1
+  ],
+  "target": "127.0.0.1:10001",
+  "bundle": "com.richerfu.nearsend",
+  "label": "final-phone-background-animated-home"
+}
