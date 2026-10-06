@@ -1,9 +1,13 @@
+mod capture_pixels;
 mod credentials;
 mod dispatcher;
 mod display;
+mod frame_request;
 mod keyboard;
 mod platform;
+mod render_cache;
 mod screen_capture;
+mod task_queue;
 mod text_system;
 mod touch_scroll;
 mod wgpu_atlas;

@@ -27,6 +27,7 @@ const SAFE_AREA_TYPES: window.AvoidAreaType[] = [
 ];
 
 interface AvoidAreaChangePayload {
+  windowId: number;
   type: window.AvoidAreaType;
   area: window.AvoidArea;
 }
@@ -140,7 +141,7 @@ export default class EntryAbility extends NativeAbility {
       for (const type of SAFE_AREA_TYPES) {
         try {
           const area = mainWindow.getWindowAvoidArea(type);
-          const payload: AvoidAreaChangePayload = { type, area };
+          const payload: AvoidAreaChangePayload = { windowId: 0, type, area };
           this.forEachLifecycle((lifecycle) =>
             lifecycle.windowStageEventCallback.onAvoidAreaChange(payload),
           );

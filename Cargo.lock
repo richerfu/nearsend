@@ -4614,7 +4614,7 @@ checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 [[package]]
 name = "openharmony-ability"
 version = "1.0.0-beta.2"
-source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#4493821eb1234af66afa4b6571e9fb6558fea4cc"
 dependencies = [
  "futures-channel",
  "log",
@@ -4638,7 +4638,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-derive"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#4493821eb1234af66afa4b6571e9fb6558fea4cc"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4648,7 +4648,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-app-control"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#4493821eb1234af66afa4b6571e9fb6558fea4cc"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4658,7 +4658,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-clipboard"
 version = "1.0.0-beta.0"
-source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#4493821eb1234af66afa4b6571e9fb6558fea4cc"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4668,7 +4668,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-files"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#4493821eb1234af66afa4b6571e9fb6558fea4cc"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4678,7 +4678,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-menu"
 version = "1.0.0-beta.0"
-source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#4493821eb1234af66afa4b6571e9fb6558fea4cc"
 dependencies = [
  "crossbeam-channel",
  "napi-derive-ohos",
@@ -4691,7 +4691,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-permission"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#4493821eb1234af66afa4b6571e9fb6558fea4cc"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4701,7 +4701,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-process"
 version = "1.0.0-beta.0"
-source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#4493821eb1234af66afa4b6571e9fb6558fea4cc"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4711,7 +4711,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-url"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#4493821eb1234af66afa4b6571e9fb6558fea4cc"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",
@@ -4721,7 +4721,7 @@ dependencies = [
 [[package]]
 name = "openharmony-ability-plugin-window"
 version = "1.0.0-beta.1"
-source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+source = "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#4493821eb1234af66afa4b6571e9fb6558fea4cc"
 dependencies = [
  "napi-derive-ohos",
  "napi-ohos",

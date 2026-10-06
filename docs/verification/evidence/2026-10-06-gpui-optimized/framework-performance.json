@@ -1,0 +1,452 @@
+{
+  "baseline_gpui_revision": "b9e032775316a3659d923965478a1a5ee7cd53bb",
+  "ability_revision": "4493821eb1234af66afa4b6571e9fb6558fea4cc",
+  "scope": "gpui-ohos framework; unchanged GPUI core and application UI",
+  "host": {
+    "environment": "macOS ARM64, debug dispatcher harness with real GPUI futures and native wake counter shim",
+    "rows": [
+      {
+        "case": "optimized_main_thread_wake_contract",
+        "native_wake_calls_for_completion": 1
+      },
+      {
+        "case": "thread_count_baseline",
+        "tasks": 16,
+        "yields_per_task": 128,
+        "observed_worker_thread_ids": 2064,
+        "poll_continuations": 2064,
+        "elapsed_ms": 29.4
+      },
+      {
+        "case": "thread_count_optimized",
+        "tasks": 16,
+        "yields_per_task": 128,
+        "observed_worker_thread_ids": 8,
+        "poll_continuations": 2064,
+        "elapsed_ms": 3.409
+      },
+      {
+        "case": "baseline",
+        "tasks": 16,
+        "yields_per_task": 128,
+        "observed_worker_thread_ids": 0,
+        "poll_continuations": 2064,
+        "elapsed_ms": 31.893
+      },
+      {
+        "case": "optimized",
+        "tasks": 16,
+        "yields_per_task": 128,
+        "observed_worker_thread_ids": 0,
+        "poll_continuations": 2064,
+        "elapsed_ms": 2.616
+      },
+      {
+        "case": "optimized",
+        "tasks": 16,
+        "yields_per_task": 128,
+        "observed_worker_thread_ids": 0,
+        "poll_continuations": 2064,
+        "elapsed_ms": 2.481
+      },
+      {
+        "case": "baseline",
+        "tasks": 16,
+        "yields_per_task": 128,
+        "observed_worker_thread_ids": 0,
+        "poll_continuations": 2064,
+        "elapsed_ms": 34.875
+      },
+      {
+        "case": "baseline",
+        "tasks": 16,
+        "yields_per_task": 128,
+        "observed_worker_thread_ids": 0,
+        "poll_continuations": 2064,
+        "elapsed_ms": 30.073
+      },
+      {
+        "case": "optimized",
+        "tasks": 16,
+        "yields_per_task": 128,
+        "observed_worker_thread_ids": 0,
+        "poll_continuations": 2064,
+        "elapsed_ms": 3.324
+      }
+    ],
+    "median_ms": {
+      "baseline": 31.893,
+      "optimized": 2.616
+    },
+    "tests_passed": 33,
+    "clippy_warnings_denied": true
+  },
+  "native_framework": {
+    "phone": {
+      "baseline": {
+        "kind": "phone",
+        "fixture": "same GPUI example, pre-optimization adapter plus shared teardown fix",
+        "gpui_revision": "b9e032775316a3659d923965478a1a5ee7cd53bb",
+        "ability_revision": "4493821eb1234af66afa4b6571e9fb6558fea4cc",
+        "idle_cpu": {
+          "pid": 6302,
+          "duration_seconds": 9.104,
+          "cpu_seconds": 0.1,
+          "cpu_percent_one_core": 1.098,
+          "samples_cpu_percent_one_core": [
+            1.316,
+            0.989,
+            0.989
+          ]
+        },
+        "idle_counter_pair": [
+          {
+            "elapsed_ms": 9000,
+            "events": 570,
+            "redraw": 549,
+            "requests": 0,
+            "ticks": 0,
+            "renders": 0,
+            "background": 0,
+            "pipelines": 1
+          },
+          {
+            "elapsed_ms": 12000,
+            "events": 762,
+            "redraw": 741,
+            "requests": 0,
+            "ticks": 0,
+            "renders": 0,
+            "background": 0,
+            "pipelines": 1
+          }
+        ],
+        "rates_per_second": {
+          "events": 64.0,
+          "redraw": 64.0,
+          "requests": 0.0,
+          "ticks": 0.0,
+          "renders": 0.0,
+          "background": 0.0,
+          "pipelines": 0.0
+        },
+        "pipelines_after_windows": 1,
+        "same_pid": true
+      },
+      "optimized": {
+        "kind": "phone",
+        "fixture": "GPUI example only, no NearSend business logic",
+        "ability_revision": "4493821eb1234af66afa4b6571e9fb6558fea4cc",
+        "pid": "4342",
+        "rows": [],
+        "idle_cpu": {
+          "pid": 4342,
+          "duration_seconds": 9.099,
+          "cpu_seconds": 0.0,
+          "cpu_percent_one_core": 0.0,
+          "samples_cpu_percent_one_core": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "idle_counter_pair": [
+          {
+            "elapsed_ms": 9005,
+            "events": 21,
+            "redraw": 0,
+            "requests": 1,
+            "ticks": 1,
+            "renders": 1,
+            "background": 4,
+            "pipelines": 1
+          },
+          {
+            "elapsed_ms": 12006,
+            "events": 21,
+            "redraw": 0,
+            "requests": 1,
+            "ticks": 1,
+            "renders": 1,
+            "background": 4,
+            "pipelines": 1
+          }
+        ],
+        "resume_cycles": 3,
+        "same_pid": true,
+        "new_faults": [],
+        "unrelated_system_faults": [],
+        "passed": true
+      },
+      "fallback": {
+        "kind": "phone",
+        "fixture": "GPUI example with native VSync creation forced unavailable; XComponent fallback",
+        "ability_revision": "4493821eb1234af66afa4b6571e9fb6558fea4cc",
+        "pid": "10767",
+        "rows": [],
+        "idle_cpu": {
+          "pid": 10767,
+          "duration_seconds": 9.09,
+          "cpu_seconds": 0.17,
+          "cpu_percent_one_core": 1.87,
+          "samples_cpu_percent_one_core": [
+            2.637,
+            1.322,
+            1.65
+          ]
+        },
+        "idle_counter_pair": [
+          {
+            "elapsed_ms": 9001,
+            "events": 572,
+            "redraw": 551,
+            "requests": 0,
+            "ticks": 0,
+            "renders": 1,
+            "background": 4,
+            "pipelines": 1
+          },
+          {
+            "elapsed_ms": 12001,
+            "events": 764,
+            "redraw": 743,
+            "requests": 0,
+            "ticks": 0,
+            "renders": 1,
+            "background": 4,
+            "pipelines": 1
+          }
+        ],
+        "resume_cycles": 3,
+        "same_pid": true,
+        "new_faults": [],
+        "unrelated_system_faults": [],
+        "passed": true
+      }
+    },
+    "2in1": {
+      "baseline": {
+        "kind": "2in1",
+        "fixture": "same GPUI example, pre-optimization adapter plus shared teardown fix",
+        "gpui_revision": "b9e032775316a3659d923965478a1a5ee7cd53bb",
+        "ability_revision": "4493821eb1234af66afa4b6571e9fb6558fea4cc",
+        "idle_cpu": {
+          "pid": 29923,
+          "duration_seconds": 9.096,
+          "cpu_seconds": 0.15,
+          "cpu_percent_one_core": 1.649,
+          "samples_cpu_percent_one_core": [
+            1.646,
+            1.651,
+            1.65
+          ]
+        },
+        "idle_counter_pair": [
+          {
+            "elapsed_ms": 9001,
+            "events": 557,
+            "redraw": 537,
+            "requests": 0,
+            "ticks": 0,
+            "renders": 0,
+            "background": 0,
+            "pipelines": 1
+          },
+          {
+            "elapsed_ms": 12003,
+            "events": 747,
+            "redraw": 727,
+            "requests": 0,
+            "ticks": 0,
+            "renders": 0,
+            "background": 0,
+            "pipelines": 1
+          }
+        ],
+        "rates_per_second": {
+          "events": 63.291,
+          "redraw": 63.291,
+          "requests": 0.0,
+          "ticks": 0.0,
+          "renders": 0.0,
+          "background": 0.0,
+          "pipelines": 0.0
+        },
+        "pipelines_after_windows": 1,
+        "same_pid": true
+      },
+      "optimized": {
+        "kind": "2in1",
+        "fixture": "GPUI example only, no NearSend business logic",
+        "ability_revision": "4493821eb1234af66afa4b6571e9fb6558fea4cc",
+        "pid": "19255",
+        "rows": [
+          {
+            "case": "three_simultaneous_child_windows",
+            "native_window_count": 4
+          },
+          {
+            "case": "input_and_close",
+            "child": "C",
+            "same_pid": true
+          },
+          {
+            "case": "input_and_close",
+            "child": "B",
+            "same_pid": true
+          },
+          {
+            "case": "input_and_close",
+            "child": "A",
+            "same_pid": true
+          },
+          {
+            "case": "reopen_A",
+            "same_pid": true
+          }
+        ],
+        "idle_cpu": {
+          "pid": 19255,
+          "duration_seconds": 9.105,
+          "cpu_seconds": 0.0,
+          "cpu_percent_one_core": 0.0,
+          "samples_cpu_percent_one_core": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "idle_counter_pair": [
+          {
+            "elapsed_ms": 21016,
+            "events": 171,
+            "redraw": 0,
+            "requests": 32,
+            "ticks": 32,
+            "renders": 31,
+            "background": 12,
+            "pipelines": 1
+          },
+          {
+            "elapsed_ms": 24019,
+            "events": 171,
+            "redraw": 0,
+            "requests": 32,
+            "ticks": 32,
+            "renders": 31,
+            "background": 12,
+            "pipelines": 1
+          }
+        ],
+        "resume_cycles": 3,
+        "same_pid": true,
+        "new_faults": [],
+        "passed": true
+      },
+      "fallback": {
+        "kind": "2in1",
+        "fixture": "GPUI example with native VSync creation forced unavailable; XComponent fallback",
+        "ability_revision": "4493821eb1234af66afa4b6571e9fb6558fea4cc",
+        "pid": "2313",
+        "rows": [
+          {
+            "case": "three_simultaneous_child_windows",
+            "native_window_count": 4
+          },
+          {
+            "case": "input_and_close",
+            "child": "C",
+            "same_pid": true
+          },
+          {
+            "case": "input_and_close",
+            "child": "B",
+            "same_pid": true
+          },
+          {
+            "case": "input_and_close",
+            "child": "A",
+            "same_pid": true
+          },
+          {
+            "case": "reopen_A",
+            "same_pid": true
+          }
+        ],
+        "idle_cpu": {
+          "pid": 2313,
+          "duration_seconds": 9.119,
+          "cpu_seconds": 0.1,
+          "cpu_percent_one_core": 1.097,
+          "samples_cpu_percent_one_core": [
+            0.989,
+            0.985,
+            1.317
+          ]
+        },
+        "idle_counter_pair": [
+          {
+            "elapsed_ms": 24006,
+            "events": 2654,
+            "redraw": 2509,
+            "requests": 0,
+            "ticks": 0,
+            "renders": 29,
+            "background": 12,
+            "pipelines": 1
+          },
+          {
+            "elapsed_ms": 27008,
+            "events": 2843,
+            "redraw": 2698,
+            "requests": 0,
+            "ticks": 0,
+            "renders": 29,
+            "background": 12,
+            "pipelines": 1
+          }
+        ],
+        "resume_cycles": 3,
+        "same_pid": true,
+        "new_faults": [],
+        "unrelated_system_faults": [],
+        "passed": true
+      }
+    }
+  },
+  "capability_contract": {
+    "background_parallelism_has_no_hard_ceiling": true,
+    "nested_and_external_blocking_work_passes": true,
+    "native_pan_and_raw_touch_sources_unchanged": true,
+    "frame_rate_antialiasing_and_present_mode_unchanged": true,
+    "no_new_capture_frame_size_limit": true,
+    "no_window_count_limit": true,
+    "native_frame_fallback_verified": true,
+    "foreground_budget_reposts_all_remaining_work": true
+  },
+  "production_source_sha256": {
+    "src/gpui_ohos.rs": "4c251799accc11fa32ab48010c6c21b3948167415b7f5d9907630fe89c609168",
+    "src/ohos/capture_pixels.rs": "af2a9e7bb615079d086e8d087ac1efa4099d1d7bddc36f011e222f2090e35dc1",
+    "src/ohos/credentials.rs": "d69e312491413ea40ba874ff357d578bebfd5312d742b8a6b8af5ed1ce1e6e4a",
+    "src/ohos/dispatcher.rs": "c07761f9b6b7145c7d57daf0afd67a52532491b981a1cc5bc4d1d9b5e0916315",
+    "src/ohos/display.rs": "f48dee5c014a59f9d9417a9de18ffd9ee42cf3d09a4acbbacd318ef824b4d2af",
+    "src/ohos/frame_request.rs": "81d12fe4c6e9dbaa2e78684550c94a37d95760441112a9dbee41c05fd5c96479",
+    "src/ohos/keyboard.rs": "17653d42e7d4b063c6ad01868611bf95635029767f63924a6d9f414ad1e2d275",
+    "src/ohos/platform.rs": "d4b126db930e9d826cc63bdf5540906330365e0734492069dba5f1d9fbf131d1",
+    "src/ohos/render_cache.rs": "588232247d4842196e4e1b4dcf747496779a693af3fcc2ca176a3fc5881f6ce0",
+    "src/ohos/screen_capture.rs": "d5a58b59602b89699333d690fb6c7346c9141510935efe3f9d050c481911333a",
+    "src/ohos/task_queue.rs": "d274557af9b74912981152b8ad31c74745e38fd972340f00b39b010a39a1bff6",
+    "src/ohos/text_system.rs": "dd92451106f56ba72b496971dc172cf3ab5981825c9c5f59940285d8cecd7fa5",
+    "src/ohos/touch_scroll.rs": "71dc2822d133b6641d26056266ee59f05d356f2497d2f0f5e08a113c7dbc6320",
+    "src/ohos/wgpu_atlas.rs": "3edf0149343efd4934054dc8c777da003490f31b102bf7971faba578ce1a60b8",
+    "src/ohos/wgpu_context.rs": "997d9983128664b8a26a01b5990f2f612506e7b16a656ac072687becb8bdf988",
+    "src/ohos/wgpu_renderer.rs": "6ff9dd7515f597a81e3930664ae84f12dfd972a65e064813cd5021a492c0bb77",
+    "src/ohos/window.rs": "b358566e89bc66fa96855df37b0b1826eff6c9fff6594a83e9dd632dacfafc13",
+    "src/ohos.rs": "c3a29fc6e5d82c5f931c0785c01e11a524fa7848db7b28db98758ddedd10731f"
+  },
+  "limits": [
+    "Host timing is not an OHOS speedup estimate.",
+    "The 9-second procfs CPU sample has 100-tick/second resolution; 0.0 means no observed CPU ticks, not zero power.",
+    "Screen capture conversion tests preserve all four existing pixel formats; no system screen-capture permission was accepted by automation."
+  ]
+}

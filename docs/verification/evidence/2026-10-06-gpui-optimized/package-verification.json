@@ -1,0 +1,45 @@
+{
+  "artifacts": [
+    {
+      "artifact": "dist/NearSend-1.2.1-gpui-optimized-default-release.hap",
+      "sha256": "66ad750cc4fea51228dedf092bf3549ca490b2f6d2df0a44cd516f4732e51185",
+      "bytes": 39101612,
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "profile_type": "debug",
+      "same_tested_native_sections": true,
+      "native_section_count": 22,
+      "same_tested_arkts_abc": true
+    },
+    {
+      "artifact": "dist/NearSend-1.2.1-gpui-optimized-publishrelease.hap",
+      "sha256": "5692eee29a5a481bb2bf03f9e32bd11b28bbff0f56a6da7324b3867913ce1079",
+      "bytes": 39099157,
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "profile_type": "release",
+      "same_tested_native_sections": true,
+      "native_section_count": 22,
+      "same_tested_arkts_abc": true
+    },
+    {
+      "artifact": "dist/NearSend-1.2.1-gpui-optimized-publishrelease.app",
+      "sha256": "6f3107f8056a55b4ff218fada82c04b905f57b2fb78a73d67c481d166d15453c",
+      "bytes": 16284199,
+      "versionName": "1.2.1",
+      "versionCode": 1002001,
+      "debug": false,
+      "signature_verified": true,
+      "profile_type": "release",
+      "same_tested_native_sections": true,
+      "native_section_count": 22,
+      "same_tested_arkts_abc": true
+    }
+  ],
+  "gpui_core_modified": false,
+  "system_pan_owns_recognition_and_velocity": true
+}

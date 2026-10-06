@@ -1886,6 +1886,8 @@ name = "ohos-touch-tests"
 version = "0.0.0"
 dependencies = [
  "gpui",
+ "log",
+ "rustc-hash",
 ]
 
 [[package]]

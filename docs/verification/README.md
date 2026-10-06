@@ -3,6 +3,7 @@
 The current implementation uses unmodified GPUI and the local gpui-ohos
 platform adapter. Start with these final reports:
 
+- [Optimized gpui-ohos delivery](2026-10-06-gpui-optimized.md)
 - [System Pan integration](2026-10-06-system-pan.md)
 - [Phone viewport correction](2026-10-06-phone-viewport.md)
 - [First accepted Pan displacement](2026-10-06-pan-latency.md)

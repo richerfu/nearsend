@@ -8,6 +8,8 @@ publish = false
 
 [dependencies]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", default-features = false }
+rustc-hash = "2"
+log = "0.4"
 
 [lib]
 path = "lib.rs"

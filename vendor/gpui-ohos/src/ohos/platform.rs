@@ -28,7 +28,9 @@ use openharmony_ability_plugin_menu::{
 use openharmony_ability_plugin_process::{ProcessBridgePlugin, ProcessExt as _};
 use openharmony_ability_plugin_url::{UrlBridgePlugin, UrlExt as _};
 use openharmony_ability_plugin_window::{WindowBridgePlugin, WindowClient};
+use rustc_hash::FxHashMap;
 use sha2::{Digest, Sha256};
+use smallvec::SmallVec;
 
 use crate::{
     Action, ActivityGuard, AnyWindowHandle, AppLifecyclePhase, BackgroundExecutor, ClipboardEntry,
@@ -52,9 +54,10 @@ pub(crate) struct OhosPlatform {
     foreground_executor: ForegroundExecutor,
     text_system: Arc<dyn PlatformTextSystem>,
     primary_display: Rc<RefCell<Option<OhosDisplay>>>,
-    main_receiver: PriorityQueueReceiver<RunnableVariant>,
+    main_receiver: Rc<RefCell<PriorityQueueReceiver<RunnableVariant>>>,
     gpu_context: Arc<WgpuContext>,
     windows: Rc<RefCell<Vec<Weak<RefCell<OhosWindow>>>>>,
+    window_index: Rc<RefCell<FxHashMap<i64, Weak<RefCell<OhosWindow>>>>>,
     open_urls: Rc<RefCell<Option<Box<dyn FnMut(Vec<String>)>>>>,
     app_lifecycle: Rc<RefCell<Option<Box<dyn FnMut(AppLifecyclePhase)>>>>,
     memory_warning: Rc<RefCell<Option<Box<dyn FnMut()>>>>,
@@ -229,9 +232,10 @@ impl OhosPlatform {
             foreground_executor,
             text_system,
             primary_display: Rc::new(RefCell::new(None)),
-            main_receiver,
+            main_receiver: Rc::new(RefCell::new(main_receiver)),
             gpu_context,
             windows: Rc::new(RefCell::new(Vec::new())),
+            window_index: Rc::new(RefCell::new(FxHashMap::default())),
             open_urls: Rc::new(RefCell::new(None)),
             app_lifecycle: Rc::new(RefCell::new(None)),
             memory_warning: Rc::new(RefCell::new(None)),
@@ -302,12 +306,23 @@ impl OhosPlatform {
     }
 
     fn run_foreground_tasks(&self) {
-        // Process GPUI tasks queued for the main thread
-        // Similar to Windows' run_foreground_task, but simpler since OHOS doesn't have message timeouts
-        let mut receiver = self.main_receiver.clone();
-        while let Ok(Some(runnable)) = receiver.try_pop() {
+        self.dispatcher.begin_main_turn();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_millis(2);
+        for _ in 0..64 {
+            let runnable = self
+                .dispatcher
+                .take_due_timer()
+                .or_else(|| self.main_receiver.borrow_mut().try_pop().ok().flatten());
+            let Some(runnable) = runnable else {
+                return;
+            };
             OhosDispatcher::execute_runnable(runnable);
+            if std::time::Instant::now() >= deadline {
+                break;
+            }
         }
+        // A continuation is needed even without input or a display callback.
+        self.dispatcher.wake_main_thread();
     }
 
     fn publish_menu(&self, window_id: i64) {
@@ -406,7 +421,6 @@ impl OhosPlatform {
         // First, process any GPUI tasks queued for the main thread
         // This ensures tasks are processed in the run_loop, integrating GPUI with OpenHarmony's event loop
         self.run_foreground_tasks();
-        self.dispatcher.run_due_timers();
         self.dispatch_menu_events();
 
         // Handle on_finish_launching callback first, before routing to windows.
@@ -420,9 +434,36 @@ impl OhosPlatform {
             callback();
         }
 
+        let targeted = match event {
+            Event::Input(_) | Event::WindowRedraw(_) => Some(0),
+            Event::SubWindowInput { window_id, .. }
+            | Event::SubWindowRedraw { window_id, .. }
+            | Event::WindowResize { window_id, .. } => Some(*window_id),
+            _ => None,
+        };
+        if let Some(id) = targeted {
+            let window = self.window_index.borrow().get(&id).and_then(Weak::upgrade);
+            if let Some(window) = window {
+                match event {
+                    Event::SubWindowInput { event, .. } | Event::Input(event) => {
+                        self.cursor_window_id.set(id);
+                        window.borrow().handle_input_event(event);
+                    }
+                    Event::SubWindowRedraw { interval, .. } => window
+                        .borrow()
+                        .handle_event(&Event::WindowRedraw(interval.clone())),
+                    _ => window.borrow().handle_event(event),
+                }
+                if window.borrow().take_pending_frame() {
+                    window.borrow().draw_requested_frame();
+                }
+            }
+            return;
+        }
+
         // Route events to all known OHOS windows without borrowing App.
         // This avoids RefCell borrow conflicts when callbacks trigger app updates.
-        let mut live_windows: Vec<Rc<RefCell<OhosWindow>>> = Vec::new();
+        let mut live_windows: SmallVec<[Rc<RefCell<OhosWindow>>; 4]> = SmallVec::new();
         {
             let mut windows = self.windows.borrow_mut();
             windows.retain(|weak: &Weak<RefCell<OhosWindow>>| {
@@ -435,6 +476,9 @@ impl OhosPlatform {
             });
         }
 
+        self.window_index
+            .borrow_mut()
+            .retain(|_, window| window.strong_count() != 0);
         if live_windows.is_empty() {
             warn!("OhosPlatform: No active windows to handle event");
         }
@@ -533,6 +577,21 @@ impl OhosPlatform {
             _ => {}
         }
 
+        if matches!(event, Event::Destroy) {
+            for window in &live_windows {
+                window.borrow().handle_event(&Event::WindowDestroy);
+            }
+            self.dispatcher.shutdown();
+            loop {
+                let next = self.main_receiver.borrow_mut().try_pop().ok().flatten();
+                let Some(runnable) = next else {
+                    break;
+                };
+                drop(runnable);
+            }
+            return;
+        }
+
         // Apply visibility and surface lifecycle before draining VSync. A
         // queued frame must not present to a surface the system just hid or
         // destroyed; GLES presentation can otherwise block requesting a buffer.
@@ -613,6 +672,7 @@ impl Clone for OhosPlatform {
             main_receiver: self.main_receiver.clone(),
             gpu_context: self.gpu_context.clone(),
             windows: self.windows.clone(),
+            window_index: self.window_index.clone(),
             open_urls: self.open_urls.clone(),
             app_lifecycle: self.app_lifecycle.clone(),
             memory_warning: self.memory_warning.clone(),
@@ -861,6 +921,7 @@ impl Platform for OhosPlatform {
                 options,
                 self.gpu_context.clone(),
                 self.foreground_executor.clone(),
+                self.dispatcher.frame_waker(),
                 self.cursor_hidden_until_move.clone(),
                 window_id,
                 fallback_atlas,
@@ -874,6 +935,9 @@ impl Platform for OhosPlatform {
 
             let window = Rc::new(RefCell::new(window));
             self.windows.borrow_mut().push(Rc::downgrade(&window));
+            self.window_index
+                .borrow_mut()
+                .insert(window_id, Rc::downgrade(&window));
             Ok(Box::new(super::window::OhosWindowHandle::new(window)))
         } else {
             Err(anyhow::anyhow!("OpenHarmonyApp not set"))

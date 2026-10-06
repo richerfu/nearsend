@@ -1,168 +1,298 @@
+use super::task_queue::TaskQueue;
+use crate::{PlatformDispatcher, Priority, PriorityQueueSender, RunnableVariant};
+use openharmony_ability::OpenHarmonyWaker;
 use std::{
     cmp::Ordering,
     collections::{BinaryHeap, VecDeque},
-    sync::{Arc, Condvar, Mutex},
+    sync::{
+        Arc, Condvar, Mutex,
+        atomic::{AtomicBool, Ordering as AtomicOrdering},
+    },
     thread,
     time::{Duration, Instant},
 };
 
-use crate::{PlatformDispatcher, Priority, PriorityQueueSender, RunnableVariant};
-use openharmony_ability::OpenHarmonyWaker;
-
 struct TimerAfter {
     when: Instant,
+    sequence: u64,
     runnable: RunnableVariant,
 }
-
 impl Ord for TimerAfter {
     fn cmp(&self, other: &Self) -> Ordering {
-        // Reverse for min-heap behavior
-        other.when.cmp(&self.when)
+        other
+            .when
+            .cmp(&self.when)
+            .then_with(|| other.sequence.cmp(&self.sequence))
     }
 }
-
 impl PartialOrd for TimerAfter {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
-
 impl PartialEq for TimerAfter {
     fn eq(&self, other: &Self) -> bool {
-        self.when.eq(&other.when)
+        self.when == other.when && self.sequence == other.sequence
     }
 }
-
 impl Eq for TimerAfter {}
+#[derive(Default)]
+struct TimerState {
+    heap: BinaryHeap<TimerAfter>,
+    next_sequence: u64,
+    closed: bool,
+}
+#[derive(Default)]
+pub(crate) struct MainWake {
+    requested: AtomicBool,
+    waker: Mutex<Option<OpenHarmonyWaker>>,
+    stopped: AtomicBool,
+    enqueue_gate: Mutex<()>,
+}
+impl MainWake {
+    pub(crate) fn notify(&self) {
+        if self.stopped.load(AtomicOrdering::Acquire)
+            || self.requested.swap(true, AtomicOrdering::AcqRel)
+        {
+            return;
+        }
+        let waker = self.waker.lock().unwrap_or_else(|e| e.into_inner()).clone();
+        if let Some(waker) = waker {
+            waker.wake();
+        } else {
+            self.requested.store(false, AtomicOrdering::Release);
+        }
+    }
+}
 
 pub(crate) struct OhosDispatcher {
     main_thread_id: thread::ThreadId,
     main_sender: PriorityQueueSender<RunnableVariant>,
-    timer_queue: Arc<(Mutex<BinaryHeap<TimerAfter>>, Condvar)>,
+    background: Arc<TaskQueue<RunnableVariant>>,
+    timers: Arc<(Mutex<TimerState>, Condvar)>,
     ready_timers: Arc<Mutex<VecDeque<RunnableVariant>>>,
-    waker: Arc<Mutex<Option<OpenHarmonyWaker>>>,
-    _timer_thread: thread::JoinHandle<()>,
+    wake: Arc<MainWake>,
 }
-
 impl OhosDispatcher {
     pub(crate) fn new(main_sender: PriorityQueueSender<RunnableVariant>) -> Self {
-        let timer_queue: Arc<(Mutex<BinaryHeap<TimerAfter>>, Condvar)> =
-            Arc::new((Mutex::new(BinaryHeap::new()), Condvar::new()));
-        let ready_timers = Arc::new(Mutex::new(VecDeque::new()));
-        let waker: Arc<Mutex<Option<OpenHarmonyWaker>>> = Arc::new(Mutex::new(None));
-        let timer_queue_thread = timer_queue.clone();
-        let ready_timers_thread = ready_timers.clone();
-        let waker_thread = waker.clone();
-        let timer_thread = thread::Builder::new()
-            .name("OhosTimer".to_owned())
+        let background = Arc::new(TaskQueue::<RunnableVariant>::default());
+        let count = thread::available_parallelism().map_or(2, |count| count.get().clamp(2, 8));
+        for index in 0..count {
+            Self::spawn_worker(background.clone(), index, false);
+        }
+        let queue = background.clone();
+        thread::Builder::new()
+            .name("OhosWorkerMonitor".into())
             .spawn(move || {
-                loop {
-                    let (lock, cvar) = &*timer_queue_thread;
-                    let mut heap = lock.lock().unwrap();
-
-                    loop {
-                        if let Some(next) = heap.peek() {
-                            let now = Instant::now();
-                            if next.when <= now {
-                                break;
-                            }
-                            let timeout = next.when.saturating_duration_since(now);
-                            let (new_heap, _) = cvar.wait_timeout(heap, timeout).unwrap();
-                            heap = new_heap;
-                        } else {
-                            heap = cvar.wait(heap).unwrap();
-                        }
-                    }
-
-                    let now = Instant::now();
-                    let mut due = VecDeque::new();
-                    while heap.peek().is_some_and(|next| next.when <= now) {
-                        due.push_back(heap.pop().expect("due timer entry exists").runnable);
-                    }
-                    drop(heap);
-
-                    let queued_any = !due.is_empty();
-                    ready_timers_thread.lock().unwrap().append(&mut due);
-
-                    // A timer is removed from the deadline heap before waking the UI thread.
-                    // This guarantees that a delayed or unavailable waker cannot turn an
-                    // expired timer into a busy loop.
-                    if queued_any && let Some(waker) = waker_thread.lock().unwrap().as_ref() {
-                        waker.wake();
-                    }
+                let mut index = count;
+                // No concurrency ceiling: blocking and nested background tasks retain
+                // the progress allowed by the previous thread-per-runnable dispatcher.
+                while queue.wait_for_stalled_work(Duration::from_millis(10)) {
+                    Self::spawn_worker(queue.clone(), index, true);
+                    index = index.wrapping_add(1);
                 }
             })
-            .expect("Failed to start OHOS timer thread");
-
+            .expect("Failed to start OHOS worker monitor");
+        let timers = Arc::new((Mutex::new(TimerState::default()), Condvar::new()));
+        let ready_timers = Arc::new(Mutex::new(VecDeque::new()));
+        let wake = Arc::new(MainWake::default());
+        let timer_state = timers.clone();
+        let ready = ready_timers.clone();
+        let timer_wake = wake.clone();
+        thread::Builder::new()
+            .name("OhosTimer".into())
+            .spawn(move || {
+                let (lock, changed) = &*timer_state;
+                loop {
+                    let mut state = lock.lock().unwrap_or_else(|e| e.into_inner());
+                    loop {
+                        if state.closed {
+                            return;
+                        }
+                        match state.heap.peek() {
+                            Some(next) if next.when <= Instant::now() => break,
+                            Some(next) => {
+                                let timeout = next.when.saturating_duration_since(Instant::now());
+                                state = changed
+                                    .wait_timeout(state, timeout)
+                                    .unwrap_or_else(|e| e.into_inner())
+                                    .0;
+                            }
+                            None => state = changed.wait(state).unwrap_or_else(|e| e.into_inner()),
+                        }
+                    }
+                    let mut target = ready.lock().unwrap_or_else(|e| e.into_inner());
+                    let now = Instant::now();
+                    while state.heap.peek().is_some_and(|next| next.when <= now) {
+                        target.push_back(state.heap.pop().unwrap().runnable);
+                    }
+                    drop(target);
+                    drop(state);
+                    timer_wake.notify();
+                }
+            })
+            .expect("Failed to start OHOS timer");
         Self {
             main_thread_id: thread::current().id(),
             main_sender,
-            timer_queue,
+            background,
+            timers,
             ready_timers,
-            waker,
-            _timer_thread: timer_thread,
+            wake,
         }
     }
-
+    fn spawn_worker(queue: Arc<TaskQueue<RunnableVariant>>, index: usize, elastic: bool) {
+        thread::Builder::new()
+            .name(format!("OhosWorker-{index}"))
+            .spawn(move || {
+                loop {
+                    let runnable = if elastic {
+                        queue.pop_timeout(Duration::from_secs(1))
+                    } else {
+                        queue.pop()
+                    };
+                    let Some(runnable) = runnable else { break };
+                    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| runnable.run()))
+                        .is_err()
+                    {
+                        log::error!("OHOS background task panicked; worker remains available");
+                    }
+                }
+            })
+            .expect("Failed to start OHOS worker");
+    }
     pub(crate) fn set_waker(&self, waker: OpenHarmonyWaker) {
-        *self.waker.lock().unwrap() = Some(waker);
+        *self.wake.waker.lock().unwrap_or_else(|e| e.into_inner()) = Some(waker);
+        self.wake.notify();
     }
-
-    pub(crate) fn run_due_timers(&self) {
-        let due = std::mem::take(&mut *self.ready_timers.lock().unwrap());
-        for runnable in due {
-            runnable.run();
-        }
+    pub(crate) fn frame_waker(&self) -> Arc<MainWake> {
+        self.wake.clone()
     }
-
+    pub(crate) fn begin_main_turn(&self) {
+        self.wake.requested.store(false, AtomicOrdering::Release);
+    }
+    pub(crate) fn wake_main_thread(&self) {
+        self.wake.notify();
+    }
+    pub(crate) fn take_due_timer(&self) -> Option<RunnableVariant> {
+        self.ready_timers
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .pop_front()
+    }
+    #[cfg(test)]
+    pub(crate) fn has_due_timers(&self) -> bool {
+        !self
+            .ready_timers
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_empty()
+    }
     pub(crate) fn execute_runnable(runnable: RunnableVariant) {
         runnable.run();
     }
+    pub(crate) fn shutdown(&self) {
+        {
+            let _gate = self
+                .wake
+                .enqueue_gate
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            if self.wake.stopped.swap(true, AtomicOrdering::AcqRel) {
+                return;
+            }
+        }
+        drop(self.background.close());
+        let (lock, changed) = &*self.timers;
+        let pending = {
+            let mut state = lock.lock().unwrap_or_else(|e| e.into_inner());
+            state.closed = true;
+            let mut pending: Vec<_> = state.heap.drain().map(|entry| entry.runnable).collect();
+            pending.extend(
+                self.ready_timers
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .drain(..),
+            );
+            changed.notify_all();
+            pending
+        };
+        // Timers can hold !Send foreground futures. Native session teardown runs on the UI thread.
+        if self.is_main_thread() {
+            drop(pending);
+        } else {
+            for runnable in pending {
+                std::mem::forget(runnable);
+            }
+        }
+        self.wake
+            .waker
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take();
+    }
 }
-
+impl Drop for OhosDispatcher {
+    fn drop(&mut self) {
+        self.shutdown();
+    }
+}
 impl PlatformDispatcher for OhosDispatcher {
     fn is_main_thread(&self) -> bool {
         thread::current().id() == self.main_thread_id
     }
-
-    fn dispatch(&self, runnable: RunnableVariant, _priority: Priority) {
-        // On OHOS, run background tasks off the main thread to avoid UI stalls.
-        std::thread::spawn(move || runnable.run());
+    fn dispatch(&self, runnable: RunnableVariant, priority: Priority) {
+        if let Err(runnable) = self.background.push(priority, runnable) {
+            drop(runnable);
+        }
     }
-
     fn dispatch_on_main_thread(&self, runnable: RunnableVariant, priority: Priority) {
-        match self.main_sender.send(priority, runnable) {
-            Ok(_) => {
-                // Task has been queued, it will be processed in the run_loop callback
-            }
-            Err(runnable) => {
-                // NOTE: Runnable may wrap a Future that is !Send.
-                //
-                // This is usually safe because we only poll it on the main thread.
-                // However if the send fails, we know that:
-                // 1. main_receiver has been dropped (which implies the app is shutting down)
-                // 2. we are on a background thread.
-                // It is not safe to drop something !Send on the wrong thread, and
-                // the app will exit soon anyway, so we must forget the runnable.
+        let gate = self
+            .wake
+            .enqueue_gate
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if self.wake.stopped.load(AtomicOrdering::Acquire) {
+            drop(gate);
+            if self.is_main_thread() {
+                drop(runnable);
+            } else {
                 std::mem::forget(runnable);
             }
+            return;
+        }
+        let result = self.main_sender.send(priority, runnable);
+        drop(gate);
+        match result {
+            Ok(()) => self.wake.notify(),
+            Err(runnable) => std::mem::forget(runnable),
         }
     }
 
     fn dispatch_after(&self, duration: Duration, runnable: RunnableVariant) {
-        let (lock, cvar) = &*self.timer_queue;
-        let mut heap = lock.lock().unwrap();
-        heap.push(TimerAfter {
+        let (lock, changed) = &*self.timers;
+        let mut state = lock.lock().unwrap_or_else(|e| e.into_inner());
+        if state.closed {
+            drop(state);
+            if self.is_main_thread() {
+                drop(runnable);
+            } else {
+                std::mem::forget(runnable);
+            }
+            return;
+        }
+        let sequence = state.next_sequence;
+        state.next_sequence = sequence.wrapping_add(1);
+        state.heap.push(TimerAfter {
             when: Instant::now() + duration,
+            sequence,
             runnable,
         });
-        cvar.notify_one();
+        changed.notify_one();
     }
-
     fn spawn_realtime(&self, f: Box<dyn FnOnce() + Send>) {
         thread::spawn(f);
     }
-
     fn now(&self) -> Instant {
         Instant::now()
     }

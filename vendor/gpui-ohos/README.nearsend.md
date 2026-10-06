@@ -1,7 +1,7 @@
 # NearSend OHOS platform patch
 
 Mirrors `ohos-rs/gpui-ohos` branch `feat/pr82-ability-adaptation`, revision
-`b9e032775316a3659d923965478a1a5ee7cd53bb`.
+`b0cd09f4c8741cec1a25860a9fb7c6692a9411ad`.
 
 `src/ohos/window.rs` uses the demand-driven GPUI VSync scheduler as the
 single source of rendering ticks. XComponent's continuous `WindowRedraw`
@@ -54,3 +54,17 @@ system has just hidden or destroyed.
 
 The runtime sources match the published branch. Keep this snapshot and its
 dependency branch in sync when updating the platform integration.
+
+## Framework performance optimization
+
+The adapter reuses background workers and native UI wakes, switches healthy
+VSync to Ability `FrameInputDelivery::OnDemand`, and caches compatible GPU
+pipelines/layouts/shaders per context. A stalled background queue grows its
+worker count; 2–8 base workers are not a concurrency limit. Remaining foreground
+work is reposted after each UI-turn budget. Input callbacks, animation frame
+rate, rendering quality, window count and capture formats retain their existing
+behavior. Continuous XComponent frame delivery remains the native VSync fallback.
+
+The 33 host checks compile the exact production modules. Phone and 2in1
+framework, fallback and application checks are recorded in
+`docs/verification/2026-10-06-gpui-optimized.md` at the NearSend repository root.

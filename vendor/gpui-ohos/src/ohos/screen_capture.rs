@@ -411,32 +411,35 @@ unsafe fn copy_frame(buffer: *mut AvBuffer, callbacks: &CaptureCallbacks) {
         warn!("Failed to map OHOS screen capture frame");
         return;
     }
-    let mut pixels = vec![0u8; frame_bytes];
+    let format = match config.format {
+        RGBA_8888 => super::capture_pixels::CaptureFormat::Rgba,
+        RGBX_8888 => super::capture_pixels::CaptureFormat::Rgbx,
+        BGRA_8888 => super::capture_pixels::CaptureFormat::Bgra,
+        _ => super::capture_pixels::CaptureFormat::Bgrx,
+    };
+    let Some(mut pixels) = super::capture_pixels::CapturePixels::new(width, height, format) else {
+        let _ = unsafe { OH_NativeBuffer_Unmap(native) };
+        return;
+    };
     for row in 0..height {
         let Some(source_offset) = row.checked_mul(stride) else {
             break;
         };
-        let target_offset = row * row_bytes;
         let source = unsafe {
             std::slice::from_raw_parts((address as *const u8).add(source_offset), row_bytes)
         };
-        pixels[target_offset..target_offset + row_bytes].copy_from_slice(source);
+        if !pixels.push_row(source) {
+            break;
+        }
     }
     let result = unsafe { OH_NativeBuffer_Unmap(native) };
     if result != 0 {
         warn!("Failed to unmap OHOS screen capture frame: {result}");
         return;
     }
-    if matches!(config.format, BGRA_8888 | BGRX_8888) {
-        for pixel in pixels.chunks_exact_mut(4) {
-            pixel.swap(0, 2);
-        }
-    }
-    if matches!(config.format, RGBX_8888 | BGRX_8888) {
-        for pixel in pixels.chunks_exact_mut(4) {
-            pixel[3] = 255;
-        }
-    }
+    let Some(pixels) = pixels.finish() else {
+        return;
+    };
     if let Some(frame) = RgbaImage::from_raw(config.width as u32, config.height as u32, pixels) {
         match callbacks.frame.lock() {
             Ok(callback) => callback(ScreenCaptureFrame(frame)),

@@ -4,10 +4,7 @@ use std::{
     cell::{Cell, RefCell},
     collections::HashMap,
     rc::Rc,
-    sync::{
-        Arc, Mutex,
-        atomic::{AtomicBool, Ordering},
-    },
+    sync::{Arc, Mutex},
     time::Instant,
 };
 
@@ -17,8 +14,8 @@ use futures::channel::oneshot;
 use ohos_accessibility_binding::Provider;
 use ohos_vsync_binding::Vsync;
 use openharmony_ability::{
-    ArkUiInputEvent, AvoidAreaType, Event, ImeEvent, InputEvent, OpenHarmonyApp, OpenHarmonyWaker,
-    PointerInputData, XComponentInputEvent,
+    ArkUiInputEvent, AvoidAreaType, Event, ImeEvent, InputEvent, OpenHarmonyApp, PointerInputData,
+    XComponentInputEvent,
     arkui::arkui_input_binding::{UIInputAction, UIInputToolType},
     xcomponent::{
         MouseAction, MouseButton as OhosMouseButton, TouchEvent as OhosTouchEvent, TouchEventData,
@@ -45,6 +42,7 @@ use crate::{
     WindowControlArea, WindowControls, WindowDecorations, WindowInsets, WindowParams,
     WindowVisibility, accesskit, point, px, size,
 };
+use openharmony_ability::FrameInputDelivery;
 
 pub(crate) struct OhosWindow {
     app: Rc<RefCell<Option<OpenHarmonyApp>>>,
@@ -54,6 +52,7 @@ pub(crate) struct OhosWindow {
     appearance: Cell<WindowAppearance>,
     window_id: i64,
     frame_scheduler: Option<Arc<FrameScheduler>>,
+    frame_delivery: Cell<Option<FrameInputDelivery>>,
     closed: Cell<bool>,
     maximized: Rc<Cell<bool>>,
     fullscreen: Rc<Cell<bool>>,
@@ -92,60 +91,40 @@ pub(crate) struct OhosWindow {
 /// the tick; drawing stays on the Ability's main thread.
 struct FrameScheduler {
     vsync: Vsync,
-    pending: Arc<AtomicBool>,
-    requested: Arc<AtomicBool>,
-    active: AtomicBool,
-    failed: AtomicBool,
-    waker: OpenHarmonyWaker,
+    state: Arc<super::frame_request::FrameRequest>,
+    waker: Arc<super::dispatcher::MainWake>,
 }
-
 impl FrameScheduler {
-    fn new(window_id: i64, waker: OpenHarmonyWaker) -> Option<Arc<Self>> {
+    fn new(window_id: i64, waker: Arc<super::dispatcher::MainWake>) -> Option<Arc<Self>> {
         Some(Arc::new(Self {
             vsync: Vsync::try_new(format!("gpui-ohos-{window_id}"))?,
-            pending: Arc::new(AtomicBool::new(false)),
-            requested: Arc::new(AtomicBool::new(false)),
-            active: AtomicBool::new(true),
-            failed: AtomicBool::new(false),
+            state: Arc::new(super::frame_request::FrameRequest::default()),
             waker,
         }))
     }
-
     fn request_frame(&self) {
-        if !self.active.load(Ordering::Acquire)
-            || self.failed.load(Ordering::Acquire)
-            || self.requested.swap(true, Ordering::AcqRel)
-        {
+        let Some(ticket) = self.state.request() else {
             return;
-        }
-        let pending = self.pending.clone();
-        let requested = self.requested.clone();
+        };
+        let state = self.state.clone();
         let waker = self.waker.clone();
         let result = self.vsync.request_frame_once(move |_| {
-            pending.store(true, Ordering::Release);
-            requested.store(false, Ordering::Release);
-            waker.wake();
+            if state.complete(ticket) {
+                waker.notify();
+            }
         });
         if result != 0 {
-            self.requested.store(false, Ordering::Release);
-            // Keep XComponent's native frame callback as a fallback if the
-            // demand-driven VSync source becomes unavailable.
-            self.failed.store(true, Ordering::Release);
+            self.state.fail(ticket);
+            self.waker.notify();
             warn!("Failed to request OHOS VSync frame: {result}");
         }
     }
-
     fn take_pending(&self) -> bool {
-        self.pending.swap(false, Ordering::AcqRel)
+        self.state.take_pending()
     }
-
     fn set_active(&self, active: bool) {
-        self.active.store(active, Ordering::Release);
-        if !active {
-            self.pending.store(false, Ordering::Release);
-            // A callback posted before backgrounding may never arrive.
-            self.requested.store(false, Ordering::Release);
-        } else {
+        self.state.set_active(active);
+        if active {
             self.request_frame();
         }
     }
@@ -319,6 +298,7 @@ impl OhosWindow {
         params: WindowParams,
         gpu_context: Arc<WgpuContext>,
         foreground_executor: ForegroundExecutor,
+        frame_wake: Arc<super::dispatcher::MainWake>,
         cursor_hidden_until_move: Rc<Cell<bool>>,
         window_id: i64,
         fallback_atlas: Option<Arc<WgpuAtlas>>,
@@ -334,10 +314,7 @@ impl OhosWindow {
             .map(|app| appearance_for_color_mode(app.config().color_mode))
             .unwrap_or_default();
         let bounds = params.bounds;
-        let frame_scheduler = app
-            .borrow()
-            .as_ref()
-            .and_then(|app| FrameScheduler::new(window_id, app.create_waker()));
+        let frame_scheduler = FrameScheduler::new(window_id, frame_wake);
         if frame_scheduler.is_none() {
             warn!("OHOS VSync is unavailable for window {window_id}");
         }
@@ -354,6 +331,7 @@ impl OhosWindow {
             appearance: Cell::new(appearance),
             window_id,
             frame_scheduler,
+            frame_delivery: Cell::new(None),
             closed: Cell::new(false),
             maximized: Rc::new(Cell::new(false)),
             fullscreen: Rc::new(Cell::new(false)),
@@ -411,6 +389,7 @@ impl OhosWindow {
     }
 
     pub(crate) fn take_pending_frame(&self) -> bool {
+        self.sync_frame_delivery();
         !self.closed.get()
             && self.surface_available.get()
             && self.visibility.get() == WindowVisibility::Visible
@@ -423,6 +402,30 @@ impl OhosWindow {
     fn frame_waker(&self) -> Option<Rc<dyn Fn()>> {
         let scheduler = self.frame_scheduler.as_ref()?.clone();
         Some(Rc::new(move || scheduler.request_frame()))
+    }
+
+    fn sync_frame_delivery(&self) {
+        let delivery = if self.surface_available.get()
+            && self.visibility.get() == WindowVisibility::Visible
+            && self
+                .frame_scheduler
+                .as_ref()
+                .is_none_or(|scheduler| scheduler.state.failed())
+        {
+            FrameInputDelivery::Continuous
+        } else {
+            FrameInputDelivery::OnDemand
+        };
+        if self.frame_delivery.get() == Some(delivery) {
+            return;
+        }
+        if let Some(app) = self.app.borrow().as_ref() {
+            if let Err(error) = app.set_frame_input_delivery_for(self.window_id, delivery) {
+                warn!("Cannot configure OHOS frame delivery: {error}");
+            } else {
+                self.frame_delivery.set(Some(delivery));
+            }
+        }
     }
 
     pub(crate) fn draw_requested_frame(&self) {
@@ -976,7 +979,9 @@ impl OhosWindow {
         if let Some(scheduler) = &self.frame_scheduler {
             scheduler.set_active(next == WindowVisibility::Visible && self.surface_available.get());
         }
-        if self.visibility.replace(next) == next {
+        let changed = self.visibility.replace(next) != next;
+        self.sync_frame_delivery();
+        if !changed {
             return;
         }
         let mut callback = self.callbacks.borrow_mut().visibility_change.take();
@@ -1181,6 +1186,7 @@ impl OhosWindow {
                 if let Some(scheduler) = &self.frame_scheduler {
                     scheduler.set_active(self.visibility.get() == WindowVisibility::Visible);
                 }
+                self.sync_frame_delivery();
                 debug!("OhosWindow: SurfaceCreate event received - initializing renderer");
                 self.initialize_accessibility();
                 // Initialize renderer when SurfaceCreate event is received
@@ -1248,8 +1254,9 @@ impl OhosWindow {
                 let height = device_height as f32;
                 let new_size = size(px(width / scale), px(height / scale));
                 let origin = self.bounds.borrow().origin;
+                let size_changed = self.bounds.borrow().size != new_size;
                 *self.bounds.borrow_mut() = Bounds::new(origin, new_size);
-                self.refresh_keyboard_overlap_device_px();
+                let keyboard_changed = self.refresh_keyboard_overlap_device_px();
 
                 // Update renderer's drawable size
                 if let Some(ref mut renderer) = *self.renderer.borrow_mut() {
@@ -1259,7 +1266,9 @@ impl OhosWindow {
                     };
                     renderer.update_drawable_size(device_size);
                 }
-                self.emit_resize_callback();
+                if size_changed || keyboard_changed {
+                    self.emit_resize_callback();
+                }
                 self.refresh_insets();
             }
             Event::ContentRectChange(info) if info.window_id == self.window_id => {
@@ -1312,7 +1321,7 @@ impl OhosWindow {
                 if self
                     .frame_scheduler
                     .as_ref()
-                    .is_none_or(|scheduler| scheduler.failed.load(Ordering::Acquire))
+                    .is_none_or(|scheduler| scheduler.state.failed())
                 {
                     self.draw_requested_frame();
                 }
@@ -1373,7 +1382,7 @@ impl OhosWindow {
                     return;
                 }
                 if let Some(scheduler) = &self.frame_scheduler {
-                    scheduler.active.store(false, Ordering::Release);
+                    scheduler.set_active(false);
                 }
                 self.update_visibility(WindowVisibility::Hidden);
                 self.active.set(false);
@@ -1401,7 +1410,7 @@ impl OhosWindow {
         }
     }
 
-    fn handle_input_event(&self, event: &InputEvent) {
+    pub(crate) fn handle_input_event(&self, event: &InputEvent) {
         match event {
             InputEvent::Ime(ime_event) => {
                 if matches!(

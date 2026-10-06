@@ -1,5 +1,9 @@
+use super::{
+    render_cache::RenderCache,
+    wgpu_renderer::{PipelineKey, WgpuBindGroupLayouts, WgpuPipelines},
+};
 use anyhow::Context as _;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 #[cfg(feature = "gles")]
 use wgpu::hal::Instance as _;
 
@@ -12,6 +16,9 @@ pub struct WgpuContext {
     pub device: Arc<wgpu::Device>,
     pub queue: Arc<wgpu::Queue>,
     dual_source_blending: bool,
+    pub(super) render_shader: OnceLock<wgpu::ShaderModule>,
+    pub(super) render_layouts: OnceLock<WgpuBindGroupLayouts>,
+    pub(super) render_pipelines: RenderCache<PipelineKey, WgpuPipelines>,
 }
 
 impl WgpuContext {
@@ -108,6 +115,9 @@ impl WgpuContext {
             device: Arc::new(device),
             queue: Arc::new(queue),
             dual_source_blending: dual_source_blending_available,
+            render_shader: OnceLock::new(),
+            render_layouts: OnceLock::new(),
+            render_pipelines: RenderCache::default(),
         })
     }
 

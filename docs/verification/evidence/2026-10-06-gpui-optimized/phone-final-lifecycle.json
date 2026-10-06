@@ -1,0 +1,9 @@
+{
+  "kind": "phone",
+  "pid": "16214",
+  "resume_cycles": 3,
+  "screen_off_on": true,
+  "same_pid": true,
+  "new_app_faults": [],
+  "passed": true
+}
