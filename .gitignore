@@ -8,4 +8,14 @@ package/libs
 *.so
 keys/
 
+__pycache__/
+*.py[cod]
+node_modules/
+oh_modules/
+.hvigor/
+
+# Simulator captures and raw logs stay local. Small verification summaries are
+# explicitly tracked alongside their reports.
+docs/verification/evidence/
+
 sign-info/

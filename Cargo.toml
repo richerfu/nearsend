@@ -9,21 +9,21 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2", default-features = false }
-gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "e7c4c4e05d9abfe52e0e75f00147be3818a2f8bf" }
+gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", default-features = false }
+gpui-ohos = { path = "vendor/gpui-ohos" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
 gpui-router = { version = "0.3" }
 gpui-kit-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
-openharmony-ability = { version = "1.0.0-beta.2" }
-openharmony-ability-derive = { version = "1.0.0-beta.1" }
-openharmony-ability-plugin-files = { version = "1.0.0-beta.1" }
-openharmony-ability-plugin-permission = { version = "1.0.0-beta.1" }
+openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability-derive = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability-plugin-files = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability-plugin-permission = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
 
 napi-ohos = { version = "=1.2.0" }
 napi-derive-ohos = { version = "=1.2.0" }
 napi-derive-backend-ohos = { version = "=1.2.0" }
 ohos-hilog-binding = { version = "*", features = ["log"] }
-log = { version = "*" }
+log = { version = "*", features = ["release_max_level_info"] }
 
 # LocalSend protocol implementation - use official core from localsend/localsend
 localsend = { git = "https://github.com/localsend/localsend.git", features = [
@@ -71,12 +71,14 @@ napi-build-ohos = { version = "=1.2.0" }
 
 # 强制 patch 所有来源的依赖，确保统一使用固定 revision 的 Zed 实现。
 [patch.crates-io]
-gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2" }
-gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42" }
-# `openharmony-ability` 1.0.0-beta.2 recursively calls `hide_keyboard`
-# from the native IME Hide callback. Keep the platform dependency local until
-# the upstream callback is made notification-only.
-openharmony-ability = { path = "vendor/openharmony-ability" }
+gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", version = "=0.2.2" }
+gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0" }
+ohos-accessibility-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-accessibility-sys = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-xcomponent-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-xcomponent-sys = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-arkui-input-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-arkui-input-sys = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
 gpui-pre = { path = "vendor/gpui-pre-adapters/gpui" }
 gpui-pre-macros = { path = "vendor/gpui-pre-adapters/gpui-macros" }
 gpui-pre-sum-tree = { path = "vendor/gpui-pre-adapters/sum-tree" }
@@ -85,17 +87,17 @@ gpui-pre-sum-tree = { path = "vendor/gpui-pre-adapters/sum-tree" }
 gpui-router = { path = "vendor/gpui-router" }
 
 [patch."https://github.com/zed-industries/zed.git"]
-gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2" }
-gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42" }
+gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", version = "=0.2.2" }
+gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0" }
 
 [patch."https://github.com/zed-industries/zed"]
-gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2" }
-gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42" }
+gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", version = "=0.2.2" }
+gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0" }
 
 [patch."https://github.com/richerfu/zed.git"]
-gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2" }
-gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42" }
+gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", version = "=0.2.2" }
+gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0" }
 
 [patch."https://github.com/richerfu/zed"]
-gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42", version = "=0.2.2" }
-gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42" }
+gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", version = "=0.2.2" }
+gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0" }

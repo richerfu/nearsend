@@ -8,4 +8,4 @@ publish = false
 test-support = ["sum_tree_current/test-support"]
 
 [dependencies]
-sum_tree_current = { package = "sum_tree", git = "https://github.com/ohos-rs/zed.git", rev = "59e51d0ff624b9c1de01236bc77bc6caf9efce42" }
+sum_tree_current = { package = "sum_tree", git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0" }

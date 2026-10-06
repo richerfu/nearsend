@@ -1,0 +1,102 @@
+[workspace]
+members = ["."]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+anyhow = "1"
+bytemuck = "1"
+cosmic-text = "0.17.0"
+etagere = "0.2"
+font-kit = { package = "zed-font-kit", version = "0.14.1-zed", git = "https://github.com/zed-industries/font-kit", rev = "110523127440aefb11ce0cf280ae7c5071337ec5", features = ["source-fontconfig-dlopen"] }
+futures = "0.3.34"
+gpui = { git = "https://github.com/ohos-rs/zed", rev = "f45c7c22d0", default-features = false }
+itertools = "0.14.0"
+image = { version = "0.25.1", default-features = false }
+log = "0.4"
+openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability-plugin-app-control = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability-plugin-clipboard = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability-plugin-files = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability-plugin-menu = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability-plugin-process = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability-plugin-url = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability-plugin-window = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+parking_lot = "0.12.1"
+profiling = "1"
+raw-window-handle = "0.6"
+rustc-hash = "2"
+smallvec = { version = "1.6", features = ["union", "const_new"] }
+sha2 = "0.10"
+smol = "2.0"
+uuid = { version = "1.1.2", features = ["v4", "v5", "v7", "serde"] }
+wgpu = { git = "https://github.com/gfx-rs/wgpu", rev = "8b419de0906f37af69d728f1735132e427a3436f", default-features = false, features = ["parking_lot", "std", "wgsl"] }
+
+[package]
+name = "gpui-ohos"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+description = "OpenHarmony platform support for GPUI"
+repository = "https://github.com/ohos-rs/gpui-ohos"
+
+[features]
+default = ["gles"]
+gles = ["wgpu/gles"]
+vulkan = ["wgpu/vulkan"]
+
+[lib]
+name = "gpui_ohos"
+path = "src/gpui_ohos.rs"
+
+[dependencies]
+gpui.workspace = true
+anyhow.workspace = true
+bytemuck.workspace = true
+cosmic-text.workspace = true
+etagere.workspace = true
+font-kit.workspace = true
+futures.workspace = true
+itertools.workspace = true
+image.workspace = true
+log.workspace = true
+openharmony-ability.workspace = true
+openharmony-ability-plugin-app-control.workspace = true
+openharmony-ability-plugin-clipboard.workspace = true
+openharmony-ability-plugin-files.workspace = true
+openharmony-ability-plugin-menu.workspace = true
+crossbeam-channel = "0.5"
+serde_json = "1"
+openharmony-ability-plugin-process.workspace = true
+openharmony-ability-plugin-url.workspace = true
+openharmony-ability-plugin-window.workspace = true
+parking_lot.workspace = true
+profiling.workspace = true
+raw-window-handle.workspace = true
+rustc-hash.workspace = true
+smallvec.workspace = true
+sha2.workspace = true
+smol.workspace = true
+uuid.workspace = true
+wgpu.workspace = true
+
+[target.'cfg(target_env = "ohos")'.dependencies]
+accesskit_ohos = { git = "https://github.com/richerfu/accesskit.git", rev = "ea2d8c4", features = ["api-15"] }
+ohos-asset-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "b732254b974f5a0a85c58cd1c20744b3f32e81fd" }
+ohos-accessibility-binding = "0.1"
+ohos-fileuri-binding = "0.1"
+ohos-fileshare-binding = "0.1"
+ohos-vsync-binding = "0.3"
+
+[patch.crates-io]
+ohos-accessibility-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-accessibility-sys = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-xcomponent-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-xcomponent-sys = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-arkui-input-sys = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }
+ohos-arkui-input-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }

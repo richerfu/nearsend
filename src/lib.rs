@@ -37,7 +37,12 @@ impl Global for GlobalOpenHarmonyApp {}
 
 #[openharmony_ability_derive::ability]
 pub fn openharmony_app(app: OpenHarmonyApp) {
-    ohos_hilog_binding::log::init_once(Config::default().with_max_level(LevelFilter::Debug));
+    let log_level = if cfg!(debug_assertions) {
+        LevelFilter::Debug
+    } else {
+        LevelFilter::Info
+    };
+    ohos_hilog_binding::log::init_once(Config::default().with_max_level(log_level));
     if let Err(error) = app.register_plugin(PermissionBridgePlugin) {
         log::error!("Failed to register OpenHarmony permission plugin: {error}");
     }

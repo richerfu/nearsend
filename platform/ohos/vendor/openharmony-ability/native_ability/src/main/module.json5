@@ -1,0 +1,15 @@
+{
+  "module": {
+    "name": "native_ability",
+    "type": "har",
+    "deviceTypes": ["default", "tablet", "2in1"],
+    "requestPermissions": [
+      {
+        "name": "ohos.permission.SET_WINDOW_TRANSPARENT",
+      },
+      {
+        "name": "ohos.permission.LOCK_WINDOW_CURSOR",
+      },
+    ],
+  },
+}
