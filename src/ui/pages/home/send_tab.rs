@@ -379,19 +379,24 @@ pub fn render_send_content(
                                         );
                                     },
                                 ))
-                                .child(render_content_type_button(
-                                    "content-folder",
-                                    paths::FOLDER,
-                                    "文件夹",
-                                    cx,
-                                    |this, window, cx| {
-                                        this.handle_pick_content(
-                                            super::SendContentType::Folder,
-                                            window,
+                                .when(
+                                    crate::platform::file_picker::is_directory_picker_supported(),
+                                    |this| {
+                                        this.child(render_content_type_button(
+                                            "content-folder",
+                                            paths::FOLDER,
+                                            "文件夹",
                                             cx,
-                                        );
+                                            |this, window, cx| {
+                                                this.handle_pick_content(
+                                                    super::SendContentType::Folder,
+                                                    window,
+                                                    cx,
+                                                );
+                                            },
+                                        ))
                                     },
-                                ))
+                                )
                                 .child(render_content_type_button(
                                     "content-text",
                                     paths::BOOK_OPEN,
@@ -632,13 +637,6 @@ pub fn render_send_content(
                                                                                     div().w(px(16.)).into_any_element()
                                                                                 }),
                                                                         ),
-                                                                )
-                                                                .child(
-                                                                    div()
-                                                                        .w_full()
-                                                                        .h(px(1.))
-                                                                        .my(px(4.))
-                                                                        .bg(cx.theme().border.opacity(0.9)),
                                                                 )
                                                                 .child(
                                                                     div()

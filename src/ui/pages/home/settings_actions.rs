@@ -298,7 +298,7 @@ impl HomePage {
     }
 
     pub(super) fn pick_receive_destination(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if !crate::platform::file_picker::is_system_file_picker_supported() {
+        if !crate::platform::file_picker::is_directory_picker_supported() {
             self.open_simple_notice_dialog(
                 crate::platform::file_picker::SYSTEM_FILE_PICKER_UNSUPPORTED_MESSAGE,
                 window,

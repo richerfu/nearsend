@@ -11,7 +11,7 @@ pub(crate) enum DeviceClass {
 }
 
 impl DeviceClass {
-    pub(crate) fn supports_system_file_picker(self) -> bool {
+    pub(crate) fn supports_directory_picker(self) -> bool {
         matches!(self, Self::Tablet | Self::TwoInOne)
     }
 }
@@ -51,12 +51,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn only_tablet_and_two_in_one_support_system_file_picker() {
-        assert!(classify_device_type("tablet").supports_system_file_picker());
-        assert!(classify_device_type("2in1").supports_system_file_picker());
-        assert!(classify_device_type("PC").supports_system_file_picker());
-        assert!(!classify_device_type("phone").supports_system_file_picker());
-        assert!(!classify_device_type("default").supports_system_file_picker());
-        assert!(!classify_device_type("tv").supports_system_file_picker());
+    fn only_tablet_and_two_in_one_support_directory_picker() {
+        assert!(classify_device_type("tablet").supports_directory_picker());
+        assert!(classify_device_type("2in1").supports_directory_picker());
+        assert!(classify_device_type("PC").supports_directory_picker());
+        assert!(!classify_device_type("phone").supports_directory_picker());
+        assert!(!classify_device_type("default").supports_directory_picker());
+        assert!(!classify_device_type("tv").supports_directory_picker());
     }
 }

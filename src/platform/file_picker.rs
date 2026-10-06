@@ -20,12 +20,12 @@ async fn show_file_dialog(options: FileDialogOptions) -> Result<Vec<String>> {
     Ok(response.files)
 }
 
-pub fn is_system_file_picker_supported() -> bool {
-    current_device_class().supports_system_file_picker()
+pub fn is_directory_picker_supported() -> bool {
+    current_device_class().supports_directory_picker()
 }
 
-fn ensure_system_file_picker_supported() -> Result<()> {
-    if is_system_file_picker_supported() {
+fn ensure_directory_picker_supported() -> Result<()> {
+    if is_directory_picker_supported() {
         Ok(())
     } else {
         Err(Error::from_reason(SYSTEM_FILE_PICKER_UNSUPPORTED_MESSAGE))
@@ -33,7 +33,6 @@ fn ensure_system_file_picker_supported() -> Result<()> {
 }
 
 pub async fn pick_files() -> Result<Vec<String>> {
-    ensure_system_file_picker_supported()?;
     let uris =
         show_file_dialog(FileDialogOptions::new(dialog_type::OPEN_FILE).allow_many(true)).await?;
     #[cfg(target_env = "ohos")]
@@ -42,7 +41,7 @@ pub async fn pick_files() -> Result<Vec<String>> {
 }
 
 pub async fn pick_folders() -> Result<Vec<String>> {
-    ensure_system_file_picker_supported()?;
+    ensure_directory_picker_supported()?;
     let uri = openharmony::app()?.pick_directory().await?;
     let uris = if uri.trim().is_empty() {
         Vec::new()
@@ -56,7 +55,7 @@ pub async fn pick_folders() -> Result<Vec<String>> {
 
 #[allow(dead_code)]
 pub async fn pick_save_directory() -> Result<Option<PathBuf>> {
-    ensure_system_file_picker_supported()?;
+    ensure_directory_picker_supported()?;
     let uri = openharmony::app()?.pick_directory().await?;
     if uri.trim().is_empty() {
         return Ok(None);

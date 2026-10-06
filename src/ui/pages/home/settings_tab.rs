@@ -247,7 +247,7 @@ pub fn render_settings_content(
     let quick_save_favorites = app.settings_state.quick_save_favorites;
     let auto_finish = app.settings_state.auto_finish;
     let save_to_history = app.settings_state.save_to_history;
-    let supports_save_directory = crate::platform::file_picker::is_system_file_picker_supported();
+    let supports_save_directory = crate::platform::file_picker::is_directory_picker_supported();
     let save_directory = app
         .settings_state
         .destination

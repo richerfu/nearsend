@@ -175,7 +175,7 @@ impl NearSendPlatformExt for OpenHarmonyApp {
                 .call_async::<NearSendPlatformBridgePlugin, SaveFileRequest, UriResponse>(
                     "pick-save-file",
                     SaveFileRequest { file_name },
-                    BridgeCallOptions::default().with_timeout_ms(60_000),
+                    BridgeCallOptions::default().with_timeout_ms(300_000),
                 )
                 .await?;
             Ok(response.uri)
@@ -189,7 +189,7 @@ impl NearSendPlatformExt for OpenHarmonyApp {
                 .call_async::<NearSendPlatformBridgePlugin, EmptyRequest, UriResponse>(
                     "pick-directory",
                     EmptyRequest::default(),
-                    BridgeCallOptions::default().with_timeout_ms(60_000),
+                    BridgeCallOptions::default().with_timeout_ms(300_000),
                 )
                 .await?;
             Ok(response.uri)
