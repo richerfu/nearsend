@@ -1,7 +1,7 @@
 # NearSend OHOS platform patch
 
-Based on `ohos-rs/gpui-ohos` revision
-`9f741b3b5cfa236d5f9ce9d8367580b35cc0a77f`.
+Mirrors `ohos-rs/gpui-ohos` branch `feat/pr82-ability-adaptation`, revision
+`b9e032775316a3659d923965478a1a5ee7cd53bb`.
 
 `src/ohos/window.rs` uses the demand-driven GPUI VSync scheduler as the
 single source of rendering ticks. XComponent's continuous `WindowRedraw`
@@ -52,4 +52,5 @@ visible surface requests a fresh VSync on resume.
 This prevents a queued animation frame from presenting to a surface the
 system has just hidden or destroyed.
 
-Remove this local patch after the upstream platform integrates the change.
+The runtime sources match the published branch. Keep this snapshot and its
+dependency branch in sync when updating the platform integration.

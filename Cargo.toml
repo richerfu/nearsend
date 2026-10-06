@@ -14,10 +14,10 @@ gpui-ohos = { path = "vendor/gpui-ohos" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
 gpui-router = { version = "0.3" }
 gpui-kit-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
-openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
-openharmony-ability-derive = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
-openharmony-ability-plugin-files = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
-openharmony-ability-plugin-permission = { git = "https://github.com/richerfu/openharmony-ability.git", rev = "8da6278" }
+openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", branch = "feat/pr82-nearsend-integration" }
+openharmony-ability-derive = { git = "https://github.com/richerfu/openharmony-ability.git", branch = "feat/pr82-nearsend-integration" }
+openharmony-ability-plugin-files = { git = "https://github.com/richerfu/openharmony-ability.git", branch = "feat/pr82-nearsend-integration" }
+openharmony-ability-plugin-permission = { git = "https://github.com/richerfu/openharmony-ability.git", branch = "feat/pr82-nearsend-integration" }
 
 napi-ohos = { version = "=1.2.0" }
 napi-derive-ohos = { version = "=1.2.0" }

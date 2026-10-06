@@ -1,11 +1,12 @@
 # NearSend ArkTS dependency snapshot
 
-Source: `https://github.com/richerfu/openharmony-ability.git`, revision
-`8da6278d475dbe93f678de36f6153ae51bad02d4`.
+Source: `https://github.com/richerfu/openharmony-ability.git`, branch
+`feat/pr82-nearsend-integration`, snapshot revision
+`0e78f5d319724861c5179f2b63d8f2cc6308fd1e`.
 
 The `native_ability` module and the app-control, clipboard, files, menu,
 permission, process, url and window plugins are copied from that revision.
-The matching Rust crates use the same git revision in the root Cargo manifest
+The matching Rust crates use the same git branch in the root Cargo manifest
 and in `vendor/gpui-ohos/Cargo.toml`.
 
 The source snapshot has no NearSend runtime patches. Hvigor regenerates each

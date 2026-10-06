@@ -1,0 +1,36 @@
+{
+  "gpui_ohos_branch": "feat/pr82-ability-adaptation",
+  "gpui_ohos_commit": "b9e032775316a3659d923965478a1a5ee7cd53bb",
+  "pushed": true,
+  "ability_branch": "feat/pr82-nearsend-integration",
+  "ability_commit": "0e78f5d319724861c5179f2b63d8f2cc6308fd1e",
+  "locks": [
+    {
+      "project": "NearSend",
+      "package_count": 10,
+      "source": "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+    },
+    {
+      "project": "gpui-ohos",
+      "package_count": 8,
+      "source": "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+    },
+    {
+      "project": "gpui-ohos example",
+      "package_count": 10,
+      "source": "git+https://github.com/richerfu/openharmony-ability.git?branch=feat%2Fpr82-nearsend-integration#0e78f5d319724861c5179f2b63d8f2cc6308fd1e"
+    }
+  ],
+  "platform_source_sha256": {
+    "src/ohos.rs": "ddde431d08f99e30fdcf558750e57bba41898d31e7b5ac87d72db71a4b1c21b9",
+    "src/ohos/platform.rs": "3a44799c44755a488f3fd7dbef5a27f6c39a3394df23f80254da363ae69869c6",
+    "src/ohos/window.rs": "80a03062c92dbb5e35721c780428f872aa94e067df59f5410f47aae1324526fc",
+    "src/ohos/touch_scroll.rs": "71dc2822d133b6641d26056266ee59f05d356f2497d2f0f5e08a113c7dbc6320"
+  },
+  "host_gesture_tests_passed": 17,
+  "clippy_passed": true,
+  "fmt_passed": true,
+  "upstream_example_arm64_release_passed": true,
+  "nearsend_arm64_release_passed": true,
+  "gpui_core_modified": false
+}

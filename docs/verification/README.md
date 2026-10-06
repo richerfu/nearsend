@@ -7,6 +7,7 @@ platform adapter. Start with these final reports:
 - [Phone viewport correction](2026-10-06-phone-viewport.md)
 - [First accepted Pan displacement](2026-10-06-pan-latency.md)
 - [Approved publishrelease APP](2026-10-06-publishrelease.md)
+- [gpui-ohos PR82 branch synchronization](2026-10-06-pr82-sync.md)
 
 Earlier dated reports record intermediate candidates and comparisons. Their
 implementation details and artifact names describe those historical builds.
