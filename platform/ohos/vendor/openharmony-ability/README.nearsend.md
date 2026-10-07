@@ -2,7 +2,7 @@
 
 Source: `https://github.com/richerfu/openharmony-ability.git`, branch
 `feat/pr82-nearsend-integration`, snapshot revision
-`4493821eb1234af66afa4b6571e9fb6558fea4cc`.
+`ab1d6c20bdd135b4d713708b942d33f53634791a`.
 
 The `native_ability` module and the app-control, clipboard, files, menu,
 permission, process, url and window plugins are copied from that revision.
