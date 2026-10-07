@@ -35,7 +35,7 @@
 - 2in1 主窗口 + 3 子窗口同时存在，每个子窗口实际点击计数 1、读取窗口状态、关闭、A 重开均通过。子窗口输入结果采用截图目视验证。
 - 两端各 3 次后台/前台恢复，PID 保持，无新增应用 fault。
 - 两端应用进程：64 个 CPU 任务保持基础/峰值/线程数 **4/4/4**；16 对同步等待的父子任务完成，基础线程全阻塞时外部任务继续推进。
-- 无真机安装或温度测量；不将模拟器数据作为真机功耗结论。
+- 本阶段为模拟器验证；后续真机安装见下节。未测量真机温度，不将模拟器数据作为真机功耗结论。
 
 原始日志、截图、诊断代码和执行脚本：`/tmp/gpui-ohos-followup-2026-10-07/`。正常包不含 `SCROLL_TRACE`、`AUDIT_QA`、`FFRT_APP_QA` 或 `GESTURE_AUDIT` 标记。
 
@@ -44,3 +44,9 @@
 结构化结果：[checks.json](evidence/2026-10-07-system-frame-followup/checks.json)。
 
 接入：gpui-ohos `feat/pr82-ability-adaptation` / `d9b2f1a6c1c963bc6edc931da53acb425f22f604`；Ability 保持已锁定的 `2a5d247c`。
+
+## 真机交付补记
+
+2026-10-07 11:44（UTC+8），上述 default 签名 Release HAP 已覆盖安装并启动于 ALN-AL00，保留应用数据。版本为 **1.2.1 / 1002001**，`debug=false`，启动 PID 为 65481，首页截图正常。用户随后反馈“看起来效果好多了”；尚无定量温度或功耗测量。
+
+[真机安装记录](evidence/2026-10-07-system-frame-followup/physical-installation.json)。完整实现状态见[交付核对清单](2026-10-07-optimization-status.md)。本次补记没有更改运行时代码。

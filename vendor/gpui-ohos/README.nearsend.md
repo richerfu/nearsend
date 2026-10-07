@@ -59,15 +59,19 @@ dependency branch in sync when updating the platform integration.
 
 The adapter reuses background workers and native UI wakes, switches healthy
 VSync to Ability `FrameInputDelivery::OnDemand`, and caches compatible GPU
-pipelines/layouts/shaders per context. A stalled background queue grows its
-worker count; 2–8 base workers are not a concurrency limit. Remaining foreground
-work is reposted after each UI-turn budget. Input callbacks, animation frame
+pipelines/layouts/shaders per context. A stalled background queue triggers a
+kernel worker-state check; blocked workers permit additional capacity, while
+CPU-running workers count toward existing capacity. The 2–8 base workers are
+not a concurrency limit. Remaining foreground work is reposted after each
+UI-turn budget. Input callbacks, animation frame
 rate, rendering quality, window count and capture formats retain their existing
 behavior. Continuous XComponent frame delivery remains the native VSync fallback.
 
-The 33 host checks compile the exact production modules. Phone and 2in1
-framework, fallback and application checks are recorded in
-`docs/verification/2026-10-06-gpui-optimized.md` at the NearSend repository root.
+The 37 host checks compile the production modules with host platform shims.
+Phone and 2in1 framework, fallback and application checks are recorded in
+`docs/verification/2026-10-07-system-frame-followup.md` at the NearSend repository root.
+The complete implementation status, deferred proposals and physical-device
+delivery are recorded in `docs/verification/2026-10-07-optimization-status.md`.
 
 ## 2026-10-07 audit fixes
 

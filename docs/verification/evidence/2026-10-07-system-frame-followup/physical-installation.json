@@ -1,0 +1,21 @@
+{
+  "checked_at": "2026-10-07T03:44:20.102610+00:00",
+  "device_model": "ALN-AL00",
+  "installed": true,
+  "launched": true,
+  "signer": "default",
+  "artifact": "dist/NearSend-1.2.1-system-frame-default-release.hap",
+  "sha256": "72d58f0adcfbc984e52fe44fb45d0c56e16441badf07bbaa08498f4f2727acea",
+  "versionName": "1.2.1",
+  "versionCode": 1002001,
+  "debug": false,
+  "pid": "65481",
+  "mode": "replace",
+  "user_feedback": {
+    "date": "2026-10-07",
+    "source": "user conversation",
+    "quote": "看起来效果好多了",
+    "kind": "qualitative"
+  },
+  "temperature_or_power_measured": false
+}
