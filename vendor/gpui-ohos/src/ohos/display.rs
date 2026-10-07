@@ -41,7 +41,7 @@ impl PlatformDisplay for OhosDisplay {
 
     fn bounds(&self) -> Bounds<Pixels> {
         let (width, height) = self.app.display_size();
-        let scale = (self.app.scale() as f32).max(f32::EPSILON);
+        let scale = self.app.scale().max(f32::EPSILON);
         if width > 0 && height > 0 {
             Bounds::new(
                 point(px(0.0), px(0.0)),

@@ -1,7 +1,7 @@
 # NearSend OHOS platform patch
 
 Mirrors `ohos-rs/gpui-ohos` branch `feat/pr82-ability-adaptation`, revision
-`7553b7431da38471094d6677510f680a47132f9e`.
+`d9b2f1a6c1c963bc6edc931da53acb425f22f604`.
 
 `src/ohos/window.rs` uses the demand-driven GPUI VSync scheduler as the
 single source of rendering ticks. XComponent's continuous `WindowRedraw`

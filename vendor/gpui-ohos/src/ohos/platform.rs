@@ -43,9 +43,18 @@ use crate::{
 };
 
 use super::{
-    dispatcher::OhosDispatcher, display::OhosDisplay, screen_capture, text_system::OhosTextSystem,
-    wgpu_context::WgpuContext, window::OhosWindow,
+    dispatcher::OhosDispatcher,
+    display::OhosDisplay,
+    screen_capture,
+    text_system::OhosTextSystem,
+    wgpu_context::WgpuContext,
+    window::{OhosWindow, OhosWindowContext},
 };
+
+type OpenUrlsCallback = Rc<RefCell<Option<Box<dyn FnMut(Vec<String>)>>>>;
+type LifecycleCallback = Rc<RefCell<Option<Box<dyn FnMut(AppLifecyclePhase)>>>>;
+type MemoryWarningCallback = Rc<RefCell<Option<Box<dyn FnMut()>>>>;
+type MenuActionCallback = Box<dyn FnMut(&dyn Action)>;
 
 pub(crate) struct OhosPlatform {
     app: Rc<RefCell<Option<OpenHarmonyApp>>>,
@@ -58,9 +67,9 @@ pub(crate) struct OhosPlatform {
     gpu_context: Arc<WgpuContext>,
     windows: Rc<RefCell<Vec<Weak<RefCell<OhosWindow>>>>>,
     window_index: Rc<RefCell<FxHashMap<i64, Weak<RefCell<OhosWindow>>>>>,
-    open_urls: Rc<RefCell<Option<Box<dyn FnMut(Vec<String>)>>>>,
-    app_lifecycle: Rc<RefCell<Option<Box<dyn FnMut(AppLifecyclePhase)>>>>,
-    memory_warning: Rc<RefCell<Option<Box<dyn FnMut()>>>>,
+    open_urls: OpenUrlsCallback,
+    app_lifecycle: LifecycleCallback,
+    memory_warning: MemoryWarningCallback,
     clipboard_cache: Rc<RefCell<Option<ClipboardItem>>>,
     cursor_hidden_until_move: Rc<Cell<bool>>,
     cursor_window_id: Rc<Cell<i64>>,
@@ -75,7 +84,7 @@ struct MenuState {
     json: String,
     actions: HashMap<String, Box<dyn Action>>,
     next_id: u64,
-    on_action: Option<Box<dyn FnMut(&dyn Action)>>,
+    on_action: Option<MenuActionCallback>,
 }
 
 fn menu_items(
@@ -115,8 +124,7 @@ fn menu_items(
                 } => {
                     let accelerator = keymap
                         .bindings_for_action(action.as_ref())
-                        .filter(|binding| binding.keystrokes().len() == 1)
-                        .last()
+                        .rfind(|binding| binding.keystrokes().len() == 1)
                         .map(|binding| {
                             let key = &binding.keystrokes()[0];
                             let modifiers = key.modifiers();
@@ -379,6 +387,24 @@ impl OhosPlatform {
     }
 
     fn handle_ohos_event(&self, event: &Event, on_finish_launching: Option<Box<dyn FnOnce()>>) {
+        // ArkUI can deliver raw contact and recognized Pan callbacks in the
+        // same native input batch. Finish that batch before polling unrelated
+        // futures or presenting a frame, both of which may block the UI thread.
+        // Invalidation and NativeVSync already queue a UserEvent for drawing.
+        let input = match event {
+            Event::Input(input) => Some((0, input)),
+            Event::SubWindowInput { window_id, event } => Some((*window_id, event)),
+            _ => None,
+        };
+        if let Some((id, input)) = input {
+            let window = self.window_index.borrow().get(&id).and_then(Weak::upgrade);
+            if let Some(window) = window {
+                self.cursor_window_id.set(id);
+                window.borrow().handle_input_event(input);
+            }
+            return;
+        }
+
         let phase = match event {
             Event::Start => Some(AppLifecyclePhase::Foreground),
             Event::GainedFocus => Some(AppLifecyclePhase::Active),
@@ -435,27 +461,20 @@ impl OhosPlatform {
         }
 
         let targeted = match event {
-            Event::Input(_) | Event::WindowRedraw(_) => Some(0),
-            Event::SubWindowInput { window_id, .. }
-            | Event::SubWindowRedraw { window_id, .. }
-            | Event::WindowResize { window_id, .. } => Some(*window_id),
+            Event::WindowRedraw(_) => Some(0),
+            Event::SubWindowRedraw { window_id, .. } | Event::WindowResize { window_id, .. } => {
+                Some(*window_id)
+            }
             _ => None,
         };
         if let Some(id) = targeted {
             let window = self.window_index.borrow().get(&id).and_then(Weak::upgrade);
             if let Some(window) = window {
                 match event {
-                    Event::SubWindowInput { event, .. } | Event::Input(event) => {
-                        self.cursor_window_id.set(id);
-                        window.borrow().handle_input_event(event);
-                    }
                     Event::SubWindowRedraw { interval, .. } => window
                         .borrow()
                         .handle_event(&Event::WindowRedraw(interval.clone())),
                     _ => window.borrow().handle_event(event),
-                }
-                if window.borrow().take_pending_frame() {
-                    window.borrow().draw_requested_frame();
                 }
             }
             return;
@@ -522,10 +541,6 @@ impl OhosPlatform {
                 } if id == *window_id => window
                     .borrow()
                     .handle_event(&Event::WindowRedraw(interval.clone())),
-                Event::SubWindowInput { window_id, event } if id == *window_id => {
-                    self.cursor_window_id.set(id);
-                    window.borrow().handle_event(&Event::Input(event.clone()))
-                }
                 Event::WindowResize { window_id, .. } if id == *window_id => {
                     window.borrow().handle_event(event)
                 }
@@ -546,10 +561,6 @@ impl OhosPlatform {
                 | Event::WindowDestroy
                     if id == 0 =>
                 {
-                    window.borrow().handle_event(event)
-                }
-                Event::Input(_) if id == 0 => {
-                    self.cursor_window_id.set(0);
                     window.borrow().handle_event(event)
                 }
                 Event::SubWindowSurfaceCreate(_)
@@ -592,12 +603,15 @@ impl OhosPlatform {
             return;
         }
 
-        // Apply visibility and surface lifecycle before draining VSync. A
-        // queued frame must not present to a surface the system just hid or
-        // destroyed; GLES presentation can otherwise block requesting a buffer.
-        for window in &live_windows {
-            if window.borrow().take_pending_frame() {
-                window.borrow().draw_requested_frame();
+        // NativeVSync wakes the system main queue with UserEvent. Only that
+        // turn consumes its pending frames; lifecycle/input callbacks must
+        // return to ArkUI without inserting a presentation into their batch.
+        // Window visibility and surface lifetime are already applied above.
+        if matches!(event, Event::UserEvent) {
+            for window in &live_windows {
+                if window.borrow().take_pending_frame() {
+                    window.borrow().draw_requested_frame();
+                }
             }
         }
     }
@@ -898,7 +912,7 @@ impl Platform for OhosPlatform {
                     .borrow()
                     .atlas()
                     .ok_or_else(|| anyhow::anyhow!("Primary OHOS window has no GPU atlas"))?;
-                let scale = app.scale() as f32;
+                let scale = app.scale();
                 let bounds = options.bounds;
                 let window_id = create_os_window(WindowCreateParams {
                     name: format!("gpui-{}", uuid::Uuid::new_v4()),
@@ -916,15 +930,17 @@ impl Platform for OhosPlatform {
                 (0, None)
             };
             let window = OhosWindow::new(
-                self.app.clone(),
                 handle,
                 options,
-                self.gpu_context.clone(),
-                self.foreground_executor.clone(),
-                self.dispatcher.frame_waker(),
-                self.cursor_hidden_until_move.clone(),
-                window_id,
-                fallback_atlas,
+                OhosWindowContext {
+                    app: self.app.clone(),
+                    gpu_context: self.gpu_context.clone(),
+                    foreground_executor: self.foreground_executor.clone(),
+                    frame_wake: self.dispatcher.frame_waker(),
+                    cursor_hidden_until_move: self.cursor_hidden_until_move.clone(),
+                    window_id,
+                    fallback_atlas,
+                },
             )?;
 
             // GPUI fetches sprite_atlas during window initialization and caches it.

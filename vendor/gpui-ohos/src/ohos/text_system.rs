@@ -135,13 +135,8 @@ impl PlatformTextSystem for OhosTextSystem {
         let index = if candidate_properties.is_empty() {
             0
         } else {
-            match font_kit::matching::find_best_match(
-                &candidate_properties,
-                &font_into_properties(font),
-            ) {
-                Ok(index) => index,
-                Err(_) => 0,
-            }
+            font_kit::matching::find_best_match(&candidate_properties, &font_into_properties(font))
+                .unwrap_or_default()
         };
 
         Ok(candidates[index])
@@ -222,8 +217,7 @@ impl OhosTextSystemState {
     fn normalize_family_name(name: &str) -> String {
         name.trim()
             .to_lowercase()
-            .replace('_', " ")
-            .replace('-', " ")
+            .replace(['_', '-'], " ")
             .split_whitespace()
             .collect::<Vec<_>>()
             .join(" ")
@@ -453,7 +447,7 @@ impl OhosTextSystemState {
             .with_context(|| format!("no image for {params:?} in font {font:?}"))?;
 
         if params.is_emoji {
-            for pixel in image.data.chunks_exact_mut(4) {
+            for pixel in image.data.as_chunks_mut::<4>().0 {
                 pixel.swap(0, 2);
             }
         }

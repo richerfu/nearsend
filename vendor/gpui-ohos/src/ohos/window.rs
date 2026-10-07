@@ -44,6 +44,19 @@ use crate::{
 };
 use openharmony_ability::FrameInputDelivery;
 
+pub(crate) type BackHandler = Rc<RefCell<Option<Box<dyn FnMut()>>>>;
+type ResizeCallback = Box<dyn FnMut(Size<Pixels>, f32)>;
+
+pub(crate) struct OhosWindowContext {
+    pub(crate) app: Rc<RefCell<Option<OpenHarmonyApp>>>,
+    pub(crate) gpu_context: Arc<WgpuContext>,
+    pub(crate) foreground_executor: ForegroundExecutor,
+    pub(crate) frame_wake: Arc<super::dispatcher::MainWake>,
+    pub(crate) cursor_hidden_until_move: Rc<Cell<bool>>,
+    pub(crate) window_id: i64,
+    pub(crate) fallback_atlas: Option<Arc<WgpuAtlas>>,
+}
+
 pub(crate) struct OhosWindow {
     app: Rc<RefCell<Option<OpenHarmonyApp>>>,
     pub(crate) handle: AnyWindowHandle,
@@ -76,7 +89,7 @@ pub(crate) struct OhosWindow {
     pressed_mouse_button: Cell<Option<MouseButton>>,
     mouse_click: RefCell<Option<MouseClickState>>,
     back_enabled: Cell<bool>,
-    back_handler: Rc<RefCell<Option<Box<dyn FnMut()>>>>,
+    back_handler: BackHandler,
     a11y_callbacks: RefCell<Option<Arc<Mutex<A11yCallbacks>>>>,
     a11y_adapter: RefCell<Option<OhosA11yAdapter<'static>>>,
     key_state: RefCell<OhosKeyState>,
@@ -182,7 +195,7 @@ struct WindowCallbacks {
     visibility_change: Option<Box<dyn FnMut(WindowVisibility)>>,
     insets_changed: Option<Box<dyn FnMut(WindowInsets)>>,
     hover_status_change: Option<Box<dyn FnMut(bool)>>,
-    resize: Option<Box<dyn FnMut(Size<Pixels>, f32)>>,
+    resize: Option<ResizeCallback>,
     moved: Option<Box<dyn FnMut()>>,
     should_close: Option<Box<dyn FnMut() -> bool>>,
     close: Option<Box<dyn FnOnce()>>,
@@ -293,21 +306,20 @@ impl OhosWindow {
     }
 
     pub(crate) fn new(
-        app: Rc<RefCell<Option<OpenHarmonyApp>>>,
         handle: AnyWindowHandle,
         params: WindowParams,
-        gpu_context: Arc<WgpuContext>,
-        foreground_executor: ForegroundExecutor,
-        frame_wake: Arc<super::dispatcher::MainWake>,
-        cursor_hidden_until_move: Rc<Cell<bool>>,
-        window_id: i64,
-        fallback_atlas: Option<Arc<WgpuAtlas>>,
+        context: OhosWindowContext,
     ) -> Result<Self> {
-        let scale = app
-            .borrow()
-            .as_ref()
-            .map(|a| a.scale() as f32)
-            .unwrap_or(1.0);
+        let OhosWindowContext {
+            app,
+            gpu_context,
+            foreground_executor,
+            frame_wake,
+            cursor_hidden_until_move,
+            window_id,
+            fallback_atlas,
+        } = context;
+        let scale = app.borrow().as_ref().map(|a| a.scale()).unwrap_or(1.0);
         let appearance = app
             .borrow()
             .as_ref()
@@ -572,10 +584,10 @@ impl OhosWindow {
     }
 
     fn request_touch_momentum_frame(&self) {
-        if self.touch_scroll.borrow().has_momentum() {
-            if let Some(scheduler) = &self.frame_scheduler {
-                scheduler.request_frame();
-            }
+        if self.touch_scroll.borrow().has_momentum()
+            && let Some(scheduler) = &self.frame_scheduler
+        {
+            scheduler.request_frame();
         }
     }
 
@@ -724,10 +736,10 @@ impl OhosWindow {
     }
 
     fn hide_keyboard_if_needed(&self) {
-        if self.keyboard_visible.replace(false) {
-            if let Some(app) = self.app.borrow().as_ref() {
-                app.hide_keyboard_for(self.window_id);
-            }
+        if self.keyboard_visible.replace(false)
+            && let Some(app) = self.app.borrow().as_ref()
+        {
+            app.hide_keyboard_for(self.window_id);
         }
     }
 
@@ -986,7 +998,7 @@ impl OhosWindow {
         self.callbacks.borrow_mut().visibility_change = callback;
     }
 
-    pub(crate) fn back_handler_state(&self) -> (bool, Rc<RefCell<Option<Box<dyn FnMut()>>>>) {
+    pub(crate) fn back_handler_state(&self) -> (bool, BackHandler) {
         (self.back_enabled.get(), self.back_handler.clone())
     }
 
@@ -1097,7 +1109,7 @@ impl OhosWindow {
         // rendering issues (stretched/cropped content, black borders, etc.)
         // even though create_platform_window_surface itself won't fail.
         let content_rect = app_ref.content_rect_for(self.window_id);
-        let scale = app_ref.scale() as f32;
+        let scale = app_ref.scale();
         *self.scale.borrow_mut() = scale;
         let device_width = if content_rect.width > 0 {
             content_rect.width as u32
@@ -1355,12 +1367,7 @@ impl OhosWindow {
                     }
                     self.callbacks.borrow_mut().appearance_changed = callback;
                 }
-                let new_scale = self
-                    .app
-                    .borrow()
-                    .as_ref()
-                    .map(|a| a.scale() as f32)
-                    .unwrap_or(1.0);
+                let new_scale = self.app.borrow().as_ref().map(|a| a.scale()).unwrap_or(1.0);
                 let old_scale = self.scale.replace(new_scale);
                 if old_scale != new_scale {
                     let mut bounds = self.bounds.borrow_mut();
@@ -2197,11 +2204,11 @@ impl PlatformWindow for OhosWindow {
         }
         // Initialize renderer lazily if not already initialized
         // This ensures native_window is available (after SurfaceCreate event)
-        if self.renderer.borrow().is_none() {
-            if let Err(e) = self.initialize_renderer() {
-                warn!("OhosWindow: Failed to initialize renderer in draw(): {}", e);
-                return;
-            }
+        if self.renderer.borrow().is_none()
+            && let Err(e) = self.initialize_renderer()
+        {
+            warn!("OhosWindow: Failed to initialize renderer in draw(): {}", e);
+            return;
         }
 
         // Use WGPU renderer to render the scene.
