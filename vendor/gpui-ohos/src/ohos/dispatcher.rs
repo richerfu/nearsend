@@ -76,23 +76,7 @@ pub(crate) struct OhosDispatcher {
 impl OhosDispatcher {
     pub(crate) fn new(main_sender: PriorityQueueSender<RunnableVariant>) -> Self {
         let background = Arc::new(TaskQueue::<RunnableVariant>::default());
-        let count = thread::available_parallelism().map_or(2, |count| count.get().clamp(2, 8));
-        for index in 0..count {
-            Self::spawn_worker(background.clone(), index, false);
-        }
-        let queue = background.clone();
-        thread::Builder::new()
-            .name("OhosWorkerMonitor".into())
-            .spawn(move || {
-                let mut index = count;
-                // No concurrency ceiling: blocking and nested background tasks retain
-                // the progress allowed by the previous thread-per-runnable dispatcher.
-                while queue.wait_for_stalled_work(Duration::from_millis(10)) {
-                    Self::spawn_worker(queue.clone(), index, true);
-                    index = index.wrapping_add(1);
-                }
-            })
-            .expect("Failed to start OHOS worker monitor");
+        super::workers::Workers::start(background.clone());
         let timers = Arc::new((Mutex::new(TimerState::default()), Condvar::new()));
         let ready_timers = Arc::new(Mutex::new(VecDeque::new()));
         let wake = Arc::new(MainWake::default());
@@ -140,26 +124,6 @@ impl OhosDispatcher {
             ready_timers,
             wake,
         }
-    }
-    fn spawn_worker(queue: Arc<TaskQueue<RunnableVariant>>, index: usize, elastic: bool) {
-        thread::Builder::new()
-            .name(format!("OhosWorker-{index}"))
-            .spawn(move || {
-                loop {
-                    let runnable = if elastic {
-                        queue.pop_timeout(Duration::from_secs(1))
-                    } else {
-                        queue.pop()
-                    };
-                    let Some(runnable) = runnable else { break };
-                    if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| runnable.run()))
-                        .is_err()
-                    {
-                        log::error!("OHOS background task panicked; worker remains available");
-                    }
-                }
-            })
-            .expect("Failed to start OHOS worker");
     }
     pub(crate) fn set_waker(&self, waker: OpenHarmonyWaker) {
         *self.wake.waker.lock().unwrap_or_else(|e| e.into_inner()) = Some(waker);

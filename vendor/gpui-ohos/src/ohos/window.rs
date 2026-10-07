@@ -48,11 +48,11 @@ pub(crate) struct OhosWindow {
     app: Rc<RefCell<Option<OpenHarmonyApp>>>,
     pub(crate) handle: AnyWindowHandle,
     bounds: RefCell<Bounds<Pixels>>,
+    viewport: super::viewport::ViewportPublisher,
     scale: RefCell<f32>,
     appearance: Cell<WindowAppearance>,
     window_id: i64,
     frame_scheduler: Option<Arc<FrameScheduler>>,
-    frame_delivery: Cell<Option<FrameInputDelivery>>,
     closed: Cell<bool>,
     maximized: Rc<Cell<bool>>,
     fullscreen: Rc<Cell<bool>>,
@@ -327,11 +327,11 @@ impl OhosWindow {
             app: app.clone(),
             handle,
             bounds: RefCell::new(bounds),
+            viewport: super::viewport::ViewportPublisher::default(),
             scale: RefCell::new(scale),
             appearance: Cell::new(appearance),
             window_id,
             frame_scheduler,
-            frame_delivery: Cell::new(None),
             closed: Cell::new(false),
             maximized: Rc::new(Cell::new(false)),
             fullscreen: Rc::new(Cell::new(false)),
@@ -416,15 +416,10 @@ impl OhosWindow {
         } else {
             FrameInputDelivery::OnDemand
         };
-        if self.frame_delivery.get() == Some(delivery) {
-            return;
-        }
-        if let Some(app) = self.app.borrow().as_ref() {
-            if let Err(error) = app.set_frame_input_delivery_for(self.window_id, delivery) {
-                warn!("Cannot configure OHOS frame delivery: {error}");
-            } else {
-                self.frame_delivery.set(Some(delivery));
-            }
+        if let Some(app) = self.app.borrow().as_ref()
+            && let Err(error) = app.set_frame_input_delivery_for(self.window_id, delivery)
+        {
+            warn!("Cannot configure OHOS frame delivery: {error}");
         }
     }
 
@@ -1068,11 +1063,8 @@ impl OhosWindow {
     fn emit_resize_callback(&self) {
         let scale = *self.scale.borrow();
         let content_size = self.effective_content_size();
-
         let mut callback = self.callbacks.borrow_mut().resize.take();
-        if let Some(ref mut cb) = callback {
-            cb(content_size, scale);
-        }
+        self.viewport.publish(content_size, scale, &mut callback);
         self.callbacks.borrow_mut().resize = callback;
     }
 
@@ -1106,16 +1098,17 @@ impl OhosWindow {
         // even though create_platform_window_surface itself won't fail.
         let content_rect = app_ref.content_rect_for(self.window_id);
         let scale = app_ref.scale() as f32;
+        *self.scale.borrow_mut() = scale;
         let device_width = if content_rect.width > 0 {
             content_rect.width as u32
         } else {
             // Fallback to bounds if content_rect is not available yet
-            self.bounds.borrow().size.width.as_f32() as u32
+            (self.bounds.borrow().size.width.as_f32() * scale) as u32
         };
         let device_height = if content_rect.height > 0 {
             content_rect.height as u32
         } else {
-            self.bounds.borrow().size.height.as_f32() as u32
+            (self.bounds.borrow().size.height.as_f32() * scale) as u32
         };
 
         debug!(
@@ -1203,9 +1196,8 @@ impl OhosWindow {
                         );
                     }
                 }
-                if self.refresh_keyboard_overlap_device_px() {
-                    self.emit_resize_callback();
-                }
+                self.refresh_keyboard_overlap_device_px();
+                self.emit_resize_callback();
                 self.refresh_insets();
             }
             Event::SurfaceDestroy => {
@@ -1254,9 +1246,8 @@ impl OhosWindow {
                 let height = device_height as f32;
                 let new_size = size(px(width / scale), px(height / scale));
                 let origin = self.bounds.borrow().origin;
-                let size_changed = self.bounds.borrow().size != new_size;
                 *self.bounds.borrow_mut() = Bounds::new(origin, new_size);
-                let keyboard_changed = self.refresh_keyboard_overlap_device_px();
+                self.refresh_keyboard_overlap_device_px();
 
                 // Update renderer's drawable size
                 if let Some(ref mut renderer) = *self.renderer.borrow_mut() {
@@ -1266,9 +1257,7 @@ impl OhosWindow {
                     };
                     renderer.update_drawable_size(device_size);
                 }
-                if size_changed || keyboard_changed {
-                    self.emit_resize_callback();
-                }
+                self.emit_resize_callback();
                 self.refresh_insets();
             }
             Event::ContentRectChange(info) if info.window_id == self.window_id => {
@@ -1372,7 +1361,13 @@ impl OhosWindow {
                     .as_ref()
                     .map(|a| a.scale() as f32)
                     .unwrap_or(1.0);
-                *self.scale.borrow_mut() = new_scale;
+                let old_scale = self.scale.replace(new_scale);
+                if old_scale != new_scale {
+                    let mut bounds = self.bounds.borrow_mut();
+                    let ratio = old_scale / new_scale;
+                    bounds.size = size(bounds.size.width * ratio, bounds.size.height * ratio);
+                    bounds.origin *= ratio;
+                }
                 self.refresh_keyboard_overlap_device_px();
                 self.emit_resize_callback();
                 self.refresh_insets();
@@ -2170,6 +2165,7 @@ impl PlatformWindow for OhosWindow {
 
     fn on_resize(&self, callback: Box<dyn FnMut(Size<Pixels>, f32)>) {
         self.callbacks.borrow_mut().resize = Some(callback);
+        self.viewport.reset();
     }
 
     fn on_moved(&self, callback: Box<dyn FnMut()>) {

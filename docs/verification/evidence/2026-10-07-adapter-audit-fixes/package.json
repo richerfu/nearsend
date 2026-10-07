@@ -1,0 +1,20 @@
+{
+  "package": "NearSend-1.2.1-adapter-audit-fixed-default-release.hap",
+  "sha256": "6e5961fa14b1ce8d68d45d4dc12cdfda2d9ca70a93a6daadada5b75a675ed75d",
+  "no_diagnostic_code": true,
+  "all_allocated_elf_sections_match_production_build": true,
+  "devices": [
+    {
+      "kind": "phone",
+      "target": "127.0.0.1:10003",
+      "pid": "10853",
+      "installed": true
+    },
+    {
+      "kind": "2in1",
+      "target": "127.0.0.1:10002",
+      "pid": "29892",
+      "installed": true
+    }
+  ]
+}

@@ -29,3 +29,5 @@ Use `scripts/verify_ohos_scroll.py` for simulator checks and
 `scripts/measure_ohos_cpu.py` for process CPU sampling. Both expect `hdc` on PATH.
 Simulator screen coordinates are recorded for the tested layouts; adjust them
 when the floating window or display size changes.
+
+- [Adapter audit fixes and scheduler comparison](2026-10-07-adapter-audit-fixes.md)

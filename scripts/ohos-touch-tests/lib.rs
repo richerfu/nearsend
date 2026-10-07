@@ -1,6 +1,6 @@
 // Native wake and the main queue are host shims; GPUI futures and production queues are real.
 extern crate self as openharmony_ability;
-pub use gpui::{PlatformDispatcher, Priority, RunnableVariant};
+pub use gpui::{Pixels, PlatformDispatcher, Priority, RunnableVariant, Size};
 use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
@@ -23,6 +23,10 @@ mod dispatcher;
 #[allow(dead_code)]
 #[path = "../../vendor/gpui-ohos/src/ohos/frame_request.rs"]
 mod frame_request;
+#[cfg(target_os = "macos")]
+#[allow(dead_code)]
+#[path = "../../vendor/gpui-ohos/src/ohos/worker_state.rs"]
+mod native_worker_state;
 #[allow(dead_code)]
 #[path = "../../vendor/gpui-ohos/src/ohos/render_cache.rs"]
 mod render_cache;
@@ -31,6 +35,17 @@ mod task_queue;
 #[allow(dead_code)]
 #[path = "../../vendor/gpui-ohos/src/ohos/touch_scroll.rs"]
 mod touch_scroll;
+#[allow(dead_code)]
+#[path = "../../vendor/gpui-ohos/src/ohos/viewport.rs"]
+mod viewport;
+#[cfg(target_os = "macos")]
+#[path = "support/macos_worker_state.rs"]
+mod worker_state;
+#[cfg(not(target_os = "macos"))]
+#[path = "../../vendor/gpui-ohos/src/ohos/worker_state.rs"]
+mod worker_state;
+#[path = "../../vendor/gpui-ohos/src/ohos/workers.rs"]
+mod workers;
 
 pub struct PriorityQueueSender<T>(Arc<task_queue::TaskQueue<T>>);
 #[cfg(test)]
@@ -97,6 +112,40 @@ mod tests {
             rx.recv_timeout(Duration::from_secs(5)).unwrap();
         }
         assert!(ids.lock().unwrap().len() <= 8);
+        dispatcher.shutdown();
+    }
+    #[test]
+    fn cpu_bound_polls_do_not_expand_the_worker_pool() {
+        let (sender, _) = PriorityQueueReceiver::new();
+        let dispatcher = Arc::new(dispatcher::OhosDispatcher::new(sender));
+        let executor = BackgroundExecutor::new(dispatcher.clone());
+        let active = Arc::new(AtomicUsize::new(0));
+        let peak = Arc::new(AtomicUsize::new(0));
+        let (tx, rx) = std::sync::mpsc::channel();
+        for _ in 0..32 {
+            let (active, peak, tx) = (active.clone(), peak.clone(), tx.clone());
+            executor
+                .spawn(async move {
+                    let n = active.fetch_add(1, Ordering::SeqCst) + 1;
+                    peak.fetch_max(n, Ordering::SeqCst);
+                    let end = Instant::now() + Duration::from_millis(100);
+                    let mut x = 1u64;
+                    while Instant::now() < end {
+                        for _ in 0..1000 {
+                            x = x.wrapping_mul(1664525).wrapping_add(1013904223);
+                        }
+                        std::hint::black_box(x);
+                    }
+                    active.fetch_sub(1, Ordering::SeqCst);
+                    tx.send(()).unwrap();
+                })
+                .detach();
+        }
+        for _ in 0..32 {
+            rx.recv_timeout(Duration::from_secs(10)).unwrap();
+        }
+        let base = std::thread::available_parallelism().map_or(2, |n| n.get().clamp(2, 8));
+        assert!(peak.load(Ordering::SeqCst) <= base);
         dispatcher.shutdown();
     }
     #[test]

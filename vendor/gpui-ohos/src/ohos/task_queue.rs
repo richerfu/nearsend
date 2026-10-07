@@ -103,8 +103,8 @@ impl<T> TaskQueue<T> {
         }
     }
 
-    // The monitor sleeps when there is no backlog. A stalled queue needs another
-    // worker: a running future may synchronously wait for work in this same queue.
+    // The monitor sleeps when there is no backlog. Stalling requests an OS-state
+    // observation; it does not by itself authorize another worker.
     pub(crate) fn wait_for_stalled_work(&self, interval: Duration) -> bool {
         let mut state = self.state.lock().unwrap_or_else(|e| e.into_inner());
         loop {

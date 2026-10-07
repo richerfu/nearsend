@@ -10,10 +10,13 @@ mod screen_capture;
 mod task_queue;
 mod text_system;
 mod touch_scroll;
+mod viewport;
 mod wgpu_atlas;
 mod wgpu_context;
 mod wgpu_renderer;
 mod window;
+mod worker_state;
+mod workers;
 
 use openharmony_ability::OpenHarmonyApp;
 
