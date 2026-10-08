@@ -1,6 +1,6 @@
 [package]
 name = "near-send"
-version = "1.2.1"
+version = "1.2.2"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -71,6 +71,8 @@ napi-build-ohos = { version = "=1.2.0" }
 
 # 强制 patch 所有来源的依赖，确保统一使用固定 revision 的 Zed 实现。
 [patch.crates-io]
+# Local IME lifecycle fix, including the in-progress text/selection support.
+ohos-ime-binding = { path = "../../ohos-rs/ohos-native-bindings/crates/ime" }
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", version = "=0.2.2" }
 gpui_macros = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0" }
 ohos-accessibility-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "c05f75ebc489ad2a8c7f7b314aac38a27fb24836" }

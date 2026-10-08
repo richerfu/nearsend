@@ -1,4 +1,5 @@
 import common from "@ohos.app.ability.common";
+import { BusinessError } from "@ohos.base";
 import deviceInfo from "@ohos.deviceInfo";
 import picker from "@ohos.file.picker";
 import {
@@ -59,8 +60,11 @@ function parseDialogOptions(payload: BridgeTypedValue): FileDialogOptions {
     throw new Error("file-dialog.filters must be an array");
   }
   if (request.suggestedName != null) {
-    if (typeof request.suggestedName !== "string" ||
-      request.dialogType !== "save-file" || request.suggestedName.trim().length === 0) {
+    if (
+      typeof request.suggestedName !== "string" ||
+      request.dialogType !== "save-file" ||
+      request.suggestedName.trim().length === 0
+    ) {
       throw new Error("file-dialog.suggestedName requires a save-file dialog and a non-empty name");
     }
   }
@@ -100,7 +104,7 @@ function pickerLocation(location: string | undefined | null): string | undefined
   return location && location.indexOf("://") > 0 ? location : undefined;
 }
 
-function supportsFolderSelection(): boolean {
+function supportsSelectedFilterIndex(): boolean {
   return deviceInfo.deviceType === "2in1" && canIUse(FOLDER_SELECTION_SYSCAP);
 }
 
@@ -121,7 +125,7 @@ async function showFileDialog(
     saveOptions.fileSuffixChoices = suffixFilters;
     const files = await documentPicker.save(saveOptions);
     let filter = -1;
-    if (deviceInfo.sdkApiVersion >= 14 && supportsFolderSelection()) {
+    if (deviceInfo.sdkApiVersion >= 14 && supportsSelectedFilterIndex()) {
       // Keep the package compatible with API 12 while using the API 14 method only after the
       // runtime capability check. The narrow adapter prevents the static checker from rejecting
       // an otherwise guarded call solely because compatibleSdkVersion is lower than 14.
@@ -135,11 +139,9 @@ async function showFileDialog(
   selectOptions.maxSelectNumber = options.allowMany ? 500 : 1;
   selectOptions.fileSuffixFilters = suffixFilters;
   if (options.dialogType === "open-folder") {
-    if (!supportsFolderSelection()) {
-      throw new Error(
-        "OpenHarmony folder selection requires a 2-in-1 device with FolderSelection capability",
-      );
-    }
+    // Let DocumentViewPicker decide whether this device supports folder selection.
+    // Product-type allowlists reject capable tablets; the selectMode SysCap also
+    // changes from FolderSelection to UserFileService in API 26.
     selectOptions.selectMode = picker.DocumentSelectMode.FOLDER;
     selectOptions.maxSelectNumber = 1;
     selectOptions.fileSuffixFilters = undefined;
@@ -156,11 +158,23 @@ export class FilesPlugin extends AsyncPluginBase {
     payload: BridgeTypedValue,
     context: BridgeCallContext,
   ): Promise<BridgeTypedValue> {
+    if (!context.isActive()) {
+      throw new Error("File dialog plugin is not active");
+    }
     if (action !== "file-dialog") {
       throw new Error(`Unsupported ohos.files action '${action}'`);
     }
     const options = parseDialogOptions(payload);
-    const response = await showFileDialog(context.abilityContext, options);
+    let response: FileDialogResponse;
+    try {
+      response = await showFileDialog(context.abilityContext, options);
+    } catch (error) {
+      const detail = error as BusinessError;
+      throw new Error(
+        `file-dialog ${options.dialogType} failed (device=${deviceInfo.deviceType}, ` +
+          `api=${deviceInfo.sdkApiVersion}, code=${detail.code ?? "unknown"}): ${detail.message}`,
+      );
+    }
     if (!context.isActive()) {
       throw new Error("Ability was destroyed while the file dialog was pending");
     }

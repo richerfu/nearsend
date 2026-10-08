@@ -9,9 +9,13 @@ permission, process, url and window plugins are copied from that revision.
 The matching Rust crates use the same git branch in the root Cargo manifest
 and in `vendor/gpui-ohos/Cargo.toml`.
 
-The source snapshot has no NearSend runtime patches. Hvigor regenerates each
-module's `BuildProfile.ets` while building; the committed copy remains the
-upstream version. Root license files also serve the module license symlinks.
+The files plugin carries the tablet folder-selection fix, mirrored in the
+`feat/pr82-nearsend-integration` working tree: folder support is decided by the
+system picker, and failures retain the system error code and device context.
+See `docs/verification/2026-10-07-tablet-folder-picker.md` in the NearSend root.
+Hvigor regenerates each module's `BuildProfile.ets` while building; the committed
+copy remains the upstream version. Root license files also serve the module
+license symlinks.
 
 Local signing material remains in the developer's `build-profile.json5` and
 ignored key directories. Only module registration changes are committed from

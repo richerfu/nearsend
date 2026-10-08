@@ -1,5 +1,4 @@
 import { OpenLinkOptions, Want, wantConstant } from "@kit.AbilityKit";
-import { deviceInfo } from "@kit.BasicServicesKit";
 import { picker } from "@kit.CoreFileKit";
 import pasteboard from "@ohos.pasteboard";
 import {
@@ -16,9 +15,6 @@ const ACCEPTED_RESPONSE_TYPE = "nearsend.platform.AcceptedResponse";
 const SAVE_FILE_REQUEST_TYPE = "nearsend.platform.SaveFileRequest";
 const URI_RESPONSE_TYPE = "nearsend.platform.UriResponse";
 const OPEN_FILE_REQUEST_TYPE = "nearsend.platform.OpenFileRequest";
-const FOLDER_SELECTION_SYSCAP =
-  "SystemCapability.FileManagement.UserFileService.FolderSelection";
-const SYSTEM_FILE_PICKER_UNSUPPORTED_MESSAGE = "系统能力不支持。";
 
 interface ClipboardWriteRequest {
   text: string;
@@ -101,14 +97,6 @@ function ensureActive(context: BridgeCallContext): void {
   }
 }
 
-function supportsDirectoryPicker(): boolean {
-  const deviceType = deviceInfo.deviceType.trim().toLowerCase();
-  return (
-    (deviceType === "tablet" || deviceType === "2in1" || deviceType === "pc") &&
-    canIUse(FOLDER_SELECTION_SYSCAP)
-  );
-}
-
 async function readClipboardText(context: BridgeCallContext): Promise<BridgeTypedValue> {
   try {
     const systemPasteboard = pasteboard.getSystemPasteboard();
@@ -162,23 +150,6 @@ async function pickSaveFile(
     ensureActive(context);
     return { typeName: URI_RESPONSE_TYPE, value: new UriResponse("") };
   }
-}
-
-async function pickDirectory(context: BridgeCallContext): Promise<BridgeTypedValue> {
-  if (!supportsDirectoryPicker()) {
-    throw new Error(SYSTEM_FILE_PICKER_UNSUPPORTED_MESSAGE);
-  }
-
-  const documentPicker = new picker.DocumentViewPicker(context.abilityContext);
-  const options = new picker.DocumentSelectOptions();
-  options.maxSelectNumber = 1;
-  options.selectMode = picker.DocumentSelectMode.FOLDER;
-  const result = await documentPicker.select(options);
-  ensureActive(context);
-  return {
-    typeName: URI_RESPONSE_TYPE,
-    value: new UriResponse(result && result.length > 0 ? result[0] : ""),
-  };
 }
 
 async function openFile(
@@ -240,9 +211,6 @@ export class NearSendPlatformPlugin extends AsyncPluginBase {
         return await writeClipboardText(parseClipboardWriteRequest(payload), context);
       case "pick-save-file":
         return await pickSaveFile(parseSaveFileRequest(payload), context);
-      case "pick-directory":
-        requireEmptyRequest(payload, action);
-        return await pickDirectory(context);
       case "open-file":
         return await openFile(parseOpenFileRequest(payload), context);
       case "open-directory":

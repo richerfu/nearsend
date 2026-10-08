@@ -42,12 +42,7 @@ pub async fn pick_files() -> Result<Vec<String>> {
 
 pub async fn pick_folders() -> Result<Vec<String>> {
     ensure_directory_picker_supported()?;
-    let uri = openharmony::app()?.pick_directory().await?;
-    let uris = if uri.trim().is_empty() {
-        Vec::new()
-    } else {
-        vec![uri]
-    };
+    let uris = show_file_dialog(FileDialogOptions::new(dialog_type::OPEN_FOLDER)).await?;
     #[cfg(target_env = "ohos")]
     persist_and_activate_uris_or_err(&uris, FILE_SHARE_READ_MODE)?;
     Ok(uris)
@@ -56,16 +51,16 @@ pub async fn pick_folders() -> Result<Vec<String>> {
 #[allow(dead_code)]
 pub async fn pick_save_directory() -> Result<Option<PathBuf>> {
     ensure_directory_picker_supported()?;
-    let uri = openharmony::app()?.pick_directory().await?;
-    if uri.trim().is_empty() {
+    let uris = show_file_dialog(FileDialogOptions::new(dialog_type::OPEN_FOLDER)).await?;
+    let Some(uri) = uris.first() else {
         return Ok(None);
-    }
+    };
     #[cfg(target_env = "ohos")]
     persist_and_activate_uris_or_err(
-        std::slice::from_ref(&uri),
+        std::slice::from_ref(uri),
         FILE_SHARE_READ_MODE | FILE_SHARE_WRITE_MODE,
     )?;
-    Ok(picker_uri_to_path(&uri))
+    Ok(picker_uri_to_path(uri))
 }
 
 pub async fn pick_save_file(file_name: String) -> Result<Option<(String, PathBuf)>> {

@@ -120,8 +120,6 @@ pub trait NearSendPlatformExt {
         file_name: String,
     ) -> Pin<Box<dyn Future<Output = Result<String>> + Send>>;
 
-    fn pick_directory(&self) -> Pin<Box<dyn Future<Output = Result<String>> + Send>>;
-
     fn open_file(&self, uri: String) -> Pin<Box<dyn Future<Output = Result<()>> + Send>>;
 
     fn open_directory(&self, uri: String) -> Pin<Box<dyn Future<Output = Result<()>> + Send>>;
@@ -175,20 +173,6 @@ impl NearSendPlatformExt for OpenHarmonyApp {
                 .call_async::<NearSendPlatformBridgePlugin, SaveFileRequest, UriResponse>(
                     "pick-save-file",
                     SaveFileRequest { file_name },
-                    BridgeCallOptions::default().with_timeout_ms(300_000),
-                )
-                .await?;
-            Ok(response.uri)
-        })
-    }
-
-    fn pick_directory(&self) -> Pin<Box<dyn Future<Output = Result<String>> + Send>> {
-        let bridge = self.bridge();
-        Box::pin(async move {
-            let response = bridge?
-                .call_async::<NearSendPlatformBridgePlugin, EmptyRequest, UriResponse>(
-                    "pick-directory",
-                    EmptyRequest::default(),
                     BridgeCallOptions::default().with_timeout_ms(300_000),
                 )
                 .await?;
