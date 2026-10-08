@@ -68,14 +68,8 @@ rate, rendering quality, window count and capture formats retain their existing
 behavior. Continuous XComponent frame delivery remains the native VSync fallback.
 
 The 37 host checks compile the production modules with host platform shims.
-Phone and 2in1 framework, fallback and application checks are recorded in
-`docs/verification/2026-10-07-system-frame-followup.md` at the NearSend repository root.
-The complete implementation status, deferred proposals and physical-device
-delivery are recorded in `docs/verification/2026-10-07-optimization-status.md`.
 
 ## 2026-10-07 audit fixes
 
 The adapter and Ability now handle failed frame registration, restarted native
 Pan sessions, changed effective viewports, and CPU-bound worker saturation.
-See `docs/verification/2026-10-07-adapter-audit-fixes.md` for implementation,
-FFRT evaluation, simulator results, and explicitly recorded validation limits.

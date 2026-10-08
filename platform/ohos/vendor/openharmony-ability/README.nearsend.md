@@ -12,7 +12,6 @@ and in `vendor/gpui-ohos/Cargo.toml`.
 The files plugin carries the tablet folder-selection fix, mirrored in the
 `feat/pr82-nearsend-integration` working tree: folder support is decided by the
 system picker, and failures retain the system error code and device context.
-See `docs/verification/2026-10-07-tablet-folder-picker.md` in the NearSend root.
 Hvigor regenerates each module's `BuildProfile.ets` while building; the committed
 copy remains the upstream version. Root license files also serve the module
 license symlinks.
