@@ -82,6 +82,17 @@ pub struct OpenFileRequest {
 
 impl_bridge_napi_type!(OpenFileRequest, "nearsend.platform.OpenFileRequest");
 
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct SystemBarThemeRequest {
+    pub dark: bool,
+}
+
+impl_bridge_napi_type!(
+    SystemBarThemeRequest,
+    "nearsend.platform.SystemBarThemeRequest"
+);
+
 pub fn set_app(app: OpenHarmonyApp) -> Result<()> {
     OPENHARMONY_APP
         .write()
@@ -108,6 +119,8 @@ fn validate_non_empty(value: &str, field: &str) -> Result<()> {
 }
 
 pub trait NearSendPlatformExt {
+    fn set_system_bar_theme(&self, dark: bool) -> Pin<Box<dyn Future<Output = Result<()>> + Send>>;
+
     fn read_clipboard_text(&self) -> Pin<Box<dyn Future<Output = Result<String>> + Send>>;
 
     fn write_clipboard_text(
@@ -126,6 +139,20 @@ pub trait NearSendPlatformExt {
 }
 
 impl NearSendPlatformExt for OpenHarmonyApp {
+    fn set_system_bar_theme(&self, dark: bool) -> Pin<Box<dyn Future<Output = Result<()>> + Send>> {
+        let bridge = self.bridge();
+        Box::pin(async move {
+            bridge?
+                .call_async::<NearSendPlatformBridgePlugin, SystemBarThemeRequest, AcceptedResponse>(
+                    "set-system-bar-theme",
+                    SystemBarThemeRequest { dark },
+                    BridgeCallOptions::default(),
+                )
+                .await?;
+            Ok(())
+        })
+    }
+
     fn read_clipboard_text(&self) -> Pin<Box<dyn Future<Output = Result<String>> + Send>> {
         let bridge = self.bridge();
         Box::pin(async move {

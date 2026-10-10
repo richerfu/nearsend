@@ -8,6 +8,19 @@ impl gpui::Render for HomePage {
         self.sync_selected_files_from_shared(cx);
         if !self.services_started {
             self.services_started = true;
+            self.system_appearance = window.appearance();
+            self.apply_theme(cx);
+            let home = cx.entity().downgrade();
+            window
+                .observe_window_appearance(move |window, cx| {
+                    let _ = home.update(cx, |this, cx| {
+                        this.system_appearance = window.appearance();
+                        if this.settings_state.theme_mode == ThemeMode::System {
+                            this.apply_theme(cx);
+                        }
+                    });
+                })
+                .detach();
             // Initialize select states for settings dropdowns
             self.init_select_states(window, cx);
             // Start server and discovery services

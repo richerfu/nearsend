@@ -1,8 +1,7 @@
 use gpui::{
-    hsla, px, size, Anchor, App, AppContext, Application, ApplicationHandle, Bounds, Global,
-    WindowBounds, WindowOptions,
+    px, size, App, AppContext, Application, ApplicationHandle, Bounds, Global, WindowBounds,
+    WindowOptions,
 };
-use gpui_component::theme::Theme;
 use gpui_component::Root;
 use gpui_kit_assets::Assets as ComponentAssets;
 
@@ -72,11 +71,7 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
 
         gpui_component::init(cx);
         gpui_router::init(cx);
-        ui::theme::apply_nearsend_theme(cx);
         RouterHistoryState::init(cx, "/");
-        Theme::global_mut(cx).overlay = hsla(0.0, 0.0, 0.0, 0.58);
-        Theme::global_mut(cx).notification.placement = Anchor::BottomCenter;
-        Theme::global_mut(cx).notification.margins.bottom = px(72.);
 
         // Create a shared tokio runtime on a background thread.
         // All async work (server, transfers, discovery) goes through this handle.

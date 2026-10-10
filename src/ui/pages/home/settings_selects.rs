@@ -4,73 +4,9 @@ use super::*;
 
 impl HomePage {
     pub(super) fn init_select_states(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.theme_select.is_some() {
+        if self.language_select.is_some() {
             return;
         }
-
-        // Theme select: 系统 / 浅色 / 深色
-        let theme_idx = match self.settings_state.theme_mode {
-            ThemeMode::System => 0,
-            ThemeMode::Light => 1,
-            ThemeMode::Dark => 2,
-        };
-        let theme_select = cx.new(|cx| {
-            SelectState::new(
-                vec!["系统", "浅色", "深色"],
-                Some(IndexPath::default().row(theme_idx)),
-                window,
-                cx,
-            )
-        });
-        cx.subscribe_in(
-            &theme_select,
-            window,
-            |this, _, event: &SelectEvent<Vec<&'static str>>, _win, cx| {
-                if let SelectEvent::Confirm(Some(value)) = event {
-                    this.settings_state.theme_mode = match *value {
-                        "浅色" => ThemeMode::Light,
-                        "深色" => ThemeMode::Dark,
-                        _ => ThemeMode::System,
-                    };
-                    this.persist_settings();
-                    cx.notify();
-                }
-            },
-        )
-        .detach();
-        self.theme_select = Some(theme_select);
-
-        // Color select: 系统 / NearSend / OLED
-        let color_idx = match self.settings_state.color_mode {
-            ColorMode::System => 0,
-            ColorMode::LocalSend => 1,
-            ColorMode::Oled => 2,
-        };
-        let color_select = cx.new(|cx| {
-            SelectState::new(
-                vec!["系统", "NearSend", "OLED"],
-                Some(IndexPath::default().row(color_idx)),
-                window,
-                cx,
-            )
-        });
-        cx.subscribe_in(
-            &color_select,
-            window,
-            |this, _, event: &SelectEvent<Vec<&'static str>>, _win, cx| {
-                if let SelectEvent::Confirm(Some(value)) = event {
-                    this.settings_state.color_mode = match *value {
-                        "NearSend" => ColorMode::LocalSend,
-                        "OLED" => ColorMode::Oled,
-                        _ => ColorMode::System,
-                    };
-                    this.persist_settings();
-                    cx.notify();
-                }
-            },
-        )
-        .detach();
-        self.color_select = Some(color_select);
 
         // Language select
         let language_idx = match self.settings_state.language.as_str() {
