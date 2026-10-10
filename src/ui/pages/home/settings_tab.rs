@@ -1,6 +1,6 @@
 //! Settings tab: general, receive, send, network, other (uses ui/pages state types).
 
-use super::{HomePage, NetworkFilterMode, SendMode};
+use super::{ColorMode, HomePage, NetworkFilterMode, SendMode, ThemeMode};
 use crate::ui::components::logo::Logo;
 use crate::ui::components::switch::Switch;
 use crate::ui::icons::{app_icon, paths};
@@ -17,6 +17,8 @@ use std::rc::Rc;
 use std::time::Duration;
 
 const SEND_MODE_OPTIONS: &[&str] = &["单设备", "多设备", "链接分享"];
+const THEME_MODE_OPTIONS: &[&str] = &["跟随系统", "浅色", "深色"];
+const COLOR_MODE_OPTIONS: &[&str] = &["NearSend", "LocalSend", "OLED", "自定义"];
 const DEVICE_TYPE_OPTIONS: &[&str] = &["Mobile", "Desktop", "Web", "Server", "Headless"];
 const DEVICE_MODEL_OPTIONS: &[&str] = &[
     "自动",
@@ -247,6 +249,105 @@ pub fn render_settings_content(
     let quick_save_favorites = app.settings_state.quick_save_favorites;
     let auto_finish = app.settings_state.auto_finish;
     let save_to_history = app.settings_state.save_to_history;
+    let supports_save_directory = crate::platform::file_picker::is_directory_picker_supported();
+    let save_directory = app
+        .settings_state
+        .destination
+        .as_deref()
+        .filter(|path| !path.trim().is_empty())
+        .unwrap_or("未设置")
+        .to_string();
+
+    // -- Appearance section: brightness and palette are independent. --
+    let theme_mode = render_value_entry(
+        "主题",
+        app.settings_state.theme_mode.label(),
+        "select-theme-mode",
+        cx,
+        |this, window, cx| {
+            this.open_settings_choice_dialog(
+                "主题",
+                THEME_MODE_OPTIONS,
+                this.settings_state.theme_mode.label(),
+                window,
+                cx,
+                |this, value, cx| {
+                    this.settings_state.theme_mode = match value {
+                        "浅色" => ThemeMode::Light,
+                        "深色" => ThemeMode::Dark,
+                        _ => ThemeMode::System,
+                    };
+                    this.apply_theme(cx);
+                    this.persist_settings();
+                },
+            );
+        },
+    );
+    let color_mode = render_value_entry(
+        "配色",
+        app.settings_state.color_mode.label(),
+        "select-color-mode",
+        cx,
+        |this, window, cx| {
+            this.open_settings_choice_dialog(
+                "配色",
+                COLOR_MODE_OPTIONS,
+                this.settings_state.color_mode.label(),
+                window,
+                cx,
+                |this, value, cx| {
+                    this.settings_state.color_mode = match value {
+                        "LocalSend" => ColorMode::LocalSend,
+                        "OLED" => ColorMode::Oled,
+                        "自定义" => ColorMode::Custom,
+                        _ => ColorMode::System,
+                    };
+                    this.apply_theme(cx);
+                    this.persist_settings();
+                },
+            );
+        },
+    );
+    let mut appearance_children = vec![theme_mode, color_mode];
+    if app.settings_state.color_mode == ColorMode::Custom {
+        let seed = app.settings_state.theme().seed();
+        appearance_children.push(
+            settings_row()
+                .id("edit-theme-color")
+                .cursor_pointer()
+                .on_click(
+                    cx.listener(|this, _, window, cx| this.open_theme_color_dialog(window, cx)),
+                )
+                .child(settings_label("主题色", cx))
+                .child(
+                    div()
+                        .size(px(20.))
+                        .rounded_full()
+                        .bg(seed)
+                        .border_1()
+                        .border_color(cx.theme().border),
+                )
+                .child(
+                    div()
+                        .text_sm()
+                        .text_color(cx.theme().muted_foreground)
+                        .child(crate::ui::theme::accent_color_hex(seed)),
+                )
+                .child(settings_chevron(cx))
+                .into_any_element(),
+        );
+    }
+    if app.settings_state.color_mode == ColorMode::Oled {
+        appearance_children.push(
+            div()
+                .py(px(8.))
+                .text_xs()
+                .text_color(cx.theme().muted_foreground)
+                .child("深色主题下使用纯黑背景")
+                .into_any_element(),
+        );
+    }
+    let appearance = render_settings_section("外观", cx, appearance_children);
 
     // -- Receive section --
     let require_pin = app.settings_state.require_pin;
@@ -334,6 +435,17 @@ pub fn render_settings_content(
         auto_finish_entry,
         save_to_history_entry,
     ];
+    if supports_save_directory {
+        receive_children.push(render_value_entry(
+            "保存目录",
+            &save_directory,
+            "receive-save-directory",
+            cx,
+            |this, window, cx| {
+                this.pick_receive_destination(window, cx);
+            },
+        ));
+    }
     if require_pin {
         receive_children.push(r2);
     }
@@ -683,6 +795,7 @@ pub fn render_settings_content(
                             .flex_1()
                             .min_w(px(0.))
                             .gap(spacing::MD)
+                            .child(appearance)
                             .child(receive)
                             .when(advanced, |this| this.child(send)),
                     )
@@ -704,6 +817,7 @@ pub fn render_settings_content(
             .pt(px(12.))
             .pb(px(12.))
             .gap(spacing::MD)
+            .child(appearance)
             .child(receive)
             .when(advanced, |this| this.child(send))
             .child(network)

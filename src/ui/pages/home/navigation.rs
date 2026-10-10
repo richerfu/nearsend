@@ -33,8 +33,6 @@ impl HomePage {
             .w_full()
             .flex_none()
             .items_center()
-            .border_t_1()
-            .border_color(cx.theme().border.opacity(0.7))
             .bg(cx.theme().background)
             .children(items.iter().map(|(tab, label, icon_path)| {
                 div()
@@ -55,8 +53,6 @@ impl HomePage {
             .w(sizing::SIDEBAR_WIDTH)
             .h_full()
             .flex_none()
-            .border_r_1()
-            .border_color(cx.theme().border.opacity(0.75))
             .bg(cx.theme().background)
             .p(px(12.))
             .child(
@@ -65,8 +61,6 @@ impl HomePage {
                     .px(px(10.))
                     .items_center()
                     .gap(px(10.))
-                    .border_b_1()
-                    .border_color(cx.theme().border.opacity(0.65))
                     .child(Logo::new().size(30.))
                     .child(
                         div()

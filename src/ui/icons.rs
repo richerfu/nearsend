@@ -4,8 +4,12 @@
 //! often inherit a transparent color, which is why some NearSend icons vanish.
 //! Always go through [`app_icon`] so the paint color is explicit.
 
-use gpui::{Hsla, SharedString, Styled};
+use gpui::{
+    percentage, Animation, AnimationExt as _, AnyElement, ElementId, Hsla, IntoElement,
+    SharedString, Styled, Transformation,
+};
 use gpui_component::{Icon, Sizable as _, Size};
+use std::time::Duration;
 
 pub mod paths {
     pub const ARROW_LEFT: &str = "icons/arrow-left.svg";
@@ -47,4 +51,15 @@ pub mod paths {
 /// Build an SVG icon that is guaranteed to paint.
 pub fn app_icon(path: impl Into<SharedString>, size: Size, color: Hsla) -> Icon {
     Icon::default().path(path).with_size(size).text_color(color)
+}
+
+/// Build a visibly asymmetric loading indicator and keep it repainting while mounted.
+pub fn loading_icon(id: impl Into<ElementId>, size: Size, color: Hsla) -> AnyElement {
+    app_icon(paths::LOADER, size, color)
+        .with_animation(
+            id,
+            Animation::new(Duration::from_millis(800)).repeat(),
+            |icon, delta| icon.transform(Transformation::rotate(percentage(delta))),
+        )
+        .into_any_element()
 }

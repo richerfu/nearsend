@@ -157,8 +157,6 @@ pub fn render_receive_content(
                             .flex_none()
                             .items_center()
                             .gap(px(10.))
-                            .border_t_1()
-                            .border_color(cx.theme().border.opacity(0.8))
                             .pt(px(24.))
                             .pb(px(8.))
                             .child(
@@ -264,9 +262,7 @@ pub fn render_receive_content(
                                     .max_w(px(420.))
                                     .items_center()
                                     .gap(spacing::MD)
-                                    .mt(px(24.))
-                                    .border_t_1()
-                                    .border_color(cx.theme().border.opacity(0.8))
+                                    .mt(px(56.))
                                     .pt(px(20.))
                                     .child(
                                         div()

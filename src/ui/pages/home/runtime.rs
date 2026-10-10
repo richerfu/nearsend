@@ -237,8 +237,13 @@ impl HomePage {
     }
 
     pub(super) fn sync_selected_files_from_shared(&mut self, cx: &mut Context<Self>) {
-        let items = self.send_selection_state.read(cx).items().to_vec();
-        let total = self.send_selection_state.read(cx).total_size();
+        let selection = self.send_selection_state.read(cx);
+        if self.selection_revision == Some(selection.revision()) {
+            return;
+        }
+        self.selection_revision = Some(selection.revision());
+        let items = selection.items().to_vec();
+        let total = selection.total_size();
         self.send_state.selected_files = items
             .into_iter()
             .map(|item| send_state::SelectedFileInfo {
@@ -398,6 +403,14 @@ impl HomePage {
             .destination
             .as_ref()
             .map(std::path::PathBuf::from);
+        #[cfg(target_env = "ohos")]
+        if let Some(directory) = default_save_directory.as_deref() {
+            if let Err(error) =
+                crate::platform::file_picker::activate_saved_directory_permission(directory)
+            {
+                log::warn!("failed to activate configured save directory: {error}");
+            }
+        }
         server_entity.update(cx, |server, _| {
             server.set_receive_pin_config(require_pin, receive_pin, &tokio_handle);
             server.set_default_save_directory(default_save_directory, &tokio_handle);
@@ -710,6 +723,7 @@ impl HomePage {
         window.push_notification(
             Notification::new()
                 .id::<ClipboardEmptyToast>()
+                .placement(gpui::Anchor::TopCenter)
                 .autohide(false)
                 .content(|_, _, _| {
                     div()
@@ -720,9 +734,9 @@ impl HomePage {
                         .into_any_element()
                 })
                 .w(px(158.))
+                .mx_auto()
                 .py(px(4.))
                 .px(px(10.))
-                .mb(px(22.))
                 .rounded_full()
                 .shadow_none()
                 .border_color(hsla(0.0, 0.0, 0.0, 0.0))

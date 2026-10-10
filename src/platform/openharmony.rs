@@ -60,7 +60,6 @@ impl_bridge_napi_type!(AcceptedResponse, "nearsend.platform.AcceptedResponse");
 
 #[napi(object)]
 #[derive(Clone, Debug)]
-#[cfg_attr(not(target_env = "ohos"), allow(dead_code))]
 pub struct SaveFileRequest {
     pub file_name: String,
 }
@@ -69,7 +68,6 @@ impl_bridge_napi_type!(SaveFileRequest, "nearsend.platform.SaveFileRequest");
 
 #[napi(object)]
 #[derive(Clone, Debug)]
-#[cfg_attr(not(target_env = "ohos"), allow(dead_code))]
 pub struct UriResponse {
     pub uri: String,
 }
@@ -78,12 +76,22 @@ impl_bridge_napi_type!(UriResponse, "nearsend.platform.UriResponse");
 
 #[napi(object)]
 #[derive(Clone, Debug)]
-#[cfg_attr(not(target_env = "ohos"), allow(dead_code))]
 pub struct OpenFileRequest {
     pub uri: String,
 }
 
 impl_bridge_napi_type!(OpenFileRequest, "nearsend.platform.OpenFileRequest");
+
+#[napi(object)]
+#[derive(Clone, Debug)]
+pub struct SystemBarThemeRequest {
+    pub dark: bool,
+}
+
+impl_bridge_napi_type!(
+    SystemBarThemeRequest,
+    "nearsend.platform.SystemBarThemeRequest"
+);
 
 pub fn set_app(app: OpenHarmonyApp) -> Result<()> {
     OPENHARMONY_APP
@@ -102,7 +110,6 @@ pub fn app() -> Result<OpenHarmonyApp> {
         .ok_or_else(|| Error::from_reason("OpenHarmony app is not initialized"))
 }
 
-#[cfg_attr(not(target_env = "ohos"), allow(dead_code))]
 fn validate_non_empty(value: &str, field: &str) -> Result<()> {
     if value.trim().is_empty() {
         Err(Error::from_reason(format!("{field} must not be empty")))
@@ -111,8 +118,9 @@ fn validate_non_empty(value: &str, field: &str) -> Result<()> {
     }
 }
 
-#[cfg_attr(not(target_env = "ohos"), allow(dead_code))]
 pub trait NearSendPlatformExt {
+    fn set_system_bar_theme(&self, dark: bool) -> Pin<Box<dyn Future<Output = Result<()>> + Send>>;
+
     fn read_clipboard_text(&self) -> Pin<Box<dyn Future<Output = Result<String>> + Send>>;
 
     fn write_clipboard_text(
@@ -126,9 +134,25 @@ pub trait NearSendPlatformExt {
     ) -> Pin<Box<dyn Future<Output = Result<String>> + Send>>;
 
     fn open_file(&self, uri: String) -> Pin<Box<dyn Future<Output = Result<()>> + Send>>;
+
+    fn open_directory(&self, uri: String) -> Pin<Box<dyn Future<Output = Result<()>> + Send>>;
 }
 
 impl NearSendPlatformExt for OpenHarmonyApp {
+    fn set_system_bar_theme(&self, dark: bool) -> Pin<Box<dyn Future<Output = Result<()>> + Send>> {
+        let bridge = self.bridge();
+        Box::pin(async move {
+            bridge?
+                .call_async::<NearSendPlatformBridgePlugin, SystemBarThemeRequest, AcceptedResponse>(
+                    "set-system-bar-theme",
+                    SystemBarThemeRequest { dark },
+                    BridgeCallOptions::default(),
+                )
+                .await?;
+            Ok(())
+        })
+    }
+
     fn read_clipboard_text(&self) -> Pin<Box<dyn Future<Output = Result<String>> + Send>> {
         let bridge = self.bridge();
         Box::pin(async move {
@@ -176,7 +200,7 @@ impl NearSendPlatformExt for OpenHarmonyApp {
                 .call_async::<NearSendPlatformBridgePlugin, SaveFileRequest, UriResponse>(
                     "pick-save-file",
                     SaveFileRequest { file_name },
-                    BridgeCallOptions::default().with_timeout_ms(60_000),
+                    BridgeCallOptions::default().with_timeout_ms(300_000),
                 )
                 .await?;
             Ok(response.uri)
@@ -200,6 +224,28 @@ impl NearSendPlatformExt for OpenHarmonyApp {
             } else {
                 Err(Error::from_reason(
                     "OpenHarmony rejected the open-file request",
+                ))
+            }
+        })
+    }
+
+    fn open_directory(&self, uri: String) -> Pin<Box<dyn Future<Output = Result<()>> + Send>> {
+        let validation = validate_non_empty(&uri, "uri");
+        let bridge = self.bridge();
+        Box::pin(async move {
+            validation?;
+            let response = bridge?
+                .call_async::<NearSendPlatformBridgePlugin, OpenFileRequest, AcceptedResponse>(
+                    "open-directory",
+                    OpenFileRequest { uri },
+                    BridgeCallOptions::default().with_timeout_ms(60_000),
+                )
+                .await?;
+            if response.accepted {
+                Ok(())
+            } else {
+                Err(Error::from_reason(
+                    "OpenHarmony rejected the open-directory request",
                 ))
             }
         })

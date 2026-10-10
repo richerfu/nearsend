@@ -74,6 +74,7 @@ impl SelectedFilesPage {
         window.push_notification(
             Notification::new()
                 .id::<ClipboardEmptyToast>()
+                .placement(gpui::Anchor::TopCenter)
                 .autohide(false)
                 .content(|_, _, _| {
                     div()
@@ -84,9 +85,9 @@ impl SelectedFilesPage {
                         .into_any_element()
                 })
                 .w(px(158.))
+                .mx_auto()
                 .py(px(4.))
                 .px(px(10.))
-                .mb(px(22.))
                 .rounded_full()
                 .shadow_none()
                 .border_color(hsla(0.0, 0.0, 0.0, 0.0))
@@ -185,61 +186,69 @@ impl SelectedFilesPage {
                                 .text_color(cx.theme().muted_foreground)
                                 .child("选择要加入的内容类型"),
                         )
-                        .child(content_picker_grid([
-                            content_picker_tile(
-                                "selected-add-file",
-                                paths::FILE,
-                                "文件",
-                                cx,
-                                move |_event, window, cx| {
-                                    window.close_dialog(cx);
-                                    page_file.update(cx, |this, cx| {
-                                        this.add_from_system_picker(false, window, cx);
-                                    });
-                                },
-                            ),
-                            content_picker_tile(
-                                "selected-add-folder",
-                                paths::FOLDER,
-                                "文件夹",
-                                cx,
-                                move |_event, window, cx| {
-                                    window.close_dialog(cx);
-                                    page_folder.update(cx, |this, cx| {
-                                        this.add_from_system_picker(true, window, cx);
-                                    });
-                                },
-                            ),
-                            content_picker_tile(
-                                "selected-add-text",
-                                paths::BOOK_OPEN,
-                                "文本",
-                                cx,
-                                move |_event, window, cx| {
-                                    window.close_dialog(cx);
-                                    page_text.update(cx, |this, cx| {
-                                        this.open_text_edit_dialog(
-                                            usize::MAX,
-                                            String::new(),
-                                            window,
+                        .child(content_picker_grid(
+                            [
+                                Some(content_picker_tile(
+                                    "selected-add-file",
+                                    paths::FILE,
+                                    "文件",
+                                    cx,
+                                    move |_event, window, cx| {
+                                        window.close_dialog(cx);
+                                        page_file.update(cx, |this, cx| {
+                                            this.add_from_system_picker(false, window, cx);
+                                        });
+                                    },
+                                )),
+                                crate::platform::file_picker::is_directory_picker_supported().then(
+                                    || {
+                                        content_picker_tile(
+                                            "selected-add-folder",
+                                            paths::FOLDER,
+                                            "文件夹",
                                             cx,
-                                        );
-                                    });
-                                },
-                            ),
-                            content_picker_tile(
-                                "selected-add-clipboard",
-                                paths::COPY,
-                                "剪贴板",
-                                cx,
-                                move |_event, window, cx| {
-                                    window.close_dialog(cx);
-                                    page_clipboard.update(cx, |this, cx| {
-                                        this.add_from_clipboard(window, cx);
-                                    });
-                                },
-                            ),
-                        ])),
+                                            move |_event, window, cx| {
+                                                window.close_dialog(cx);
+                                                page_folder.update(cx, |this, cx| {
+                                                    this.add_from_system_picker(true, window, cx);
+                                                });
+                                            },
+                                        )
+                                    },
+                                ),
+                                Some(content_picker_tile(
+                                    "selected-add-text",
+                                    paths::BOOK_OPEN,
+                                    "文本",
+                                    cx,
+                                    move |_event, window, cx| {
+                                        window.close_dialog(cx);
+                                        page_text.update(cx, |this, cx| {
+                                            this.open_text_edit_dialog(
+                                                usize::MAX,
+                                                String::new(),
+                                                window,
+                                                cx,
+                                            );
+                                        });
+                                    },
+                                )),
+                                Some(content_picker_tile(
+                                    "selected-add-clipboard",
+                                    paths::COPY,
+                                    "剪贴板",
+                                    cx,
+                                    move |_event, window, cx| {
+                                        window.close_dialog(cx);
+                                        page_clipboard.update(cx, |this, cx| {
+                                            this.add_from_clipboard(window, cx);
+                                        });
+                                    },
+                                )),
+                            ]
+                            .into_iter()
+                            .flatten(),
+                        )),
                 )
                 .footer(build_close_footer("selected-files-add", "关闭"))
                 .button_props(gpui_component::dialog::DialogButtonProps::default().ok_text("关闭"))
@@ -335,6 +344,15 @@ impl SelectedFilesPage {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if pick_folder && !crate::platform::file_picker::is_directory_picker_supported() {
+            self.open_notice_dialog(
+                crate::platform::file_picker::SYSTEM_FILE_PICKER_UNSUPPORTED_MESSAGE,
+                window,
+                cx,
+            );
+            return;
+        }
+
         let window_handle = window.window_handle();
         let page_entity = cx.entity();
         let send_selection_state = self.send_selection_state.clone();

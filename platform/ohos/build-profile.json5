@@ -51,6 +51,42 @@
           ]
         }
       ]
+    },
+    {
+      "name": "native_ability",
+      "srcPath": "./vendor/openharmony-ability/native_ability"
+    },
+    {
+      "name": "plugin_app_control",
+      "srcPath": "./vendor/openharmony-ability/plugins/app-control"
+    },
+    {
+      "name": "plugin_clipboard",
+      "srcPath": "./vendor/openharmony-ability/plugins/clipboard"
+    },
+    {
+      "name": "plugin_files",
+      "srcPath": "./vendor/openharmony-ability/plugins/files"
+    },
+    {
+      "name": "plugin_menu",
+      "srcPath": "./vendor/openharmony-ability/plugins/menu"
+    },
+    {
+      "name": "plugin_permission",
+      "srcPath": "./vendor/openharmony-ability/plugins/permission"
+    },
+    {
+      "name": "plugin_process",
+      "srcPath": "./vendor/openharmony-ability/plugins/process"
+    },
+    {
+      "name": "plugin_url",
+      "srcPath": "./vendor/openharmony-ability/plugins/url"
+    },
+    {
+      "name": "plugin_window",
+      "srcPath": "./vendor/openharmony-ability/plugins/window"
     }
   ]
 }
