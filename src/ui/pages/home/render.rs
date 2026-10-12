@@ -34,7 +34,7 @@ impl gpui::Render for HomePage {
             TabType::Settings => settings_tab::render_settings_content(self, window, cx),
         };
 
-        if layout.is_desktop() {
+        let page = if layout.is_desktop() {
             h_flex()
                 .size_full()
                 .bg(cx.theme().muted.opacity(0.35))
@@ -62,6 +62,21 @@ impl gpui::Render for HomePage {
                 )
                 .child(self.render_bottom_nav(cx))
                 .into_any_element()
+        };
+
+        #[cfg(feature = "fps")]
+        {
+            div()
+                .relative()
+                .size_full()
+                .child(page)
+                .child(
+                    gpui_fps::fps_monitor(window, cx)
+                        .frame_budget(std::time::Duration::from_secs_f64(1. / 120.)),
+                )
+                .into_any_element()
         }
+        #[cfg(not(feature = "fps"))]
+        page
     }
 }

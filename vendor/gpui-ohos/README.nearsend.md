@@ -52,8 +52,40 @@ visible surface requests a fresh VSync on resume.
 This prevents a queued animation frame from presenting to a surface the
 system has just hidden or destroyed.
 
-The runtime sources match the published branch. Keep this snapshot and its
-dependency branch in sync when updating the platform integration.
+## 2026-10-12 frame pacing fixes
+
+This snapshot carries local frame pacing fixes beyond the mirrored branch.
+NativeVSync timestamps are mapped from CLOCK_MONOTONIC to the input dispatch
+Instant clock using a fixed calibration. The native callback publishes that
+frame time together with its request ticket; the main queue consumes only the
+latest pending tick. Hiding a surface clears both demand and frame time, and
+late or duplicate callbacks cannot complete a different request. Momentum
+retains its release-dispatch origin and advances using the delivered frame
+clock, without adding main-thread queue delay to animation time.
+
+The platform renderer reports whether it submitted a frame, needs a retry,
+or has an unavailable surface. Transient acquisition failures request the next
+VSync and retain presentation demand even after GPUI clears its own flag.
+Retries present GPUI's latest scene without forcing a new render/layout.
+Occluded or invalid surfaces retain demand until input or lifecycle events;
+they do not start a retry loop. XComponent remains the fallback frame source.
+The wgpu dependency, GLES backend and FIFO presentation mode are unchanged.
+
+## 2026-10-12 quad rendering optimization
+
+The renderer compiles general, solid-fill, and borderless rectangular quad
+pipelines from the same WGSL shader. Pure fills omit gradient/pattern and dashed
+border branches; borderless rectangles additionally omit rounded-corner and
+border distance calculations. `quad_pipeline.rs` checks the exact conditions,
+including all four corners and all four borders. Adjacent runs preserve scene
+order, clipping, blending, and the existing antialiasing calculations.
+
+Resolved multisample path attachments use `StoreOp::Discard`; the resolved
+single-sample image is retained, and the multisample attachment is cleared on
+its next use. No sampling count or rendering resolution is reduced.
+
+Presentation stays synchronous on the UI thread, driven by the demand-driven
+NativeVSync scheduler. XComponent frame callbacks remain its fallback.
 
 ## Framework performance optimization
 
@@ -67,7 +99,7 @@ UI-turn budget. Input callbacks, animation frame
 rate, rendering quality, window count and capture formats retain their existing
 behavior. Continuous XComponent frame delivery remains the native VSync fallback.
 
-The 37 host checks compile the production modules with host platform shims.
+The host regression checks compile the production modules with host platform shims.
 
 ## 2026-10-07 audit fixes
 

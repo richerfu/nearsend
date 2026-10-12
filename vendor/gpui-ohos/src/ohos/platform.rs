@@ -609,8 +609,8 @@ impl OhosPlatform {
         // Window visibility and surface lifetime are already applied above.
         if matches!(event, Event::UserEvent) {
             for window in &live_windows {
-                if window.borrow().take_pending_frame() {
-                    window.borrow().draw_requested_frame();
+                if let Some(frame_time) = window.borrow().take_pending_frame() {
+                    window.borrow().draw_requested_frame(frame_time);
                 }
             }
         }

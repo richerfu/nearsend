@@ -18,6 +18,7 @@ futures = "0.3.34"
 gpui = { git = "https://github.com/ohos-rs/zed", rev = "f45c7c22d0", default-features = false }
 itertools = "0.14.0"
 image = { version = "0.25.1", default-features = false }
+libc = "0.2"
 log = "0.4"
 openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", branch = "feat/pr82-nearsend-integration" }
 openharmony-ability-plugin-app-control = { git = "https://github.com/richerfu/openharmony-ability.git", branch = "feat/pr82-nearsend-integration" }
@@ -88,6 +89,7 @@ uuid.workspace = true
 wgpu.workspace = true
 
 [target.'cfg(target_env = "ohos")'.dependencies]
+libc.workspace = true
 accesskit_ohos = { git = "https://github.com/richerfu/accesskit.git", rev = "ea2d8c4", features = ["api-15"] }
 ohos-asset-binding = { git = "https://github.com/ohos-rs/ohos-native-bindings.git", rev = "b732254b974f5a0a85c58cd1c20744b3f32e81fd" }
 ohos-accessibility-binding = "0.1"

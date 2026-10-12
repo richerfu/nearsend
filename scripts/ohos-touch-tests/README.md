@@ -7,9 +7,11 @@ counting stub and the host main queue uses the production queue facade. No OHOS
 native libraries are linked. Simulator checks cover native input, VSync, frame
 fallback, multiwindow operation and lifecycle integration separately.
 
-33 regressions include cooperative worker reuse, blocking parents/children,
+Regressions include native frame clock calibration, coalesced VSync momentum,
+late and duplicate frame callbacks, cooperative worker reuse, blocking parents/children,
 external work while base workers block, foreground/timer wake delivery,
-shutdown, frame generation races, priority fairness and pixel conversion.
+shutdown, frame generation races, priority fairness, quad pipeline eligibility
+and pixel conversion.
 
 ```sh
 cargo test --manifest-path scripts/ohos-touch-tests/Cargo.toml --locked

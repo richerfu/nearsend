@@ -968,6 +968,34 @@ mod tests {
     }
 
     #[test]
+    fn queued_vsync_ticks_preserve_release_origin_and_skip_intermediate_frames() {
+        use super::super::frame_request::FrameRequest;
+
+        let release = Instant::now();
+        let mut scroll = TouchScroll::default();
+        let mut reference = TouchScroll::default();
+        fling(&mut scroll, release, false);
+        fling(&mut reference, release, false);
+        // A frame queued before Pan End must not advance the new fling.
+        let old_tick = scroll.tick(release - Duration::from_millis(8)).unwrap();
+        assert_eq!(deltas(&[old_tick])[0].y, px(0.));
+
+        let frames = FrameRequest::default();
+        frames.set_active(true);
+        for ms in [8, 16, 24] {
+            let ticket = frames.request().unwrap();
+            frames.complete(ticket, release + Duration::from_millis(ms));
+        }
+        // The main thread may run much later. Its wall time is deliberately
+        // absent: only the latest VSync tick determines the animation step.
+        let latest = frames.take_pending().unwrap();
+        let actual = scroll.tick(latest).unwrap();
+        let expected = reference.tick(release + Duration::from_millis(24)).unwrap();
+        assert_eq!(deltas(&[actual]), deltas(&[expected]));
+        assert!(frames.take_pending().is_none());
+    }
+
+    #[test]
     fn invalid_or_tiny_velocity_is_ignored_and_system_velocity_is_capped() {
         let now = Instant::now();
         for velocity in [0., 1., f32::NAN, f32::INFINITY, -80000.] {

@@ -1,3 +1,7 @@
+// Specialized pipelines remove unused fragment branches at compilation time.
+// The CPU selects them only when these assumptions hold for every instance.
+override RECT_QUAD: bool = false;
+override SOLID_QUAD: bool = false;
 /* Functions useful for debugging:
 
 // A heat map color for debugging (blue -> cyan -> green -> yellow -> red).
@@ -629,8 +633,15 @@ fn fs_quad(input: QuadVarying) -> @location(0) vec4<f32> {
     background.colors[0].percentage = input.background_stops.x;
     background.colors[1].percentage = input.background_stops.y;
 
-    let background_color = gradient_color(background, input.position.xy, bounds,
-        input.background_solid, input.background_color0, input.background_color1);
+    var background_color = input.background_solid;
+    if (!SOLID_QUAD) {
+        background_color = gradient_color(background, input.position.xy, bounds,
+            input.background_solid, input.background_color0, input.background_color1);
+    }
+
+    if (RECT_QUAD) {
+        return blend_color(background_color, 1.0);
+    }
 
     let unrounded = corner_radii.top_left == 0.0 &&
         corner_radii.bottom_left == 0.0 &&
@@ -748,7 +759,7 @@ fn fs_quad(input: QuadVarying) -> @location(0) vec4<f32> {
         var border_color = input.border_color;
 
         // Dashed border logic when border_style == 1
-        if (input.border_style == 1u) {
+        if (!SOLID_QUAD && input.border_style == 1u) {
             // Position along the perimeter in "dash space", where each dash
             // period has length 1
             var t = 0.0;

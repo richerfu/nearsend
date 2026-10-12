@@ -11,8 +11,10 @@ use gpui::{
     div, percentage, prelude::*, px, Animation, AnimationExt as _, AnyElement, Context,
     Transformation, Window,
 };
-use gpui_component::scroll::ScrollableElement as _;
-use gpui_component::{h_flex, v_flex, ActiveTheme as _, Sizable as _, Size, StyledExt as _};
+use gpui_component::{
+    h_flex, v_flex, ActiveTheme as _, InteractiveElementExt as _, Sizable as _, Size,
+    StyledExt as _,
+};
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -827,10 +829,12 @@ pub fn render_settings_content(
     };
 
     div()
+        .id("settings-scroll")
         .size_full()
         .w_full()
         .bg(cx.theme().muted.opacity(0.45))
-        .overflow_y_scrollbar()
+        .overflow_y_scroll()
+        .lock_scroll_axis()
         .child(content)
         .into_any_element()
 }

@@ -21,12 +21,18 @@ mod capture_pixels;
 #[path = "../../vendor/gpui-ohos/src/ohos/dispatcher.rs"]
 mod dispatcher;
 #[allow(dead_code)]
+#[path = "../../vendor/gpui-ohos/src/ohos/frame_clock.rs"]
+mod frame_clock;
+#[allow(dead_code)]
 #[path = "../../vendor/gpui-ohos/src/ohos/frame_request.rs"]
 mod frame_request;
 #[cfg(target_os = "macos")]
 #[allow(dead_code)]
 #[path = "../../vendor/gpui-ohos/src/ohos/worker_state.rs"]
 mod native_worker_state;
+#[allow(dead_code)]
+#[path = "../../vendor/gpui-ohos/src/ohos/quad_pipeline.rs"]
+mod quad_pipeline;
 #[allow(dead_code)]
 #[path = "../../vendor/gpui-ohos/src/ohos/render_cache.rs"]
 mod render_cache;

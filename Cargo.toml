@@ -8,12 +8,16 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 
+[features]
+fps = ["dep:gpui-fps"]
+
 [dependencies]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", default-features = false }
 gpui-ohos = { path = "vendor/gpui-ohos" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
 gpui-router = { version = "0.3" }
 gpui-kit-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
+gpui-fps = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b", optional = true }
 openharmony-ability = { git = "https://github.com/richerfu/openharmony-ability.git", branch = "feat/pr82-nearsend-integration" }
 openharmony-ability-derive = { git = "https://github.com/richerfu/openharmony-ability.git", branch = "feat/pr82-nearsend-integration" }
 openharmony-ability-plugin-files = { git = "https://github.com/richerfu/openharmony-ability.git", branch = "feat/pr82-nearsend-integration" }

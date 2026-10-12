@@ -74,6 +74,8 @@ pub(super) struct PipelineKey {
 
 pub(super) struct WgpuPipelines {
     quads: wgpu::RenderPipeline,
+    solid_quads: wgpu::RenderPipeline,
+    rect_quads: wgpu::RenderPipeline,
     shadows: wgpu::RenderPipeline,
     path_rasterization: wgpu::RenderPipeline,
     paths: wgpu::RenderPipeline,
@@ -102,6 +104,16 @@ struct SceneInstanceBindings {
     monochrome_sprites: InstanceBinding,
     subpixel_sprites: InstanceBinding,
     polychrome_sprites: InstanceBinding,
+}
+
+/// Result of a platform presentation attempt. A transient acquisition failure
+/// retains demand until the next VSync; an unavailable surface waits for input
+/// or lifecycle events instead of spinning on a hidden or invalid surface.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Presentation {
+    Presented,
+    Retry,
+    Unavailable,
 }
 
 pub struct WgpuRenderer {
@@ -940,7 +952,8 @@ impl WgpuRenderer {
                                vertex_buffers: &[wgpu::VertexBufferLayout<'_>],
                                topology: wgpu::PrimitiveTopology,
                                color_targets: &[Option<wgpu::ColorTargetState>],
-                               sample_count: u32| {
+                               sample_count: u32,
+                               constants: &[(&str, f64)]| {
             let vertex_buffers = vertex_buffers.iter().cloned().map(Some).collect::<Vec<_>>();
             let bind_group_layouts = bind_group_layouts
                 .iter()
@@ -966,7 +979,10 @@ impl WgpuRenderer {
                     module: shader_module,
                     entry_point: Some(fs_entry),
                     targets: color_targets,
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                    compilation_options: wgpu::PipelineCompilationOptions {
+                        constants,
+                        ..Default::default()
+                    },
                 }),
                 primitive: wgpu::PrimitiveState {
                     topology,
@@ -997,6 +1013,31 @@ impl WgpuRenderer {
             wgpu::PrimitiveTopology::TriangleStrip,
             &[Some(color_target.clone())],
             1,
+            &[],
+        );
+
+        let solid_quads = create_pipeline(
+            "solid_quads",
+            "vs_quad",
+            "fs_quad",
+            &[&layouts.globals],
+            &[Self::quad_vertex_layout()],
+            wgpu::PrimitiveTopology::TriangleStrip,
+            &[Some(color_target.clone())],
+            1,
+            &[("SOLID_QUAD", 1.0)],
+        );
+
+        let rect_quads = create_pipeline(
+            "rect_quads",
+            "vs_quad",
+            "fs_quad",
+            &[&layouts.globals],
+            &[Self::quad_vertex_layout()],
+            wgpu::PrimitiveTopology::TriangleStrip,
+            &[Some(color_target.clone())],
+            1,
+            &[("SOLID_QUAD", 1.0), ("RECT_QUAD", 1.0)],
         );
 
         let shadows = create_pipeline(
@@ -1008,6 +1049,7 @@ impl WgpuRenderer {
             wgpu::PrimitiveTopology::TriangleStrip,
             &[Some(color_target.clone())],
             1,
+            &[],
         );
 
         let path_rasterization = create_pipeline(
@@ -1023,6 +1065,7 @@ impl WgpuRenderer {
                 write_mask: wgpu::ColorWrites::ALL,
             })],
             path_sample_count,
+            &[],
         );
 
         let paths_blend = wgpu::BlendState {
@@ -1051,6 +1094,7 @@ impl WgpuRenderer {
                 write_mask: wgpu::ColorWrites::ALL,
             })],
             1,
+            &[],
         );
 
         let underlines = create_pipeline(
@@ -1062,6 +1106,7 @@ impl WgpuRenderer {
             wgpu::PrimitiveTopology::TriangleStrip,
             &[Some(color_target.clone())],
             1,
+            &[],
         );
 
         let mono_sprites = create_pipeline(
@@ -1073,6 +1118,7 @@ impl WgpuRenderer {
             wgpu::PrimitiveTopology::TriangleStrip,
             &[Some(color_target.clone())],
             1,
+            &[],
         );
 
         let subpixel_sprites = if dual_source_blending {
@@ -1102,6 +1148,7 @@ impl WgpuRenderer {
                     write_mask: wgpu::ColorWrites::COLOR,
                 })],
                 1,
+                &[],
             ))
         } else {
             None
@@ -1116,10 +1163,13 @@ impl WgpuRenderer {
             wgpu::PrimitiveTopology::TriangleStrip,
             &[Some(color_target.clone())],
             1,
+            &[],
         );
 
         WgpuPipelines {
             quads,
+            solid_quads,
+            rect_quads,
             shadows,
             path_rasterization,
             paths,
@@ -1286,7 +1336,7 @@ impl WgpuRenderer {
         }
     }
 
-    pub fn draw(&mut self, scene: &Scene) {
+    pub fn draw(&mut self, scene: &Scene) -> Presentation {
         self.atlas.before_frame();
 
         let frame = match self.surface.get_current_texture() {
@@ -1294,18 +1344,21 @@ impl WgpuRenderer {
             wgpu::CurrentSurfaceTexture::Suboptimal(frame) => {
                 drop(frame);
                 self.surface.configure(&self.device, &self.surface_config);
-                return;
+                return Presentation::Retry;
             }
             wgpu::CurrentSurfaceTexture::Lost | wgpu::CurrentSurfaceTexture::Outdated => {
                 self.surface.configure(&self.device, &self.surface_config);
-                return;
+                return Presentation::Retry;
             }
-            wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
-                return;
+            wgpu::CurrentSurfaceTexture::Timeout => {
+                return Presentation::Retry;
+            }
+            wgpu::CurrentSurfaceTexture::Occluded => {
+                return Presentation::Unavailable;
             }
             wgpu::CurrentSurfaceTexture::Validation => {
                 log::error!("Failed to acquire surface texture: validation error");
-                return;
+                return Presentation::Unavailable;
             }
         };
         let frame_view = frame
@@ -1322,7 +1375,7 @@ impl WgpuRenderer {
                         self.instance_buffer_capacity
                     );
                     self.queue.present(frame);
-                    return;
+                    return Presentation::Unavailable;
                 }
                 self.grow_instance_buffer();
                 continue;
@@ -1353,10 +1406,10 @@ impl WgpuRenderer {
 
                 for batch in scene.batches() {
                     let ok = match batch {
-                        PrimitiveBatch::Quads(range) => self.draw_instances(
+                        PrimitiveBatch::Quads(range) => self.draw_quads(
                             range,
                             instance_bindings.quads,
-                            &self.pipelines.quads,
+                            &scene.quads,
                             &mut pass,
                         ),
                         PrimitiveBatch::Shadows(range) => self.draw_instances(
@@ -1452,7 +1505,7 @@ impl WgpuRenderer {
                         self.instance_buffer_capacity
                     );
                     self.queue.present(frame);
-                    return;
+                    return Presentation::Unavailable;
                 }
                 self.grow_instance_buffer();
                 continue;
@@ -1460,7 +1513,7 @@ impl WgpuRenderer {
 
             self.queue.submit(std::iter::once(encoder.finish()));
             self.queue.present(frame);
-            return;
+            return Presentation::Presented;
         }
     }
 
@@ -1512,6 +1565,37 @@ impl WgpuRenderer {
             &self.pipelines.poly_sprites,
             pass,
         )
+    }
+
+    fn draw_quads(
+        &self,
+        range: Range<usize>,
+        binding: InstanceBinding,
+        quads: &[Quad],
+        pass: &mut wgpu::RenderPass<'_>,
+    ) -> bool {
+        use super::quad_pipeline::QuadPipeline;
+
+        // Only split adjacent runs. Reordering by pipeline would change alpha
+        // compositing and overlap between backgrounds, borders and controls.
+        let mut start = range.start;
+        while start < range.end {
+            let kind = QuadPipeline::for_quad(&quads[start]);
+            let mut end = start + 1;
+            while end < range.end && QuadPipeline::for_quad(&quads[end]) == kind {
+                end += 1;
+            }
+            let pipeline = match kind {
+                QuadPipeline::General => &self.pipelines.quads,
+                QuadPipeline::Solid => &self.pipelines.solid_quads,
+                QuadPipeline::Rect => &self.pipelines.rect_quads,
+            };
+            if !self.draw_instances(start..end, binding, pipeline, pass) {
+                return false;
+            }
+            start = end;
+        }
+        true
     }
 
     fn draw_instances(
@@ -1677,7 +1761,13 @@ impl WgpuRenderer {
                     resolve_target,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::TRANSPARENT),
-                        store: wgpu::StoreOp::Store,
+                        // The multisample attachment is resolved here and cleared
+                        // before every reuse; retaining it writes unused full-screen data.
+                        store: if resolve_target.is_some() {
+                            wgpu::StoreOp::Discard
+                        } else {
+                            wgpu::StoreOp::Store
+                        },
                     },
                     depth_slice: None,
                 })],
