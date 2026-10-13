@@ -1,5 +1,5 @@
 use gpui::{
-    div, hsla, percentage, prelude::*, px, svg, Animation, AnimationExt as _, IntoElement,
+    div, percentage, prelude::*, px, svg, Animation, AnimationExt as _, IntoElement,
     Transformation, Window,
 };
 use gpui_component::{v_flex, ActiveTheme as _, StyledExt as _};
@@ -58,8 +58,8 @@ impl gpui::RenderOnce for Logo {
         let spinning = self.spinning;
         let duration = Duration::from_secs(self.duration_secs.max(1) as u64);
         // gpui::svg 只有在存在 text_color 时才会触发 paint_svg。
-        // 品牌 logo 保留自定义资源并沿用主视觉绿色。
-        let svg_color = hsla(113.0 / 360.0, 0.42, 0.44, 1.0);
+        // 每次渲染读取当前主题色，让静态和旋转 logo 同步跟随主题。
+        let svg_color = cx.theme().primary;
 
         let logo = if spinning {
             svg()
