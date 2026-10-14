@@ -124,7 +124,10 @@ export class ProcessInitializer {
     // zombie entry → getByLabel returns a dead handle → same-label windows can't rebuild
     // (manual_tests §二十八 close lifecycle defect).
     if (ProcessInitializer.nativeModules.length > 0) {
-      AppStorage.setOrCreate<Module>(NATIVE_MODULE_STORAGE_KEY, ProcessInitializer.nativeModules[0]);
+      AppStorage.setOrCreate<Module>(
+        NATIVE_MODULE_STORAGE_KEY,
+        ProcessInitializer.nativeModules[0],
+      );
     }
 
     ProcessInitializer.initialized = true;

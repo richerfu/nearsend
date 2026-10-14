@@ -73,12 +73,20 @@
       "srcPath": "./vendor/openharmony-ability/plugins/menu"
     },
     {
+      "name": "plugin_notification",
+      "srcPath": "./vendor/openharmony-ability/plugins/notification"
+    },
+    {
       "name": "plugin_permission",
       "srcPath": "./vendor/openharmony-ability/plugins/permission"
     },
     {
       "name": "plugin_process",
       "srcPath": "./vendor/openharmony-ability/plugins/process"
+    },
+    {
+      "name": "plugin_system_state",
+      "srcPath": "./vendor/openharmony-ability/plugins/system-state"
     },
     {
       "name": "plugin_url",

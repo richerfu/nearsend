@@ -7,8 +7,10 @@ import { AppControlPlugin } from "@ohos-rs/ability-plugin-app-control";
 import { ClipboardPlugin } from "@ohos-rs/ability-plugin-clipboard";
 import { FilesPlugin } from "@ohos-rs/ability-plugin-files";
 import { MenuPlugin } from "@ohos-rs/ability-plugin-menu";
+import { NotificationPlugin } from "@ohos-rs/ability-plugin-notification";
 import { PermissionPlugin } from "@ohos-rs/ability-plugin-permission";
 import { ProcessPlugin } from "@ohos-rs/ability-plugin-process";
+import { SystemStatePlugin } from "@ohos-rs/ability-plugin-system-state";
 import { UrlPlugin } from "@ohos-rs/ability-plugin-url";
 import { WindowPlugin } from "@ohos-rs/ability-plugin-window";
 import * as nearSendNative from "libnear_send.so";
@@ -38,11 +40,15 @@ export default class EntryAbility extends NativeAbility {
   public bridgePlugins = [
     new LazyPlugin(() => new PermissionPlugin()),
     new LazyPlugin(() => new AppControlPlugin()),
-    new LazyPlugin(() => new ClipboardPlugin()),
+    new LazyPlugin(
+      () => new ClipboardPlugin({ metadataMimeType: "application/x-gpui-ohos-text-metadata-v1" }),
+    ),
     new LazyPlugin(() => new FilesPlugin()),
     new LazyPlugin(() => new MenuPlugin()),
+    new LazyPlugin(() => new NotificationPlugin({ scheme: "gpui-notification" })),
     new LazyPlugin(() => new NearSendPlatformPlugin()),
     new LazyPlugin(() => new ProcessPlugin()),
+    new LazyPlugin(() => new SystemStatePlugin()),
     new LazyPlugin(() => new UrlPlugin()),
     new LazyPlugin(() => new WindowPlugin()),
   ];

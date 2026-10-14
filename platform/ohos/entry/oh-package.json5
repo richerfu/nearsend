@@ -11,8 +11,10 @@
     "@ohos-rs/ability-plugin-clipboard": "file:../vendor/openharmony-ability/plugins/clipboard",
     "@ohos-rs/ability-plugin-files": "file:../vendor/openharmony-ability/plugins/files",
     "@ohos-rs/ability-plugin-menu": "file:../vendor/openharmony-ability/plugins/menu",
+    "@ohos-rs/ability-plugin-notification": "file:../vendor/openharmony-ability/plugins/notification",
     "@ohos-rs/ability-plugin-permission": "file:../vendor/openharmony-ability/plugins/permission",
     "@ohos-rs/ability-plugin-process": "file:../vendor/openharmony-ability/plugins/process",
+    "@ohos-rs/ability-plugin-system-state": "file:../vendor/openharmony-ability/plugins/system-state",
     "@ohos-rs/ability-plugin-url": "file:../vendor/openharmony-ability/plugins/url",
     "@ohos-rs/ability-plugin-window": "file:../vendor/openharmony-ability/plugins/window",
     "libnear_send.so": "file:./src/main/ets/types/libnear_send"
