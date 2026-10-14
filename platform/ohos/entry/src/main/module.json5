@@ -20,6 +20,7 @@
         "icon": "$media:layered_image",
         "label": "$string:EntryAbility_label",
         "launchType": "singleton",
+        "recoverable": true,
         "startWindowIcon": "$media:startIcon",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
