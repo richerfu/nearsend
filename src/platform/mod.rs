@@ -1,4 +1,5 @@
 pub mod clipboard;
+pub mod device;
 pub mod file_opener;
 pub mod file_picker;
 pub mod openharmony;

@@ -29,6 +29,7 @@ impl SendSelectionItem {
 #[derive(Default)]
 pub struct SendSelectionState {
     items: Vec<SendSelectionItem>,
+    revision: u64,
 }
 
 impl SendSelectionState {
@@ -36,22 +37,31 @@ impl SendSelectionState {
         &self.items
     }
 
+    pub(crate) fn revision(&self) -> u64 {
+        self.revision
+    }
+
     pub fn total_size(&self) -> u64 {
         self.items.iter().map(|f| f.size).sum()
     }
 
     pub fn clear(&mut self) {
-        self.items.clear();
+        if !self.items.is_empty() {
+            self.items.clear();
+            self.revision = self.revision.wrapping_add(1);
+        }
     }
 
     pub fn remove(&mut self, index: usize) {
         if index < self.items.len() {
             self.items.remove(index);
+            self.revision = self.revision.wrapping_add(1);
         }
     }
 
     pub fn add_text(&mut self, text: String) {
         self.items.push(SendSelectionItem::from_text(text));
+        self.revision = self.revision.wrapping_add(1);
     }
 
     #[allow(dead_code)]
@@ -88,6 +98,7 @@ impl SendSelectionState {
             item.file_type = "text/plain".to_string();
             item.size = size;
             item.text_content = Some(text);
+            self.revision = self.revision.wrapping_add(1);
         }
     }
 
@@ -159,7 +170,41 @@ impl SendSelectionState {
             file_type: infer_file_type(&display_name),
             text_content: None,
         });
+        self.revision = self.revision.wrapping_add(1);
         1
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SendSelectionState;
+
+    #[test]
+    fn revision_tracks_same_size_edits_and_actual_removals() {
+        let mut state = SendSelectionState::default();
+        state.clear();
+        state.remove(0);
+        assert_eq!(state.revision(), 0);
+
+        state.add_text("old".into());
+        let revision = state.revision();
+        let total_size = state.total_size();
+        state.update_text(0, "new".into());
+        assert_ne!(state.revision(), revision);
+        assert_eq!(state.total_size(), total_size);
+
+        let revision = state.revision();
+        state.update_text(99, "ignored".into());
+        state.remove(99);
+        assert_eq!(state.revision(), revision);
+        state.remove(0);
+        assert_ne!(state.revision(), revision);
+
+        state.add_text("last".into());
+        let revision = state.revision();
+        state.clear();
+        assert_ne!(state.revision(), revision);
+        assert!(state.items().is_empty());
     }
 }
 

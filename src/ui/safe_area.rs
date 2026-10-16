@@ -24,7 +24,7 @@ pub fn current(cx: &App) -> SafeAreaInsets {
     let ohos = &app.0;
     let scale = normalized_scale(ohos.scale());
     let content = ohos.content_rect();
-    let window = ohos.window_rect();
+    let window = ohos.window_rect_for(0);
 
     let mut top_px = 0.0_f32;
     let mut right_px = 0.0_f32;

@@ -12,6 +12,7 @@ mod send_state;
 mod send_tab;
 mod send_transfer_flow;
 mod settings_actions;
+mod settings_appearance;
 mod settings_selects;
 mod settings_state;
 mod settings_tab;
@@ -39,7 +40,9 @@ pub(super) use crate::ui::components::chrome::{
 };
 use crate::ui::icons::{app_icon, paths};
 use crate::ui::routes;
-use gpui::{div, hsla, prelude::*, px, AnyElement, Context, Entity, IntoElement, Window};
+use gpui::{
+    div, hsla, prelude::*, px, AnyElement, Context, Entity, IntoElement, Window, WindowAppearance,
+};
 use gpui_component::button::{Button, ButtonCustomVariant, ButtonVariants as _};
 use gpui_component::dialog::{DialogAction, DialogClose, DialogFooter};
 use gpui_component::input::{Input, InputState, Textarea, TextareaState};
@@ -73,6 +76,7 @@ pub struct HomePage {
     pub(super) transfer_state: Entity<TransferState>,
     pub(super) history_state: Entity<HistoryState>,
     pub(super) send_selection_state: Entity<SendSelectionState>,
+    selection_revision: Option<u64>,
     pub(super) receive_inbox_state: Entity<ReceiveInboxState>,
     pub(super) current_tab: TabType,
     services_started: bool,
@@ -82,8 +86,7 @@ pub struct HomePage {
     pub(super) server_refreshing: bool,
     server_refresh_op_id: u64,
     // Select states for settings dropdowns (lazy-initialized on first render)
-    pub(super) theme_select: Option<Entity<SelectState<Vec<&'static str>>>>,
-    pub(super) color_select: Option<Entity<SelectState<Vec<&'static str>>>>,
+    system_appearance: WindowAppearance,
     pub(super) language_select: Option<Entity<SelectState<Vec<&'static str>>>>,
     pub(super) send_mode_default_select: Option<Entity<SelectState<Vec<&'static str>>>>,
     pub(super) device_type_select: Option<Entity<SelectState<Vec<&'static str>>>>,
@@ -176,6 +179,7 @@ impl HomePage {
         history_state: Entity<HistoryState>,
         send_selection_state: Entity<SendSelectionState>,
         receive_inbox_state: Entity<ReceiveInboxState>,
+        cx: &mut Context<Self>,
     ) -> Self {
         let alias = generate_random_alias();
         let mut receive_state = ReceivePageState::default();
@@ -201,6 +205,8 @@ impl HomePage {
             SendModeSetting::Multiple => SendMode::Multiple,
             SendModeSetting::Link => SendMode::Link,
         };
+        let system_appearance = cx.window_appearance();
+        settings_state.theme().apply(system_appearance, cx);
 
         Self {
             app_state,
@@ -208,6 +214,7 @@ impl HomePage {
             transfer_state,
             history_state,
             send_selection_state,
+            selection_revision: None,
             receive_inbox_state,
             current_tab: TabType::Receive,
             services_started: false,
@@ -216,8 +223,7 @@ impl HomePage {
             settings_state,
             server_refreshing: false,
             server_refresh_op_id: 0,
-            theme_select: None,
-            color_select: None,
+            system_appearance,
             language_select: None,
             send_mode_default_select: None,
             device_type_select: None,
@@ -230,6 +236,14 @@ impl HomePage {
 
     pub(super) fn persist_settings(&self) {
         self.settings_state.persist_to_disk();
+    }
+
+    pub(super) fn apply_theme(&self, cx: &mut Context<Self>) {
+        self.settings_state
+            .theme()
+            .apply(self.system_appearance, cx);
+        self.sync_system_bar_theme(cx);
+        cx.notify();
     }
 }
 

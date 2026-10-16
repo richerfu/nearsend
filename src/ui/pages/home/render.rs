@@ -8,6 +8,19 @@ impl gpui::Render for HomePage {
         self.sync_selected_files_from_shared(cx);
         if !self.services_started {
             self.services_started = true;
+            self.system_appearance = window.appearance();
+            self.apply_theme(cx);
+            let home = cx.entity().downgrade();
+            window
+                .observe_window_appearance(move |window, cx| {
+                    let _ = home.update(cx, |this, cx| {
+                        this.system_appearance = window.appearance();
+                        if this.settings_state.theme_mode == ThemeMode::System {
+                            this.apply_theme(cx);
+                        }
+                    });
+                })
+                .detach();
             // Initialize select states for settings dropdowns
             self.init_select_states(window, cx);
             // Start server and discovery services
@@ -21,7 +34,7 @@ impl gpui::Render for HomePage {
             TabType::Settings => settings_tab::render_settings_content(self, window, cx),
         };
 
-        if layout.is_desktop() {
+        let page = if layout.is_desktop() {
             h_flex()
                 .size_full()
                 .bg(cx.theme().muted.opacity(0.35))
@@ -49,6 +62,21 @@ impl gpui::Render for HomePage {
                 )
                 .child(self.render_bottom_nav(cx))
                 .into_any_element()
+        };
+
+        #[cfg(feature = "fps")]
+        {
+            div()
+                .relative()
+                .size_full()
+                .child(page)
+                .child(
+                    gpui_fps::fps_monitor(window, cx)
+                        .frame_budget(std::time::Duration::from_secs_f64(1. / 120.)),
+                )
+                .into_any_element()
         }
+        #[cfg(not(feature = "fps"))]
+        page
     }
 }

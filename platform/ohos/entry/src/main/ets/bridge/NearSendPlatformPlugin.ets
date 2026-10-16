@@ -1,4 +1,4 @@
-import { Want, wantConstant } from "@kit.AbilityKit";
+import { OpenLinkOptions, Want, wantConstant } from "@kit.AbilityKit";
 import { picker } from "@kit.CoreFileKit";
 import pasteboard from "@ohos.pasteboard";
 import {
@@ -15,6 +15,7 @@ const ACCEPTED_RESPONSE_TYPE = "nearsend.platform.AcceptedResponse";
 const SAVE_FILE_REQUEST_TYPE = "nearsend.platform.SaveFileRequest";
 const URI_RESPONSE_TYPE = "nearsend.platform.UriResponse";
 const OPEN_FILE_REQUEST_TYPE = "nearsend.platform.OpenFileRequest";
+const SYSTEM_BAR_THEME_REQUEST_TYPE = "nearsend.platform.SystemBarThemeRequest";
 
 interface ClipboardWriteRequest {
   text: string;
@@ -26,6 +27,10 @@ interface SaveFileRequest {
 
 interface OpenFileRequest {
   uri: string;
+}
+
+interface SystemBarThemeRequest {
+  dark: boolean;
 }
 
 class ClipboardReadResponse {
@@ -89,6 +94,35 @@ function parseOpenFileRequest(payload: BridgeTypedValue): OpenFileRequest {
     throw new Error("open-file.uri must be non-empty");
   }
   return request;
+}
+
+function parseSystemBarThemeRequest(payload: BridgeTypedValue): SystemBarThemeRequest {
+  if (payload.typeName !== SYSTEM_BAR_THEME_REQUEST_TYPE || typeof payload.value !== "object") {
+    throw new Error(`set-system-bar-theme requires bridge type ${SYSTEM_BAR_THEME_REQUEST_TYPE}`);
+  }
+  const request = payload.value as SystemBarThemeRequest;
+  if (typeof request.dark !== "boolean") {
+    throw new Error("set-system-bar-theme.dark must be a boolean");
+  }
+  return request;
+}
+
+async function setSystemBarTheme(
+  request: SystemBarThemeRequest,
+  context: BridgeCallContext,
+): Promise<BridgeTypedValue> {
+  const mainWindow = context.getWindowStage().getMainWindowSync();
+  const contentColor = request.dark ? "#FFFFFF" : "#000000";
+  await mainWindow.setWindowSystemBarProperties({
+    statusBarColor: "#00000000",
+    navigationBarColor: "#00000000",
+    statusBarContentColor: contentColor,
+    navigationBarContentColor: contentColor,
+    enableStatusBarAnimation: false,
+    enableNavigationBarAnimation: false,
+  });
+  ensureActive(context);
+  return { typeName: ACCEPTED_RESPONSE_TYPE, value: new AcceptedResponse(true) };
 }
 
 function ensureActive(context: BridgeCallContext): void {
@@ -157,15 +191,31 @@ async function openFile(
   context: BridgeCallContext,
 ): Promise<BridgeTypedValue> {
   try {
-    const uri = request.uri.endsWith("/") ? request.uri : `${request.uri}/`;
     const want: Want = {
       action: "ohos.want.action.viewData",
-      uri,
+      uri: request.uri,
       flags:
         wantConstant.Flags.FLAG_AUTH_READ_URI_PERMISSION |
         wantConstant.Flags.FLAG_AUTH_WRITE_URI_PERMISSION,
     };
     await context.abilityContext.startAbility(want);
+    ensureActive(context);
+    return { typeName: ACCEPTED_RESPONSE_TYPE, value: new AcceptedResponse(true) };
+  } catch (_error) {
+    ensureActive(context);
+    return { typeName: ACCEPTED_RESPONSE_TYPE, value: new AcceptedResponse(false) };
+  }
+}
+
+async function openDirectory(
+  request: OpenFileRequest,
+  context: BridgeCallContext,
+): Promise<BridgeTypedValue> {
+  try {
+    const options: OpenLinkOptions = {
+      parameters: { fileUri: request.uri },
+    };
+    await context.abilityContext.openLink("filemanager://openDirectory", options);
     ensureActive(context);
     return { typeName: ACCEPTED_RESPONSE_TYPE, value: new AcceptedResponse(true) };
   } catch (_error) {
@@ -188,6 +238,8 @@ export class NearSendPlatformPlugin extends AsyncPluginBase {
     }
 
     switch (action) {
+      case "set-system-bar-theme":
+        return await setSystemBarTheme(parseSystemBarThemeRequest(payload), context);
       case "read-clipboard":
         requireEmptyRequest(payload, action);
         return await readClipboardText(context);
@@ -197,6 +249,8 @@ export class NearSendPlatformPlugin extends AsyncPluginBase {
         return await pickSaveFile(parseSaveFileRequest(payload), context);
       case "open-file":
         return await openFile(parseOpenFileRequest(payload), context);
+      case "open-directory":
+        return await openDirectory(parseOpenFileRequest(payload), context);
       default:
         throw new Error(`Unsupported nearsend.platform action '${action}'`);
     }

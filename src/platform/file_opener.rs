@@ -4,6 +4,9 @@ use std::path::Path;
 use super::openharmony::{self, NearSendPlatformExt as _};
 
 #[cfg(target_env = "ohos")]
+const FILE_SHARE_READ_MODE: u32 = 1 << 0;
+
+#[cfg(target_env = "ohos")]
 fn normalize_to_file_uri(path: &Path) -> String {
     let raw = path.to_string_lossy();
     match ohos_fileuri_binding::get_uri_from_path(raw.as_ref()) {
@@ -46,11 +49,20 @@ fn canonicalize_ohos_uri(input: &str) -> String {
 }
 
 #[cfg(target_env = "ohos")]
-pub async fn open_saved_uri(uri: &str) -> anyhow::Result<()> {
-    let target_uri = canonicalize_ohos_uri(uri);
-    if target_uri.is_empty() {
-        return Err(anyhow::anyhow!("empty uri"));
+fn activate_uri_permission(uri: &str) {
+    let policies = [ohos_fileshare_binding::PolicyInfo {
+        uri: uri.to_string(),
+        operation_mode: FILE_SHARE_READ_MODE,
+    }];
+    match ohos_fileshare_binding::activate_permission(&policies) {
+        Ok(failed) if failed.is_empty() => {}
+        Ok(failed) => log::warn!("failed to activate saved uri permission: {failed:?}"),
+        Err(error) => log::warn!("failed to activate saved uri permission: {error}"),
     }
+}
+
+#[cfg(target_env = "ohos")]
+async fn open_ohos_uri(target_uri: String) -> anyhow::Result<()> {
     openharmony::app()?
         .open_file(target_uri)
         .await
@@ -58,12 +70,23 @@ pub async fn open_saved_uri(uri: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(not(target_env = "ohos"))]
-pub fn open_saved_uri(uri: &str) -> anyhow::Result<()> {
-    if let Some(path) = uri.strip_prefix("file://") {
-        return open_saved_file(Path::new(path));
+#[cfg(target_env = "ohos")]
+async fn open_ohos_directory_uri(target_uri: String) -> anyhow::Result<()> {
+    openharmony::app()?
+        .open_directory(target_uri)
+        .await
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    Ok(())
+}
+
+#[cfg(target_env = "ohos")]
+pub async fn open_saved_uri(uri: &str) -> anyhow::Result<()> {
+    let target_uri = canonicalize_ohos_uri(uri);
+    if target_uri.is_empty() {
+        return Err(anyhow::anyhow!("empty uri"));
     }
-    open_saved_file(Path::new(uri))
+    activate_uri_permission(&target_uri);
+    open_ohos_uri(target_uri).await
 }
 
 #[cfg(target_env = "ohos")]
@@ -71,46 +94,12 @@ pub async fn open_saved_file(path: &Path) -> anyhow::Result<()> {
     open_saved_uri(&normalize_to_file_uri(path)).await
 }
 
-#[cfg(not(target_env = "ohos"))]
-pub fn open_saved_file(path: &Path) -> anyhow::Result<()> {
-    #[cfg(target_os = "macos")]
-    let mut cmd = {
-        let mut c = std::process::Command::new("open");
-        c.arg(path);
-        c
-    };
-
-    #[cfg(target_os = "linux")]
-    let mut cmd = {
-        let mut c = std::process::Command::new("xdg-open");
-        c.arg(path);
-        c
-    };
-
-    #[cfg(target_os = "windows")]
-    let mut cmd = {
-        let mut c = std::process::Command::new("cmd");
-        c.args(["/C", "start", ""]).arg(path);
-        c
-    };
-
-    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-    {
-        return Err(anyhow::anyhow!(
-            "open file is not supported on this platform"
-        ));
+#[cfg(target_env = "ohos")]
+pub async fn open_saved_directory(path: &Path) -> anyhow::Result<()> {
+    let target_uri = normalize_to_file_uri(path);
+    if target_uri.trim().is_empty() {
+        return Err(anyhow::anyhow!("empty directory uri"));
     }
-
-    #[cfg(any(target_os = "macos", target_os = "linux", target_os = "windows"))]
-    {
-        let status = cmd.status()?;
-        if status.success() {
-            Ok(())
-        } else {
-            Err(anyhow::anyhow!(
-                "open file command exited with status {}",
-                status
-            ))
-        }
-    }
+    activate_uri_permission(&target_uri);
+    open_ohos_directory_uri(target_uri).await
 }

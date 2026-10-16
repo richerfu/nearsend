@@ -1,25 +1,7 @@
 //! Settings tab state and types (theme, color, receive/send/network options).
+use crate::ui::theme::NearSendTheme;
+pub use crate::ui::theme::{ColorMode, ThemeMode};
 use serde::{Deserialize, Serialize};
-
-/// Theme mode (Brightness)
-#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "snake_case")]
-pub enum ThemeMode {
-    #[default]
-    System,
-    Light,
-    Dark,
-}
-
-/// Color mode
-#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
-#[serde(rename_all = "snake_case")]
-pub enum ColorMode {
-    #[default]
-    System,
-    LocalSend,
-    Oled,
-}
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
@@ -45,6 +27,7 @@ pub enum NetworkFilterMode {
 pub struct SettingsPageState {
     pub theme_mode: ThemeMode,
     pub color_mode: ColorMode,
+    pub custom_theme_color: String,
     pub language: String,
     pub animations: bool,
     pub advanced: bool,
@@ -76,6 +59,10 @@ pub struct SettingsPageState {
 }
 
 impl SettingsPageState {
+    pub(crate) fn theme(&self) -> NearSendTheme {
+        NearSendTheme::new(self.theme_mode, self.color_mode, &self.custom_theme_color)
+    }
+
     pub fn load_or_default() -> Self {
         let path = crate::platform::preferences_path::get_preferences_file_path("settings.json");
         let Ok(raw) = std::fs::read_to_string(&path) else {
@@ -119,6 +106,7 @@ impl Default for SettingsPageState {
         Self {
             theme_mode: ThemeMode::System,
             color_mode: ColorMode::System,
+            custom_theme_color: "#5CA34B".to_string(),
             language: "System".to_string(),
             animations: true,
             advanced: false,
@@ -146,5 +134,47 @@ impl Default for SettingsPageState {
             encryption: false,
             multicast_group: "224.0.0.167".to_string(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ui::theme::accent_color_hex;
+
+    #[test]
+    fn loads_existing_settings_without_resetting_user_preferences() {
+        let settings: SettingsPageState = serde_json::from_str(
+            r#"{
+            "theme_mode": "dark", "color_mode": "local_send",
+            "server_alias": "我的设备", "server_port": 53318, "require_pin": true
+        }"#,
+        )
+        .unwrap();
+        assert!(settings.theme_mode == ThemeMode::Dark);
+        assert!(settings.color_mode == ColorMode::LocalSend);
+        assert_eq!(settings.server_alias, "我的设备");
+        assert_eq!(settings.server_port, 53318);
+        assert!(settings.require_pin);
+        assert_eq!(
+            settings.custom_theme_color,
+            SettingsPageState::default().custom_theme_color
+        );
+    }
+
+    #[test]
+    fn custom_palette_survives_settings_serialization() {
+        let settings = SettingsPageState {
+            theme_mode: ThemeMode::Dark,
+            color_mode: ColorMode::Custom,
+            custom_theme_color: "#2563EB".into(),
+            ..SettingsPageState::default()
+        };
+        let saved = serde_json::to_string(&settings).unwrap();
+        let restored: SettingsPageState = serde_json::from_str(&saved).unwrap();
+        assert!(restored.theme_mode == ThemeMode::Dark);
+        assert!(restored.color_mode == ColorMode::Custom);
+        assert_eq!(restored.custom_theme_color, "#2563EB");
+        assert_eq!(accent_color_hex(restored.theme().seed()), "#2563EB");
     }
 }

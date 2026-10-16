@@ -2,187 +2,606 @@
 /* eslint-disable */
 
 export interface PermissionRequestPayload {
-  permissions: Array<string>;
+  permissions: Array<string>
 }
 
 export interface PermissionResponsePayload {
-  codes: Array<number>;
+  codes: Array<number>
+}
+
+export interface UrlOpenFileRequest {
+  uri: string
+}
+
+export interface UrlOpenRequest {
+  url: string
+}
+
+export interface UrlOpenResponse {
+  accepted: boolean
 }
 
 /**
- * One suffix filter group: a display name plus `;`-separated suffixes (e.g. `"md"`).
- * The pattern stays structured; the ArkTS plugin converts it to the picker grammar.
- */
+  * Reveal-in-directory request.
+  *
+  * `path` is the **absolute real filesystem path** of the directory to reveal
+  * (the file's parent), e.g. `/storage/media/100/local/files/Docs/IDEProjects`.
+  * NOT a `file://` URI — the ArkTS side maps the real path to the file-manager
+  * virtual uri and builds the explicit Want. Sandbox or unmappable-prefix
+  * paths are rejected ArkTS-side with a documented platform-limitation error.
+  */
+export interface UrlRevealRequest {
+  path: string
+}
+
+export interface ClipboardClearRequest {
+
+}
+
+export interface ClipboardClearResponse {
+  accepted: boolean
+}
+
+export interface ClipboardReadContentResponse {
+  text?: string
+  png?: Array<number>
+  uris: Array<string>
+}
+
+export interface ClipboardReadTextRequest {
+
+}
+
+export interface ClipboardReadTextResponse {
+  text?: string
+}
+
+export interface ClipboardWriteEncodedImageRequest {
+  bytes: Array<number>
+}
+
+export interface ClipboardWriteHtmlRequest {
+  html: string
+}
+
+export interface ClipboardWriteHtmlResponse {
+  accepted: boolean
+}
+
+export interface ClipboardWriteImageRequest {
+  rgba: Array<number>
+  width: number
+  height: number
+}
+
+export interface ClipboardWriteImageResponse {
+  accepted: boolean
+}
+
+export interface ClipboardWriteTextRequest {
+  text: string
+}
+
+export interface ClipboardWriteTextResponse {
+  accepted: boolean
+}
+
+export interface ClipboardWriteUrisRequest {
+  uris: Array<string>
+}
+
+/**
+  * One suffix filter group: a display name plus `;`-separated suffixes (e.g. `"md"`).
+  * The pattern stays structured; the ArkTS plugin converts it to the picker grammar.
+  */
 export interface FileDialogFilter {
-  name?: string;
-  pattern?: string;
+  name?: string
+  pattern?: string
 }
 
 export interface FileDialogOptions {
   /** One of [`dialog_type`] constants. */
-  dialogType: string;
-  allowMany: boolean;
-  defaultLocation?: string;
-  filters: Array<FileDialogFilter>;
+  dialogType: string
+  allowMany: boolean
+  defaultLocation?: string
+  /** Suggested file name for the save dialog. */
+  suggestedName?: string
+  filters: Array<FileDialogFilter>
 }
 
 export interface FileDialogResponse {
   /** Selected file URIs. */
-  files: Array<string>;
+  files: Array<string>
   /** Selected filter index, or -1 when the platform does not report one. */
-  filter: number;
+  filter: number
 }
 
 export interface AbilityInitContext {
-  basePath?: string;
-  prefPath?: string;
-  preferredLocales?: string;
-  moduleName?: string;
+  basePath?: string
+  prefPath?: string
+  preferredLocales?: string
+  moduleName?: string
+  sdkApiVersion?: number
+  distributionOSApiVersion?: number
 }
 
 export interface ApplicationLifecycle {
-  bridgePlugins: Array<BridgePluginDeclaration>;
-  environmentCallback: EnvironmentCallback;
-  windowStageEventCallback: WindowStageEventCallback;
-  keyboardEventCallback: KeyboardCallback;
+  bridgePlugins: Array<BridgePluginDeclaration>
+  environmentCallback: EnvironmentCallback
+  windowStageEventCallback: WindowStageEventCallback
+  keyboardEventCallback: KeyboardCallback
 }
 
 /**
- * Structural declaration exported to ArkTS after the native module has configured its Rust
- * plugin registry. The host uses this to select the matching factory automatically and to
- * validate the parts of the contract that affect scheduling. Request and response ABI identity
- * remains pinned by each named N-API type.
- */
+  * Structural declaration exported to ArkTS after the native module has configured its Rust
+  * plugin registry. The host uses this to select the matching factory automatically and to
+  * validate the parts of the contract that affect scheduling. Request and response ABI identity
+  * remains pinned by each named N-API type.
+  */
 export interface BridgePluginDeclaration {
-  id: string;
-  execution: string;
-  requires: Array<string>;
+  id: string
+  execution: string
+  requires: Array<string>
 }
 
 export interface EnvironmentCallback {
-  onConfigurationUpdated: () => void;
-  onMemoryLevel: (arg: number) => void;
+  onConfigurationUpdated: () => void
+  onMemoryLevel: (arg: number) => void
 }
 
 export interface KeyboardCallback {
-  onKeyboardHeightChange: (arg: number) => void;
+  onKeyboardHeightChange: (arg: number) => void
 }
 
 export interface NodeAcknowledgement {
-  accepted: boolean;
+  accepted: boolean
 }
 
 /** Appends the node of `child_handle` under the node of `parent_handle`. */
 export interface NodeAppendChildRequest {
-  parentHandle: number;
-  childHandle: number;
+  parentHandle: number
+  childHandle: number
 }
 
 /** Request marker for `create-container`: the response carries the new handle. */
-export interface NodeCreateContainerRequest {}
+export interface NodeCreateContainerRequest {
+
+}
 
 /** Detaches a handle-owned node from its parent and disposes it. */
 export interface NodeDisposeRequest {
-  handle: number;
+  handle: number
 }
 
 /** Opaque handle of a container `FrameNode` created in ArkTS. */
 export interface NodeHandleResponse {
-  handle: number;
+  handle: number
 }
 
 /** Appends a handle-owned node to this module's component root. */
 export interface NodeMountIntoRootRequest {
-  handle: number;
+  handle: number
+}
+
+export interface PreviewTextEventData {
+  text: string
+  start: number
+  end: number
 }
 
 export interface WindowStageEventCallback {
-  onWindowStageCreate: () => void;
-  onWindowStageDestroy: () => void;
-  onAbilityCreate: (arg: string) => void;
-  onAbilityDestroy: () => void;
-  onAbilitySaveState: () => void;
-  onAbilityRestoreState: () => void;
-  onWindowStageEvent: (arg: number) => void;
-  onWindowSizeChange: (arg: object) => void;
-  onWindowRectChange: (arg: object) => void;
-  onAvoidAreaChange: (arg: object) => void;
+  onWindowStageCreate: () => void
+  onWindowStageDestroy: () => void
+  onAbilityCreate: (arg: string) => void
+  onAbilityDestroy: () => void
+  onAbilitySaveState: () => void
+  onAbilityRestoreState: () => void
+  onWindowStageEvent: (arg: number) => void
+  onWindowSizeChange: (arg: object) => void
+  onWindowRectChange: (arg: object) => void
+  onWindowFocusChange: (arg: object) => void
+  onAvoidAreaChange: (arg: object) => void
+  onNewWant: (arg: object) => void
+  onAbilityCreateWithWant: (arg: object) => void
 }
 
+/**
+  * Reads the last windowId reported by a subsequent instance. Returns -1 if no
+  * subsequent instance has registered yet. Used by automated tests.
+  */
+export declare function getLastUiAbilityWindowId(): number
+
+export declare function isDesktopDevice(): boolean
+
+/**
+  * NAPI function called from ArkTS to request a window close.
+  * This queues the OHOS window ID for processing by the Rust event loop,
+  * ensuring proper lifecycle events (close-requested, destroyed) are emitted.
+  *
+  * Timing: ArkTS calls this synchronously before `destroyWindow()` (async).
+  * The Rust event loop drains the queue at the start of the next iteration,
+  * processing window IDs before the async OHOS destruction completes.
+  * The Rust side only uses the ID to look up the matching window —
+  * it never accesses the OHOS window object directly, so destroyed windows are safe.
+  */
+export declare function notifyWindowClose(windowId: number): void
+
+/**
+  * NAPI function called from ArkTS `windowStatusChange` callbacks to report a
+  * window status change. Queues (window_id, status) for the Rust event loop.
+  *
+  * `status` is the raw OHOS `WindowStatusType` value (transparently forwarded):
+  * FULL_SCREEN=1, MAXIMIZE=2, MINIMIZE=3, FLOATING=4, SPLIT_SCREEN=5.
+  * Semantic decoding happens on the tao side (`apply_window_status`); this layer
+  * only transports the integer.
+  */
+export declare function notifyWindowStatus(windowId: number, status: number): void
+
+/**
+  * NAPI function called from the ArkTS `onContinue` lifecycle callback to
+  * synchronously read the source-side continuation snapshot (pre-registered
+  * via `setContinuationData`). `onContinue` is a synchronous callback, so the
+  * read must be a plain NAPI call — no Promise, no bridge round-trip. Empty
+  * string means "nothing registered" (the caller refuses with MISMATCH).
+  */
+export declare function readContinueSnapshot(): string
+
+/**
+  * Register the ArkTS `createSubWindow` wrapper as a ThreadsafeFunction.
+  *
+  * Called from `ProcessInitializer.initialize()` after native modules are loaded.
+  * The ArkTS wrapper is an arrow function that captures `WindowManager.getInstance()`
+  * and calls `createSubWindow(config)`, returning a `Promise<number>`.
+  *
+  * After registration, `create_os_window` can fire-and-forget sub-window creation
+  * from any thread (TSFN is threadsafe).
+  */
+export declare function registerCreateSubWindowTsfn(createFn: (config: ESObject) => Promise<number>): void
+
+/**
+  * NAPI: Called by the new EntryAbility instance's `onWindowStageCreate` (via
+  * ArkTS `WindowManager.registerUIAbilityStage`) to report the windowId
+  * it received from want.parameters. Records the id globally so automated tests
+  * can poll `get_last_ui_ability_window_id` and verify want-parameter forwarding.
+  */
+export declare function registerUiAbilityStage(windowId: number): void
+
+/**
+  * NAPI function called from the ArkTS `onMouse` handler (Move/Press) to
+  * update the tracked cursor position. Coordinates are MainPage-relative vp.
+  */
+export declare function updateCursorPosition(x: number, y: number): void
+
 export interface AcceptedResponse {
-  accepted: boolean;
+  accepted: boolean
 }
 
 export interface ClipboardReadResponse {
-  text: string;
+  text: string
 }
 
 export interface ClipboardWriteRequest {
-  text: string;
+  text: string
 }
 
-export interface EmptyRequest {}
+export interface EmptyRequest {
+
+}
 
 export interface OpenFileRequest {
-  uri: string;
+  uri: string
 }
 
 export interface SaveFileRequest {
-  fileName: string;
+  fileName: string
 }
 
 export interface UriResponse {
-  uri: string;
+  uri: string
 }
 
-export declare function disposeAllRenders(): void;
+export declare function disposeAllRenders(): void
 
 /**
- * r" Releases the Ability-session transport without touching this module's independent
- * r" DefaultXComponent render owner. Stale owners are ignored.
- */
-export declare function disposeBridge(bridgeOwner: string): void;
+  * r" Releases the Ability-session transport without touching this module's independent
+  * r" DefaultXComponent render owner. Stale owners are ignored.
+  */
+export declare function disposeBridge(bridgeOwner: string): void
 
-export declare function disposeRender(renderOwner: string): void;
+export declare function disposeRender(renderOwner: string): void
 
-/** Queues content received from the HarmonyOS system share panel. */
-export declare function enqueueSystemShare(uris: Array<string>, texts: Array<string>): void;
+/**
+  * Native entry point used by `EntryAbility` after Share Kit parses a share Want.
+  *
+  * This can run before GPUI has created `AppRoot`, so requests are retained in a
+  * process-local queue and consumed once the first window is ready.
+  */
+export declare function enqueueSystemShare(uris: Array<string>, texts: Array<string>): void
 
-/** Reports the HarmonyOS product type before GPUI creates its first frame. */
-export declare function setDeviceType(deviceType: string): void;
+export declare function init(bindings: object, bridgeOwner: string, context?: AbilityInitContext): ApplicationLifecycle
 
-export declare function init(
-  bindings: object,
-  bridgeOwner: string,
-  context?: AbilityInitContext,
-): ApplicationLifecycle;
+export declare function notifyNativeWindowClose(windowId: number): void
 
-export declare function onBackPressIntercept(): boolean;
+export declare function onBackPressIntercept(): boolean
 
 /** r" ArkTS-only lifecycle transitions, currently UI-context readiness transitions. */
-export declare function onBridgeLifecycle(kind: string): void;
+export declare function onBridgeLifecycle(kind: string): void
 
 /**
- * r" Synchronous ArkTS platform callback -> Rust plugin decision port.
- * r"
- * r" The N-API value is scoped to this call and the returned value must be produced
- * r" before ArkTS resumes the originating platform callback. It is the dedicated
- * r" typed inbound event port for ArkTS plugins.
- */
-export declare function onBridgeSyncEvent(
-  pluginId: string,
-  event: string,
-  requestTypeName: string,
-  responseTypeName: string,
-  value: unknown,
-): unknown;
+  * r" Synchronous ArkTS platform callback -> Rust plugin decision port.
+  * r"
+  * r" The N-API value is scoped to this call and the returned value must be produced
+  * r" before ArkTS resumes the originating platform callback. It is the dedicated
+  * r" typed inbound event port for ArkTS plugins.
+  */
+export declare function onBridgeSyncEvent(pluginId: string, event: string, requestTypeName: string, responseTypeName: string, value: unknown): unknown
 
-export declare function render(slot: NodeContent, renderOwner: string): void;
+export declare function render(slot: NodeContent, renderOwner: string): void
+
+export declare function renderWindow(slot: NodeContent, renderOwner: string, windowId: number): void
+
+/** Reports the HarmonyOS product type before GPUI creates its first frame. */
+export declare function setDeviceType(deviceType: string): void
+
+/** Empty request marker for the `restart` action. */
+export interface RestartRequest {
+
+}
+
+/** Result of dispatching `appRecovery.restartApp()`. */
+export interface RestartResponse {
+  /** 0 on success, negative on failure (mirrors the former TSFN contract). */
+  code: number
+}
+
+export interface AboutMetadataData {
+  name?: string
+  version?: string
+  shortVersion?: string
+  authors?: Array<string>
+  comments?: string
+  copyright?: string
+  license?: string
+  website?: string
+}
+
+export interface MenuAcknowledgement {
+  accepted: boolean
+}
+
+export interface MenuClickEvent {
+  menuId: string
+  windowId?: string
+}
+
+export interface MenuItemData {
+  id: string
+  type: string
+  text?: string
+  enabled?: boolean
+  accelerator?: string
+  predefinedType?: string
+  checked?: boolean
+  icon?: string
+  nativeIcon?: string
+  submenuItems?: Array<MenuItemData>
+  aboutMetadata?: AboutMetadataData
+}
+
+export interface MenuPopupRequest {
+  /** Serialized `Vec<MenuItemData>` JSON. */
+  jsonData: string
+  x?: number
+  y?: number
+  windowId: string
+}
+
+export interface MenuPredefinedRequest {
+  action: string
+  windowId?: string
+}
+
+export interface MenuSetMenubarRequest {
+  /** Serialized `Vec<MenuItemData>` JSON. */
+  jsonData: string
+  windowId: string
+}
+
+export interface MenuSetVisibleRequest {
+  visible: boolean
+  windowId: string
+}
+
+export interface AvoidAreaRequest {
+  areaType: number
+}
+
+export interface AvoidAreaResponse {
+  area: RawAvoidArea
+}
+
+export interface CursorIconRequest {
+  windowId: number
+  /** PointerStyle id as understood by WindowManager.setPointerStyle. */
+  style: number
+}
+
+export interface CursorVisibleRequest {
+  /**
+    * Global pointer visibility. `pointer.setPointerVisible` is process-wide
+    * (not per-window), so this request deliberately carries no window id.
+    */
+  visible: boolean
+}
+
+export interface DecorationFlagsRequest {
+  windowId: number
+  /** FLAG bit-field (closable=1, maximizable=2, minimizable=4, resizable=8). */
+  flags: number
+}
+
+export interface ImePositionRequest {
+  windowId: number
+  x: number
+  y: number
+}
+
+export interface ImePositionResponse {
+  ok: boolean
+  code: number
+  message: string
+}
+
+export interface RawAvoidArea {
+  visible: boolean
+  leftRect: RawRect
+  topRect: RawRect
+  rightRect: RawRect
+  bottomRect: RawRect
+}
+
+export interface RawRect {
+  top: number
+  left: number
+  width: number
+  height: number
+}
+
+export interface RealWindowIdResponse {
+  windowId: number
+}
+
+export interface WindowAcknowledgement {
+  accepted: boolean
+}
+
+export interface WindowBlurRequest {
+  windowId: number
+  radius: number
+}
+
+export interface WindowColorRequest {
+  windowId: number
+  color: number
+}
+
+export interface WindowCreateRequest {
+  name: string
+  width: number
+  height: number
+  x: number
+  y: number
+  /** Whether to show window decorations (title bar, drag area, close button). */
+  decorations: boolean
+  /** Fully transparent window background. */
+  transparent: boolean
+  /** Window background color in 0xAARRGGBB format; ignored when `transparent` is true. */
+  backgroundColor?: number
+}
+
+export interface WindowCreateResponse {
+  windowId: number
+}
+
+export interface WindowDecorationsRequest {
+  windowId: number
+  decorations: boolean
+}
+
+export interface WindowDraggableRequest {
+  windowId: number
+  enable: boolean
+}
+
+export interface WindowFocusableRequest {
+  windowId: number
+  focusable: boolean
+}
+
+export interface WindowFullscreenRequest {
+  windowId: number
+  on: boolean
+}
+
+export interface WindowIdRequest {
+  windowId: number
+}
+
+export interface WindowKeepScreenOnRequest {
+  windowId: number
+  on: boolean
+}
+
+export interface WindowLimitsRequest {
+  windowId: number
+  minWidth: number
+  minHeight: number
+  maxWidth: number
+  maxHeight: number
+}
+
+export interface WindowMoveRequest {
+  windowId: number
+  x: number
+  y: number
+}
+
+export interface WindowResizeRequest {
+  windowId: number
+  width: number
+  height: number
+}
+
+export interface WindowStateResponse {
+  value: boolean
+}
+
+export interface WindowTitleRequest {
+  windowId: number
+  title: string
+}
+
+export interface WindowTopmostRequest {
+  windowId: number
+  topmost: boolean
+}
+
+export interface WindowTouchableRequest {
+  windowId: number
+  touchable: boolean
+}
+
+/** Request to hide the application's UIAbility (fire-and-forget). */
+export interface HideAbilityRequest {
+
+}
+
+export interface HideAbilityResponse {
+  accepted: boolean
+}
+
+export interface SetColorModeRequest {
+  /** 0 = Dark, 1 = Light, 2 = NoSet (follow system). */
+  colorMode: number
+}
+
+export interface SetColorModeResponse {
+  accepted: boolean
+}
+
+/** Request to restore a hidden UIAbility to the foreground (fire-and-forget). */
+export interface ShowAbilityRequest {
+
+}
+
+export interface ShowAbilityResponse {
+  accepted: boolean
+}
 
 export interface TerminateRequest {
-  code: number;
+  code: number
 }
 
 export interface TerminateResponse {
-  accepted: boolean;
+  accepted: boolean
 }

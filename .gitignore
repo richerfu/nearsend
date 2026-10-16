@@ -8,4 +8,10 @@ package/libs
 *.so
 keys/
 
+__pycache__/
+*.py[cod]
+node_modules/
+oh_modules/
+.hvigor/
+
 sign-info/

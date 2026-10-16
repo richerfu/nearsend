@@ -20,6 +20,7 @@
         "icon": "$media:layered_image",
         "label": "$string:EntryAbility_label",
         "launchType": "singleton",
+        "recoverable": true,
         "startWindowIcon": "$media:startIcon",
         "startWindowBackground": "$color:start_window_background",
         "exported": true,
@@ -67,6 +68,12 @@
       },
       {
         "name": "ohos.permission.FILE_ACCESS_PERSIST"
+      },
+      {
+        "name": "ohos.permission.SET_WINDOW_TRANSPARENT"
+      },
+      {
+        "name": "ohos.permission.LOCK_WINDOW_CURSOR"
       },
       {
         "name": "ohos.permission.READ_PASTEBOARD",

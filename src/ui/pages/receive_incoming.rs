@@ -1,7 +1,7 @@
 use crate::state::{
     app_state::AppState, receive_inbox_state::ReceiveInboxState, transfer_state::TransferDirection,
 };
-use crate::ui::icons::{app_icon, paths};
+use crate::ui::icons::{app_icon, loading_icon, paths};
 use crate::ui::responsive::ResponsiveLayout;
 use crate::ui::routes;
 use crate::ui::theme::radius;
@@ -262,6 +262,8 @@ impl gpui::Render for ReceiveIncomingPage {
         } else {
             cx.theme().primary
         };
+        let status_is_loading =
+            !show_cancelled && !is_completed && message_content.is_none() && decision_submitted;
 
         v_flex()
             .size_full()
@@ -293,7 +295,16 @@ impl gpui::Render for ReceiveIncomingPage {
                                     .flex()
                                     .items_center()
                                     .justify_center()
-                                    .child(app_icon(status_icon, Size::Large, status_color)),
+                                    .child(if status_is_loading {
+                                        loading_icon(
+                                            "receive-status-loading-large",
+                                            Size::Large,
+                                            status_color,
+                                        )
+                                    } else {
+                                        app_icon(status_icon, Size::Large, status_color)
+                                            .into_any_element()
+                                    }),
                             )
                             .child(
                                 div()
@@ -373,13 +384,20 @@ impl gpui::Render for ReceiveIncomingPage {
                                                             .flex()
                                                             .items_center()
                                                             .justify_center()
-                                                            .child(
+                                                            .child(if status_is_loading {
+                                                                loading_icon(
+                                                                    "receive-status-loading-card",
+                                                                    Size::Small,
+                                                                    status_color,
+                                                                )
+                                                            } else {
                                                                 app_icon(
                                                                     status_icon,
                                                                     Size::Small,
                                                                     status_color,
-                                                                ),
-                                                            ),
+                                                                )
+                                                                .into_any_element()
+                                                            }),
                                                     )
                                                     .child(
                                                         v_flex()
@@ -560,7 +578,16 @@ impl gpui::Render for ReceiveIncomingPage {
                                                                                     .flex()
                                                                                     .items_center()
                                                                                     .justify_center()
-                                                                                    .child(
+                                                                                    .child(if row_receiving {
+                                                                                        loading_icon(
+                                                                                            format!(
+                                                                                                "receive-file-loading-{}",
+                                                                                                item.file_id
+                                                                                            ),
+                                                                                            Size::XSmall,
+                                                                                            row_tone,
+                                                                                        )
+                                                                                    } else {
                                                                                         app_icon(
                                                                                             if row_active {
                                                                                                 paths::CHECK
@@ -569,8 +596,9 @@ impl gpui::Render for ReceiveIncomingPage {
                                                                                             },
                                                                                             Size::XSmall,
                                                                                             row_tone,
-                                                                                        ),
-                                                                                    ),
+                                                                                        )
+                                                                                        .into_any_element()
+                                                                                    }),
                                                                             )
                                                                             .child(
                                                                                 app_icon(

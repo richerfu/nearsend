@@ -65,7 +65,7 @@ impl AppRoot {
 
         let send_selection_state = cx.new(|_| SendSelectionState::default());
         let receive_inbox_state = cx.new(|_| ReceiveInboxState::default());
-        let home_entity = cx.new(|_| {
+        let home_entity = cx.new(|cx| {
             HomePage::new(
                 app_state.clone(),
                 device_state.clone(),
@@ -73,6 +73,7 @@ impl AppRoot {
                 history_state.clone(),
                 send_selection_state.clone(),
                 receive_inbox_state.clone(),
+                cx,
             )
         });
         let history_entity = cx.new(|_| {

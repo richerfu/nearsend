@@ -912,17 +912,21 @@ async fn handle_upload(
         return Err((StatusCode::CONFLICT, "Transfer cancelled".to_string()));
     }
 
-    let (saved_location, mut output_file) =
-        match crate::platform::save_file::create_incoming_file(&session_id, &file_name_for_save)
-            .await
-        {
-            Ok(target) => target,
-            Err(err) => {
-                let msg = format!("save incoming file failed: {}", err);
-                cancel_incoming_session(&state, &session_id, msg.clone()).await;
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
-            }
-        };
+    let default_save_directory = state.default_save_directory.lock().await.clone();
+    let (saved_location, mut output_file) = match crate::platform::save_file::create_incoming_file(
+        &session_id,
+        &file_name_for_save,
+        default_save_directory.as_deref(),
+    )
+    .await
+    {
+        Ok(target) => target,
+        Err(err) => {
+            let msg = format!("save incoming file failed: {}", err);
+            cancel_incoming_session(&state, &session_id, msg.clone()).await;
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, msg));
+        }
+    };
 
     let mut body = req.into_body();
     let mut captured_text =
