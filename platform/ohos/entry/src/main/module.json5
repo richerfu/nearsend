@@ -70,6 +70,12 @@
         "name": "ohos.permission.FILE_ACCESS_PERSIST"
       },
       {
+        "name": "ohos.permission.SET_WINDOW_TRANSPARENT"
+      },
+      {
+        "name": "ohos.permission.LOCK_WINDOW_CURSOR"
+      },
+      {
         "name": "ohos.permission.READ_PASTEBOARD",
         "reason": "$string:READ_PASTEBOARD_PERMISSION",
         "usedScene": {

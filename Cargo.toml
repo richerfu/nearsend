@@ -22,16 +22,16 @@ opt-level = 3
 
 [dependencies]
 gpui = { git = "https://github.com/ohos-rs/zed.git", rev = "f45c7c22d0", default-features = false }
-gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "a494a0df03e62ded90017d2bb78e3f66a2ce80bb" }
+gpui-ohos = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "f3724800da7209a6f2586598214f6c2499637c62" }
 gpui-component = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
 gpui-router = { version = "0.3" }
 gpui-kit-assets = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b" }
 gpui-fps = { git = "https://github.com/longbridge/gpui-component.git", rev = "2f2bab9a6cea994531527bd382bfdafc463b0d0b", optional = true }
-# The ability crates come from gpui-ohos's pinned submodule so both use one crate instance.
-openharmony-ability = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "a494a0df03e62ded90017d2bb78e3f66a2ce80bb" }
-openharmony-ability-derive = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "a494a0df03e62ded90017d2bb78e3f66a2ce80bb" }
-openharmony-ability-plugin-files = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "a494a0df03e62ded90017d2bb78e3f66a2ce80bb" }
-openharmony-ability-plugin-permission = { git = "https://github.com/ohos-rs/gpui-ohos.git", rev = "a494a0df03e62ded90017d2bb78e3f66a2ce80bb" }
+# Match gpui-ohos's published ability crates and the ArkTS packages.
+openharmony-ability = "=1.0.0-beta.3"
+openharmony-ability-derive = "=1.0.0-beta.3"
+openharmony-ability-plugin-files = "=1.0.0-beta.3"
+openharmony-ability-plugin-permission = "=1.0.0-beta.3"
 
 napi-ohos = { version = "=1.2.0" }
 napi-derive-ohos = { version = "=1.2.0" }
