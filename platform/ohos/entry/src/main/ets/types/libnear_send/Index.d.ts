@@ -34,12 +34,21 @@ export interface UrlRevealRequest {
   path: string
 }
 
-export interface ClipboardClearRequest {
-
+export interface UrlSchemeRequest {
+  scheme: string
 }
 
-export interface ClipboardClearResponse {
-  accepted: boolean
+export interface UrlSchemeResponse {
+  declared: boolean
+}
+
+/**
+  * One exact representation. Text/HTML must be UTF-8 without embedded NUL;
+  * other formats are opaque bytes and cannot be empty on the native API.
+  */
+export interface ClipboardMimeContent {
+  mime: string
+  data: Array<number>
 }
 
 export interface ClipboardReadContentResponse {
@@ -48,46 +57,17 @@ export interface ClipboardReadContentResponse {
   uris: Array<string>
 }
 
-export interface ClipboardReadTextRequest {
-
+export interface ClipboardReadMimeResponse {
+  contents: Array<ClipboardMimeContent>
+  available: Array<string>
 }
 
-export interface ClipboardReadTextResponse {
+/** A convenience projection of one record. Use `read_mime` for all representations. */
+export interface ClipboardRecord {
   text?: string
-}
-
-export interface ClipboardWriteEncodedImageRequest {
-  bytes: Array<number>
-}
-
-export interface ClipboardWriteHtmlRequest {
-  html: string
-}
-
-export interface ClipboardWriteHtmlResponse {
-  accepted: boolean
-}
-
-export interface ClipboardWriteImageRequest {
-  rgba: Array<number>
-  width: number
-  height: number
-}
-
-export interface ClipboardWriteImageResponse {
-  accepted: boolean
-}
-
-export interface ClipboardWriteTextRequest {
-  text: string
-}
-
-export interface ClipboardWriteTextResponse {
-  accepted: boolean
-}
-
-export interface ClipboardWriteUrisRequest {
-  uris: Array<string>
+  metadata?: string
+  encodedImage?: Array<number>
+  uri?: string
 }
 
 /**
@@ -107,6 +87,8 @@ export interface FileDialogOptions {
   /** Suggested file name for the save dialog. */
   suggestedName?: string
   filters: Array<FileDialogFilter>
+  /** Ability window ID that owns the dialog. Omit for the default Ability picker. */
+  parentWindowId?: number
 }
 
 export interface FileDialogResponse {
@@ -116,13 +98,38 @@ export interface FileDialogResponse {
   filter: number
 }
 
+export interface ResourceManagerReadyResponse {
+  accepted: boolean
+}
+
+/**
+  * Optional N-API representation of OpenHarmony's `@ohos.app.ability.Configuration`.
+  *
+  * Every property on the ArkTS `Configuration` interface is optional, and
+  * `UIAbility.onConfigurationUpdate` may deliver partial delta objects or omit fields
+  * such as `mcc`/`mnc` on Wi-Fi-only devices. Parsing into optional fields allows both
+  * `AbilityInitContext` startup seeding and `onConfigurationUpdated` runtime updates to
+  * merge cleanly onto an existing [`Configuration`] without failing N-API conversion.
+  */
+export interface AbilityInitConfiguration {
+  language?: string
+  colorMode?: number
+  direction?: number
+  screenDensity?: number
+  displayId?: number
+  hasPointerDevice?: boolean
+  fontSizeScale?: number
+  fontWeightScale?: number
+  mcc?: string
+  mnc?: string
+}
+
 export interface AbilityInitContext {
   basePath?: string
   prefPath?: string
   preferredLocales?: string
   moduleName?: string
-  sdkApiVersion?: number
-  distributionOSApiVersion?: number
+  configuration?: AbilityInitConfiguration
 }
 
 export interface ApplicationLifecycle {
@@ -153,6 +160,21 @@ export interface KeyboardCallback {
   onKeyboardHeightChange: (arg: number) => void
 }
 
+/** Identifies a ready FrameNode. Decoding never attaches it. */
+export interface NativeNodeReady {
+  targetId: number
+}
+
+/** Synchronous notification before an ArkTS owner disposes its content. */
+export interface NativeNodeRetiring {
+  targetId: number
+}
+
+/** Identifies a ready wrapper and NodeContent slot. Decoding never mounts either one. */
+export interface NativeSubtreeReady {
+  targetId: number
+}
+
 export interface NodeAcknowledgement {
   accepted: boolean
 }
@@ -181,12 +203,6 @@ export interface NodeHandleResponse {
 /** Appends a handle-owned node to this module's component root. */
 export interface NodeMountIntoRootRequest {
   handle: number
-}
-
-export interface PreviewTextEventData {
-  text: string
-  start: number
-  end: number
 }
 
 export interface WindowStageEventCallback {
@@ -296,6 +312,10 @@ export interface SaveFileRequest {
   fileName: string
 }
 
+export interface SystemBarThemeRequest {
+  dark: boolean
+}
+
 export interface UriResponse {
   uri: string
 }
@@ -336,22 +356,91 @@ export declare function onBridgeLifecycle(kind: string): void
   */
 export declare function onBridgeSyncEvent(pluginId: string, event: string, requestTypeName: string, responseTypeName: string, value: unknown): unknown
 
-export declare function render(slot: NodeContent, renderOwner: string): void
+export declare function render(slot: NodeContent, renderOwner: string, nativeWindowId?: number | undefined | null): void
 
-export declare function renderWindow(slot: NodeContent, renderOwner: string, windowId: number): void
+export declare function renderWindow(slot: NodeContent, renderOwner: string, windowId: number, nativeWindowId?: number | undefined | null): void
 
 /** Reports the HarmonyOS product type before GPUI creates its first frame. */
 export declare function setDeviceType(deviceType: string): void
 
-/** Empty request marker for the `restart` action. */
-export interface RestartRequest {
+export interface AvailableArea {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+export interface DisplaySnapshot {
+  id: number
+  width: number
+  height: number
+  densityPixels: number
+  refreshRate?: number
+  availableArea?: AvailableArea
+  isDefault: boolean
+}
+
+export interface GetAvailableAreaRequest {
 
 }
 
-/** Result of dispatching `appRecovery.restartApp()`. */
-export interface RestartResponse {
-  /** 0 on success, negative on failure (mirrors the former TSFN contract). */
-  code: number
+export interface GetAvailableAreaResponse {
+  area: AvailableArea
+}
+
+export interface GetBundleCodeDirRequest {
+
+}
+
+export interface GetBundleCodeDirResponse {
+  path: string
+}
+
+export interface GetDisplaysRequest {
+
+}
+
+export interface GetDisplaysResponse {
+  displays: Array<DisplaySnapshot>
+}
+
+export interface GetThermalLevelRequest {
+
+}
+
+export interface GetThermalLevelResponse {
+  level: number
+}
+
+/**
+  * 0..7 correspond to `thermal.ThermalLevel`. `kind` is thermal, sleep, wake,
+  * available-area, or displays.
+  */
+export interface SystemStateChangedEvent {
+  kind: string
+  thermalLevel?: number
+  availableArea?: AvailableArea
+  displays?: Array<DisplaySnapshot>
+}
+
+export interface DismissNotificationRequest {
+  tag: string
+}
+
+export interface NotificationAcknowledgement {
+  accepted: boolean
+}
+
+export interface NotificationAction {
+  id: string
+  label: string
+}
+
+export interface ShowNotificationRequest {
+  tag: string
+  title: string
+  body: string
+  actions: Array<NotificationAction>
 }
 
 export interface AboutMetadataData {
@@ -374,18 +463,52 @@ export interface MenuClickEvent {
   windowId?: string
 }
 
+export interface MenuCommandItem {
+  id: string
+  text: string
+  enabled: boolean
+}
+
 export interface MenuItemData {
   id: string
   type: string
   text?: string
   enabled?: boolean
   accelerator?: string
+  /**
+    * Show the chord while the native renderer owns key dispatch and context.
+    * Missing/false retains ordinary native menu accelerator handling.
+    */
+  acceleratorDisplayOnly?: boolean
   predefinedType?: string
   checked?: boolean
   icon?: string
   nativeIcon?: string
   submenuItems?: Array<MenuItemData>
   aboutMetadata?: AboutMetadataData
+}
+
+export interface MenuOpenEvent {
+  windowId: string
+}
+
+export interface MenuPopupCommandsRequest {
+  windowId: string
+  items: Array<MenuCommandItem>
+  /** Content-local logical coordinates in vp. */
+  x: number
+  y: number
+  /** Inspector ID to restore synchronously when the native popup closes. */
+  restoreFocusId?: string
+}
+
+export interface MenuPopupMenubarRequest {
+  windowId: string
+  menuName?: string
+  x: number
+  y: number
+  /** Inspector ID to restore synchronously when the native popup closes. */
+  restoreFocusId?: string
 }
 
 export interface MenuPopupRequest {
@@ -434,6 +557,15 @@ export interface CursorVisibleRequest {
   visible: boolean
 }
 
+export interface CustomCursorRequest {
+  windowId: number
+  rgba: Array<number>
+  width: number
+  height: number
+  hotspotX: number
+  hotspotY: number
+}
+
 export interface DecorationFlagsRequest {
   windowId: number
   /** FLAG bit-field (closable=1, maximizable=2, minimizable=4, resizable=8). */
@@ -480,6 +612,14 @@ export interface WindowBlurRequest {
   radius: number
 }
 
+export interface WindowCloseRequested {
+  windowId: number
+}
+
+export interface WindowCloseResponse {
+  preventClose: boolean
+}
+
 export interface WindowColorRequest {
   windowId: number
   color: number
@@ -523,6 +663,13 @@ export interface WindowFullscreenRequest {
   on: boolean
 }
 
+/** Main Ability window/task icon. An empty image restores the packaged Ability icon. */
+export interface WindowIconRequest {
+  windowId: number
+  rgba: Array<number>
+  size: number
+}
+
 export interface WindowIdRequest {
   windowId: number
 }
@@ -546,14 +693,81 @@ export interface WindowMoveRequest {
   y: number
 }
 
+export interface WindowMoveRequested {
+  windowId: number
+}
+
+export interface WindowMoveResponse {
+  startMoving: boolean
+}
+
+export interface WindowPromptAnchor {
+  /** Horizontal position in the target window's content, in logical vp units. */
+  x: number
+  /** Vertical position in the target window's content, in logical vp units. */
+  y: number
+}
+
+/** Application-owned semantic colors in ARGB order, including alpha. */
+export interface WindowPromptAppearance {
+  background: number
+  foreground: number
+  mutedForeground: number
+  primary: number
+  primaryForeground: number
+  border: number
+  focus: number
+}
+
+export interface WindowPromptRequest {
+  windowId: number
+  message: string
+  detail?: string
+  /** 0 information, 1 warning, 2 critical. */
+  level: number
+  buttons: Array<string>
+  cancelIndex?: number
+  /** Optional content-local position in logical vp units, not physical px or screen coordinates. */
+  anchor?: WindowPromptAnchor
+  /** Omit to follow the target window's system colors. */
+  appearance?: WindowPromptAppearance
+}
+
+export interface WindowPromptResponse {
+  index: number
+}
+
 export interface WindowResizeRequest {
   windowId: number
   width: number
   height: number
 }
 
+export interface WindowStackRequest {
+  displayId: number
+  windowIds: Array<number>
+}
+
+export interface WindowStackResponse {
+  windowIds: Array<number>
+}
+
 export interface WindowStateResponse {
   value: boolean
+}
+
+/** Status-bar settings; zero selects the component's window. */
+export interface WindowStatusBarRequest {
+  /** Window ID, or zero for the component's window. */
+  windowId: number
+  /** Whether the status bar is visible. */
+  enabled: boolean
+  /** White text/icons when true, black when false. */
+  lightContent: boolean
+  /** Optional background, in ARGB. */
+  background?: number
+  /** Animate visibility changes. */
+  animated: boolean
 }
 
 export interface WindowTitleRequest {
@@ -577,6 +791,15 @@ export interface HideAbilityRequest {
 }
 
 export interface HideAbilityResponse {
+  accepted: boolean
+}
+
+/** Restart the application into the calling Ability after application cleanup. */
+export interface RestartRequest {
+
+}
+
+export interface RestartResponse {
   accepted: boolean
 }
 

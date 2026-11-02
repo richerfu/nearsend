@@ -136,7 +136,7 @@ fn render_license_row(
                             .track_scroll(&license_text_scroll)
                             // The license text owns this scroll. Keep its
                             // movement from also moving the surrounding list.
-                            .on_scroll_wheel(|_event, _window, cx| cx.stop_propagation())
+                            .on_scroll(|_event, _window, cx| cx.stop_propagation())
                             .overflow_x_hidden()
                             .p(px(12.))
                             .child(
