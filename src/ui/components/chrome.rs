@@ -163,6 +163,7 @@ pub struct CircleIconTrigger {
     selected: bool,
     bg: Hsla,
     icon: AnyElement,
+    on_click: Option<Box<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
 }
 
 impl CircleIconTrigger {
@@ -173,6 +174,7 @@ impl CircleIconTrigger {
             selected: false,
             bg: cx.theme().muted,
             icon: icon_el.into_any_element(),
+            on_click: None,
         }
     }
 
@@ -186,6 +188,16 @@ impl CircleIconTrigger {
 
     pub fn touch(mut self) -> Self {
         self.size = sizing::TOUCH;
+        self
+    }
+
+    /// Own pointer activation on a completed click instead of allowing the
+    /// enclosing popover to toggle on each mouse-down event.
+    pub fn on_click(
+        mut self,
+        handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.on_click = Some(Box::new(handler));
         self
     }
 }
@@ -216,6 +228,15 @@ impl gpui::RenderOnce for CircleIconTrigger {
             .justify_center()
             .cursor_pointer()
             .when(self.selected, |this| this.opacity(0.88))
+            .when_some(self.on_click, |this, on_click| {
+                this.on_mouse_down(gpui::MouseButton::Left, |_, _, cx| {
+                    cx.stop_propagation();
+                })
+                .on_click(move |event, window, cx| {
+                    on_click(event, window, cx);
+                    cx.stop_propagation();
+                })
+            })
             .child(self.icon)
     }
 }
