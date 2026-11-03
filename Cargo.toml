@@ -25,10 +25,10 @@ gpui = { package = "gpui-pre", version = "=0.3.11", default-features = false }
 gpui-ohos = "=0.0.1-beta.0"
 # Use GPUI Kit's component/assets crates directly: its desktop facade selects
 # Linux's platform backend on OHOS, where gpui-ohos supplies the platform.
-gpui-component = "=0.8.1"
+gpui-component = "=0.9.0"
 gpui-router = { version = "0.7.0", default-features = false, features = ["gpui-pre"] }
-gpui-kit-assets = "=0.8.1"
-gpui-fps = { version = "=0.8.1", optional = true }
+gpui-kit-assets = "=0.9.0"
+gpui-fps = { version = "=0.9.0", optional = true }
 # Match gpui-ohos's published ability crates and the ArkTS packages.
 openharmony-ability = "=1.0.0-beta.5"
 openharmony-ability-derive = "=1.0.0-beta.5"
@@ -84,14 +84,3 @@ ohos-fileshare-binding = "0.1"
 
 [build-dependencies]
 napi-build-ohos = { version = "=1.2.0" }
-
-
-# GPUI Kit 0.8.1 pins snapshot 0.3.10; gpui-ohos requires 0.3.11.
-# Align the snapshot pins and adapt the text cache to GPUI's Rc window API.
-# See vendor/gpui-kit/README.md for the exact release-source changes.
-# Remove these patches when Kit publishes a matching release.
-[patch.crates-io]
-gpui-base = { path = "vendor/gpui-kit/gpui-base" }
-gpui-component = { path = "vendor/gpui-kit/gpui-component" }
-gpui-kit-assets = { path = "vendor/gpui-kit/gpui-kit-assets" }
-gpui-fps = { path = "vendor/gpui-kit/gpui-fps" }
