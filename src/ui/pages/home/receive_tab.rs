@@ -308,14 +308,20 @@ fn render_receive_actions(
                     .on_open_change({
                         let home_entity = home_entity.clone();
                         move |open, _window, cx| {
-                            home_entity.update(cx, |this, _cx| {
+                            home_entity.update(cx, |this, cx| {
                                 this.receive_state.show_advanced = *open;
+                                cx.notify();
                             });
                         }
                     })
                     .trigger(
                         CircleIconTrigger::from_path("receive-info-trigger", paths::INFO, cx)
-                            .touch(),
+                            .touch()
+                            .on_click(cx.listener(|this, _event, _window, cx| {
+                                this.receive_state.show_advanced =
+                                    !this.receive_state.show_advanced;
+                                cx.notify();
+                            })),
                     )
                     .content(move |_state, _window, cx| {
                         v_flex()
