@@ -10,17 +10,40 @@ use crate::ui::pages::{
     AboutPage, ChangelogPage, DonatePage, HistoryPage, HomePage, OpenSourceLicensesPage,
     ProgressPage, ReceiveIncomingPage, SelectedFilesPage, WebSendPage,
 };
-use crate::ui::router_history::{HistoryEntry, RouterHistoryState};
+use crate::ui::router_history::NavigationState;
 use crate::ui::routes;
-use gpui::{div, prelude::*, Context, Entity, IntoElement, MouseButton, ReadGlobal, Window};
-use gpui_component::{v_flex, ActiveTheme as _, Root, WindowExt as _};
-use gpui_router::{Route, RouterState, Routes};
+use gpui::{div, prelude::*, Context, Entity, IntoElement, Window};
+use gpui_component::{v_flex, ActiveTheme as _};
+use gpui_router::{Route, Routes};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::unbounded_channel;
 
+/// Initializes this window's router before constructing its routed subtree.
+pub(crate) struct AppRouteHost {
+    view: Entity<AppRoot>,
+}
+
+impl AppRouteHost {
+    pub(crate) fn new(view: Entity<AppRoot>) -> Self {
+        Self { view }
+    }
+}
+
+impl gpui::Render for AppRouteHost {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        let view = self.view.clone();
+        Routes::new().basename("/").child(
+            Route::new()
+                .path("*")
+                .element(move |_, _| view.clone().into_any_element()),
+        )
+    }
+}
+
 /// Router root: shows Home (tabs), History, Progress, or Selected Files.
 pub struct AppRoot {
+    navigation: Entity<NavigationState>,
     home_entity: Entity<HomePage>,
     history_entity: Entity<HistoryPage>,
     about_entity: Entity<AboutPage>,
@@ -55,6 +78,7 @@ impl AppRoot {
 
     pub fn new(
         cx: &mut Context<Self>,
+        navigation: Entity<NavigationState>,
         app_state: Entity<AppState>,
         device_state: Entity<DeviceState>,
         transfer_state: Entity<TransferState>,
@@ -62,17 +86,25 @@ impl AppRoot {
     ) -> Self {
         // Get root entity before creating child entities
         let root = cx.entity();
+        cx.observe(&navigation, |this, _, cx| {
+            this.sync_back_press_capability(cx);
+            cx.notify();
+        })
+        .detach();
 
         let send_selection_state = cx.new(|_| SendSelectionState::default());
         let receive_inbox_state = cx.new(|_| ReceiveInboxState::default());
         let home_entity = cx.new(|cx| {
             HomePage::new(
-                app_state.clone(),
-                device_state.clone(),
-                transfer_state.clone(),
-                history_state.clone(),
-                send_selection_state.clone(),
-                receive_inbox_state.clone(),
+                crate::ui::pages::home::HomePageModels {
+                    navigation: navigation.clone(),
+                    app_state: app_state.clone(),
+                    device_state: device_state.clone(),
+                    transfer_state: transfer_state.clone(),
+                    history_state: history_state.clone(),
+                    send_selection_state: send_selection_state.clone(),
+                    receive_inbox_state: receive_inbox_state.clone(),
+                },
                 cx,
             )
         });
@@ -109,6 +141,7 @@ impl AppRoot {
 
         // Initialize back press handler
         let this = Self {
+            navigation,
             home_entity,
             history_entity,
             about_entity,
@@ -124,16 +157,6 @@ impl AppRoot {
             back_press_can_intercept: back_press_can_intercept.clone(),
         };
 
-        // Initialize router history with initial path
-        let initial_path = RouterState::global(cx).location.pathname.clone();
-        let normalized_initial = if Self::is_home_path(initial_path.as_ref()) {
-            routes::HOME.to_string()
-        } else {
-            initial_path.to_string()
-        };
-        RouterHistoryState::global_mut(cx)
-            .history
-            .reset(HistoryEntry::new(normalized_initial));
         this.sync_back_press_capability(cx);
 
         // Setup back press interceptor
@@ -167,8 +190,9 @@ impl AppRoot {
     }
 
     fn sync_back_press_capability(&self, cx: &Context<Self>) {
-        let can_go_back = RouterHistoryState::global(cx).history.can_go_back();
-        let is_home = Self::is_home_path(RouterState::global(cx).location.pathname.as_ref());
+        let navigation = self.navigation.read(cx);
+        let can_go_back = navigation.can_go_back();
+        let is_home = Self::is_home_path(navigation.pathname().as_ref());
         self.back_press_can_intercept
             .store(can_go_back || !is_home, Ordering::SeqCst);
     }
@@ -178,12 +202,11 @@ impl AppRoot {
             return;
         }
 
-        let current_path = RouterState::global(cx).location.pathname.clone();
+        let current_path = self.navigation.read(cx).pathname().clone();
         if !Self::is_home_path(current_path.as_ref()) {
-            RouterHistoryState::global_mut(cx)
-                .history
-                .reset(HistoryEntry::new(routes::HOME));
-            RouterState::global_mut(cx).location.pathname = routes::HOME.into();
+            self.navigation.update(cx, |navigation, cx| {
+                navigation.reset(routes::HOME, cx);
+            });
             self.sync_back_press_capability(cx);
             cx.notify();
         }
@@ -191,30 +214,20 @@ impl AppRoot {
 
     /// Navigate to a new path and add to history
     pub fn navigate_to(&mut self, pathname: &str, cx: &mut Context<Self>) {
-        let current = RouterState::global(cx).location.pathname.clone();
-        if current.as_ref() != pathname {
-            let pathname_owned = pathname.to_string();
-            RouterHistoryState::global_mut(cx)
-                .history
-                .push(HistoryEntry::new(pathname_owned.clone()));
-            RouterState::global_mut(cx).location.pathname = pathname_owned.into();
-            self.sync_back_press_capability(cx);
-            cx.notify();
-        }
+        self.navigation.update(cx, |navigation, cx| {
+            navigation.navigate_to(pathname, cx);
+        });
+        self.sync_back_press_capability(cx);
     }
 
     /// Go back to previous path in history
     /// Returns true if successfully went back, false if at root
     pub fn go_back(&mut self, cx: &mut Context<Self>) -> bool {
-        if let Some(entry) = RouterHistoryState::global_mut(cx).history.go_back() {
-            RouterState::global_mut(cx).location.pathname = entry.pathname;
-            self.sync_back_press_capability(cx);
-            cx.notify();
-            true
-        } else {
-            self.sync_back_press_capability(cx);
-            false
-        }
+        let went_back = self
+            .navigation
+            .update(cx, |navigation, cx| navigation.go_back(cx));
+        self.sync_back_press_capability(cx);
+        went_back
     }
 
     /// Pop one history entry. If history is unavailable, navigate to fallback path.
@@ -277,10 +290,10 @@ impl gpui::Render for AppRoot {
             home.poll_send_retry_event(window, cx);
         });
 
-        let sheet_layer = Root::render_sheet_layer(window, cx);
-        let dialog_layer = Root::render_dialog_layer(window, cx);
-        let notification_layer = Root::render_notification_layer(window, cx);
-        let has_dialog = dialog_layer.is_some();
+        self.navigation.update(cx, |navigation, cx| {
+            navigation.apply_pending(window, cx);
+        });
+        self.sync_back_press_capability(cx);
 
         // Clone entities for use in closures
         let home_entity = self.home_entity.clone();
@@ -379,8 +392,8 @@ impl gpui::Render for AppRoot {
             }));
 
         let insets = crate::ui::safe_area::current(cx);
-        let pathname = RouterState::global(cx).location.pathname.as_ref();
-        let page_background = if Self::uses_muted_page_background(pathname) {
+        let pathname = self.navigation.read(cx).pathname();
+        let page_background = if Self::uses_muted_page_background(pathname.as_ref()) {
             cx.theme().muted.opacity(0.45)
         } else {
             cx.theme().background
@@ -402,27 +415,5 @@ impl gpui::Render for AppRoot {
                     .pr(insets.right)
                     .child(div().size_full().child(routed_page)),
             )
-            .children(sheet_layer)
-            // gpui-component 9890a77 moved the dialog dim onto an
-            // `absolute().size_full()` backdrop nested in an unsized wrapper,
-            // so the mask laid out as 0x0. Paint a window-sized scrim here.
-            .when(has_dialog, |this| {
-                this.child(
-                    div()
-                        .id("dialog-scrim")
-                        .absolute()
-                        .top_0()
-                        .left_0()
-                        .right_0()
-                        .bottom_0()
-                        .occlude()
-                        .bg(cx.theme().overlay)
-                        .on_mouse_down(MouseButton::Left, |_, window, cx| {
-                            window.close_dialog(cx);
-                        }),
-                )
-            })
-            .children(dialog_layer)
-            .children(notification_layer)
     }
 }

@@ -8,7 +8,6 @@ use gpui_kit_assets::Assets as ComponentAssets;
 use log::LevelFilter;
 use ohos_hilog_binding::log::Config;
 use openharmony_ability::OpenHarmonyApp;
-use openharmony_ability_plugin_files::FilesBridgePlugin;
 use openharmony_ability_plugin_permission::PermissionBridgePlugin;
 
 mod app;
@@ -18,7 +17,7 @@ mod platform;
 mod state;
 mod ui;
 
-use ui::router_history::RouterHistoryState;
+use ui::router_history::NavigationRegistry;
 
 thread_local! {
     static GPUI_APPLICATION: std::cell::RefCell<Option<ApplicationHandle>> = const {
@@ -42,11 +41,13 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
         LevelFilter::Info
     };
     ohos_hilog_binding::log::init_once(Config::default().with_max_level(log_level));
+    let panic_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic| {
+        log::error!("Rust panic: {panic}");
+        panic_hook(panic);
+    }));
     if let Err(error) = app.register_plugin(PermissionBridgePlugin) {
         log::error!("Failed to register OpenHarmony permission plugin: {error}");
-    }
-    if let Err(error) = app.register_plugin(FilesBridgePlugin) {
-        log::error!("Failed to register OpenHarmony files plugin: {error}");
     }
     if let Err(error) = app.register_plugin(platform::openharmony::NearSendPlatformBridgePlugin) {
         log::error!("Failed to register NearSend platform plugin: {error}");
@@ -71,7 +72,7 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
 
         gpui_component::init(cx);
         gpui_router::init(cx);
-        RouterHistoryState::init(cx, "/");
+        NavigationRegistry::init(cx);
 
         // Create a shared tokio runtime on a background thread.
         // All async work (server, transfers, discovery) goes through this handle.
@@ -101,6 +102,7 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
                 ..Default::default()
             },
             |window, cx| {
+                let navigation = NavigationRegistry::register(window, cx);
                 let view = cx.new(|cx| {
                     let server = cx.new(|_| core::server::ServerManager::new(53317));
 
@@ -125,9 +127,17 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
                     let device_state = cx.new(|_| state::device_state::DeviceState::new());
                     let transfer_state = cx.new(|_| state::transfer_state::TransferState::new());
                     let history_state = cx.new(|_| state::history_state::HistoryState::new());
-                    app::AppRoot::new(cx, app_state, device_state, transfer_state, history_state)
+                    app::AppRoot::new(
+                        cx,
+                        navigation,
+                        app_state,
+                        device_state,
+                        transfer_state,
+                        history_state,
+                    )
                 });
-                cx.new(|cx| Root::new(view, window, cx).window_shadow_size(px(0.)))
+                let routed = cx.new(|_| app::AppRouteHost::new(view));
+                cx.new(|cx| Root::new(routed, window, cx))
             },
         )
         .unwrap();

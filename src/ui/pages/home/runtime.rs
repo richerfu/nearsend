@@ -40,10 +40,9 @@ impl HomePage {
 
         self.sync_selected_files_from_shared(cx);
         self.current_tab = TabType::Send;
-        crate::ui::router_history::RouterHistoryState::global_mut(cx)
-            .history
-            .reset(crate::ui::router_history::HistoryEntry::new(routes::HOME));
-        RouterState::global_mut(cx).location.pathname = routes::HOME.into();
+        self.navigation.update(cx, |navigation, cx| {
+            navigation.reset(routes::HOME, cx);
+        });
         cx.notify();
     }
 
@@ -214,7 +213,7 @@ impl HomePage {
                 state.clear();
                 state_cx.notify();
             });
-            if RouterState::global(cx).location.pathname == routes::RECEIVE_INCOMING {
+            if self.navigation.read(cx).pathname() == routes::RECEIVE_INCOMING {
                 self.navigate_to(routes::HOME, cx);
             }
         }

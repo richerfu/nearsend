@@ -10,6 +10,7 @@ use crate::ui::components::chrome::{
 };
 use crate::ui::icons::{app_icon, paths};
 use crate::ui::responsive::ResponsiveLayout;
+use crate::ui::router_history::NavigationRegistry;
 use crate::ui::routes;
 use crate::ui::theme::radius;
 use chrono::{Datelike, Local, TimeZone as _, Timelike};
@@ -20,7 +21,6 @@ use gpui_component::{
     dialog::{DialogAction, DialogClose, DialogFooter},
     h_flex, v_flex, ActiveTheme as _, Size, StyledExt as _, WindowExt as _,
 };
-use gpui_router::RouterState;
 
 /// History page: back bar + title + history list.
 pub struct HistoryPage {
@@ -96,14 +96,10 @@ impl gpui::Render for HistoryPage {
                         let _ = root.update(cx, |this, cx| {
                             this.go_back_or_navigate(routes::HOME, cx);
                         });
-                    } else if let Some(entry) =
-                        crate::ui::router_history::RouterHistoryState::global_mut(cx)
-                            .history
-                            .go_back()
-                    {
-                        RouterState::global_mut(cx).location.pathname = entry.pathname;
                     } else {
-                        RouterState::global_mut(cx).location.pathname = routes::HOME.into();
+                        NavigationRegistry::for_window(window, cx).update(cx, |navigation, cx| {
+                            navigation.go_back_or_navigate(routes::HOME, cx);
+                        });
                     }
                     window.refresh();
                 }),
@@ -707,7 +703,9 @@ fn open_history_entry(
                 root.navigate_to(routes::RECEIVE_INCOMING, cx);
             });
         } else {
-            RouterState::global_mut(cx).location.pathname = routes::RECEIVE_INCOMING.into();
+            NavigationRegistry::for_window(window, cx).update(cx, |navigation, cx| {
+                navigation.navigate_to(routes::RECEIVE_INCOMING, cx);
+            });
         }
         window.refresh();
         return;

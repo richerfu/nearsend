@@ -7,19 +7,9 @@ use crate::ui::theme::sizing;
 
 impl HomePage {
     pub(super) fn navigate_to(&self, pathname: &str, cx: &mut Context<Self>) {
-        let current = RouterState::global(cx).location.pathname.clone();
-        if current.as_ref() == pathname {
-            return;
-        }
-
-        let pathname_owned = pathname.to_string();
-        crate::ui::router_history::RouterHistoryState::global_mut(cx)
-            .history
-            .push(crate::ui::router_history::HistoryEntry::new(
-                pathname_owned.clone(),
-            ));
-        RouterState::global_mut(cx).location.pathname = pathname_owned.into();
-        cx.notify();
+        self.navigation.update(cx, |navigation, cx| {
+            navigation.navigate_to(pathname, cx);
+        });
     }
 
     pub(super) fn render_bottom_nav(&mut self, cx: &mut Context<Self>) -> AnyElement {

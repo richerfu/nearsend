@@ -10,6 +10,7 @@ use crate::ui::components::chrome::{
 use crate::ui::components::transfer_item::TransferItem;
 use crate::ui::icons::{app_icon, loading_icon, paths};
 use crate::ui::responsive::ResponsiveLayout;
+use crate::ui::router_history::NavigationRegistry;
 use crate::ui::routes;
 use crate::ui::theme::spacing;
 use gpui::{div, prelude::*, px, Context, Entity, Window};
@@ -20,7 +21,6 @@ use gpui_component::{
     progress::Progress,
     v_flex, ActiveTheme as _, Size, StyledExt as _,
 };
-use gpui_router::RouterState;
 
 /// Progress page: full-screen view of ongoing transfer.
 pub struct ProgressPage {
@@ -121,14 +121,10 @@ impl gpui::Render for ProgressPage {
                         let _ = root.update(cx, |this, cx| {
                             this.go_back_or_navigate(routes::HOME, cx);
                         });
-                    } else if let Some(entry) =
-                        crate::ui::router_history::RouterHistoryState::global_mut(cx)
-                            .history
-                            .go_back()
-                    {
-                        RouterState::global_mut(cx).location.pathname = entry.pathname;
                     } else {
-                        RouterState::global_mut(cx).location.pathname = routes::HOME.into();
+                        NavigationRegistry::for_window(window, cx).update(cx, |navigation, cx| {
+                            navigation.go_back_or_navigate(routes::HOME, cx);
+                        });
                     }
                     window.refresh();
                 }),
@@ -263,19 +259,12 @@ impl gpui::Render for ProgressPage {
                                         this.go_back_or_navigate(routes::HOME, cx);
                                     });
                                 } else {
-                                    if let Some(entry) =
-                                        crate::ui::router_history::RouterHistoryState::global_mut(
-                                            cx,
-                                        )
-                                        .history
-                                        .go_back()
-                                    {
-                                        RouterState::global_mut(cx).location.pathname =
-                                            entry.pathname;
-                                    } else {
-                                        RouterState::global_mut(cx).location.pathname =
-                                            routes::HOME.into();
-                                    }
+                                    NavigationRegistry::for_window(window, cx).update(
+                                        cx,
+                                        |navigation, cx| {
+                                            navigation.go_back_or_navigate(routes::HOME, cx);
+                                        },
+                                    );
                                 }
                                 window.refresh();
                             }))

@@ -39,6 +39,7 @@ pub(super) use crate::ui::components::chrome::{
     content_picker_grid, content_picker_tile, dialog_title,
 };
 use crate::ui::icons::{app_icon, paths};
+use crate::ui::router_history::NavigationState;
 use crate::ui::routes;
 use gpui::{
     div, hsla, prelude::*, px, AnyElement, Context, Entity, IntoElement, Window, WindowAppearance,
@@ -51,7 +52,6 @@ use gpui_component::select::{SelectEvent, SelectState};
 use gpui_component::{
     h_flex, v_flex, ActiveTheme as _, IndexPath, Sizable as _, Size, StyledExt as _, WindowExt as _,
 };
-use gpui_router::RouterState;
 use localsend::http::state::ClientInfo;
 use localsend::model::discovery::DeviceType;
 use std::collections::BTreeSet;
@@ -68,8 +68,20 @@ pub enum TabType {
     Settings,
 }
 
+/// Models shared with the home page for one application window.
+pub(crate) struct HomePageModels {
+    pub navigation: Entity<NavigationState>,
+    pub app_state: Entity<AppState>,
+    pub device_state: Entity<DeviceState>,
+    pub transfer_state: Entity<TransferState>,
+    pub history_state: Entity<HistoryState>,
+    pub send_selection_state: Entity<SendSelectionState>,
+    pub receive_inbox_state: Entity<ReceiveInboxState>,
+}
+
 /// Home page: receives / send / settings tabs + bottom nav.
 pub struct HomePage {
+    navigation: Entity<NavigationState>,
     pub(super) app_state: Entity<AppState>,
     #[allow(dead_code)]
     pub(super) device_state: Entity<DeviceState>,
@@ -172,15 +184,16 @@ impl HomePage {
         true
     }
 
-    pub fn new(
-        app_state: Entity<AppState>,
-        device_state: Entity<DeviceState>,
-        transfer_state: Entity<TransferState>,
-        history_state: Entity<HistoryState>,
-        send_selection_state: Entity<SendSelectionState>,
-        receive_inbox_state: Entity<ReceiveInboxState>,
-        cx: &mut Context<Self>,
-    ) -> Self {
+    pub(crate) fn new(models: HomePageModels, cx: &mut Context<Self>) -> Self {
+        let HomePageModels {
+            navigation,
+            app_state,
+            device_state,
+            transfer_state,
+            history_state,
+            send_selection_state,
+            receive_inbox_state,
+        } = models;
         let alias = generate_random_alias();
         let mut receive_state = ReceivePageState::default();
         let settings_file_exists =
@@ -209,6 +222,7 @@ impl HomePage {
         settings_state.theme().apply(system_appearance, cx);
 
         Self {
+            navigation,
             app_state,
             device_state,
             transfer_state,

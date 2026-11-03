@@ -6,6 +6,7 @@ use crate::ui::components::switch::Switch;
 use crate::ui::icons::{app_icon, paths};
 use crate::ui::pages::HomePage;
 use crate::ui::responsive::ResponsiveLayout;
+use crate::ui::router_history::NavigationRegistry;
 use crate::ui::routes;
 use gpui::{div, hsla, prelude::*, px, Context, Entity, Window};
 use gpui_component::input::{Input, InputState};
@@ -16,7 +17,6 @@ use gpui_component::{
     dialog::{DialogAction, DialogClose, DialogFooter},
     h_flex, v_flex, ActiveTheme as _, Sizable as _, Size, StyledExt as _, WindowExt as _,
 };
-use gpui_router::RouterState;
 use qrcode::types::Color;
 use qrcode::QrCode;
 use std::collections::HashMap;
@@ -454,14 +454,10 @@ impl gpui::Render for WebSendPage {
                         let _ = root.update(cx, |this, cx| {
                             this.go_back_or_navigate(routes::HOME, cx);
                         });
-                    } else if let Some(entry) =
-                        crate::ui::router_history::RouterHistoryState::global_mut(cx)
-                            .history
-                            .go_back()
-                    {
-                        RouterState::global_mut(cx).location.pathname = entry.pathname;
                     } else {
-                        RouterState::global_mut(cx).location.pathname = routes::HOME.into();
+                        NavigationRegistry::for_window(window, cx).update(cx, |navigation, cx| {
+                            navigation.go_back_or_navigate(routes::HOME, cx);
+                        });
                     }
                     window.refresh();
                 }),
