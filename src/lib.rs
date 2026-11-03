@@ -106,14 +106,16 @@ pub fn openharmony_app(app: OpenHarmonyApp) {
                 let view = cx.new(|cx| {
                     let server = cx.new(|_| core::server::ServerManager::new(53317));
 
-                    // Generate self-signed cert for TLS
-                    let cert = match core::cert::generate_self_signed_cert() {
+                    let identity_store = core::cert::IdentityStore::new(
+                        platform::preferences_path::get_preferences_path(),
+                    );
+                    let cert = match identity_store.load_or_create() {
                         Ok(cert) => {
-                            log::info!("Generated self-signed TLS certificate");
+                            log::info!("Loaded persistent LocalSend device identity");
                             Some(cert)
                         }
                         Err(e) => {
-                            log::error!("Failed to generate TLS certificate: {}", e);
+                            log::error!("Failed to initialize LocalSend device identity: {e}");
                             None
                         }
                     };

@@ -30,6 +30,18 @@ The default `MAX` headline estimates CPU drawing throughput. Right-click
 the overlay to switch to observed FPS; click it to toggle the compact view.
 The overlay is excluded when the feature is disabled.
 
+## LocalSend device identity
+
+The installation keeps one certificate and device fingerprint across restarts.
+Discovery, transfer metadata and HTTPS client authentication use that identity.
+After upgrading an older build that regenerated its identity at startup, add
+NearSend to the other device's favorites once again.
+
+Run the identity persistence and mutual-TLS regressions on the host with
+`python3 scripts/test_identity.py` (Python 3.11+). The runner uses the actual
+production module and the dependency versions from this application's Cargo
+manifest and lockfile, without linking OHOS or GPUI.
+
 ## Credits
 
 - [LocalSend Protocol](https://github.com/localsend/protocol)

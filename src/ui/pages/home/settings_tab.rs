@@ -134,7 +134,7 @@ fn network_filter_mode_label(mode: NetworkFilterMode) -> &'static str {
     }
 }
 
-/// Whole-row toggle with a trailing gpui-component Switch.
+/// A row-wide label target beside a gpui-component Switch.
 fn render_boolean_entry(
     label: &str,
     value: bool,
@@ -150,17 +150,35 @@ fn render_boolean_entry(
     settings_row()
         .id(id.to_string())
         .cursor_pointer()
-        .on_click(cx.listener(move |this, _ev, _win, cx| {
-            on_toggle_row(this, cx);
-        }))
-        .child(settings_label(label, cx))
+        .py_0()
+        .gap_0()
+        .child(
+            // Sibling targets keep a switch press from also activating the row.
+            div()
+                .id(format!("{id}-label"))
+                .flex_1()
+                .min_w(px(0.))
+                .min_h(px(48.))
+                .flex()
+                .items_center()
+                .py(px(8.))
+                .pr(px(12.))
+                .on_click(cx.listener(move |this, _ev, _win, cx| {
+                    on_toggle_row(this, cx);
+                    cx.notify();
+                }))
+                .child(settings_label(label, cx)),
+        )
         .child(
             Switch::new(switch_id)
                 .checked(value)
                 .large()
-                .on_click(move |_, _, cx| {
+                .on_change(move |_, _, cx| {
+                    home.update(cx, |this, cx| {
+                        on_toggle_switch(this, cx);
+                        cx.notify();
+                    });
                     cx.stop_propagation();
-                    home.update(cx, |this, cx| on_toggle_switch(this, cx));
                 }),
         )
         .into_any_element()

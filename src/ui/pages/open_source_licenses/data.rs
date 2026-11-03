@@ -55,6 +55,14 @@ const ANYHOW_LICENSE_APACHE: &str =
     include_str!("../../../licenses/third_party/anyhow-LICENSE-APACHE.txt");
 const ANYHOW_LICENSE_MIT: &str =
     include_str!("../../../licenses/third_party/anyhow-LICENSE-MIT.txt");
+const TEMPFILE_LICENSE_APACHE: &str =
+    include_str!("../../../licenses/third_party/tempfile-LICENSE-APACHE.txt");
+const TEMPFILE_LICENSE_MIT: &str =
+    include_str!("../../../licenses/third_party/tempfile-LICENSE-MIT.txt");
+const THISERROR_LICENSE_APACHE: &str =
+    include_str!("../../../licenses/third_party/thiserror-LICENSE-APACHE.txt");
+const THISERROR_LICENSE_MIT: &str =
+    include_str!("../../../licenses/third_party/thiserror-LICENSE-MIT.txt");
 const UUID_LICENSE_APACHE: &str =
     include_str!("../../../licenses/third_party/uuid-LICENSE-APACHE.txt");
 const UUID_LICENSE_MIT: &str = include_str!("../../../licenses/third_party/uuid-LICENSE-MIT.txt");
@@ -228,6 +236,18 @@ pub fn get_third_party_libs() -> Vec<ThirdPartyLib> {
             "https://github.com/dtolnay/anyhow",
             "MIT OR Apache-2.0",
             merge_license(&[ANYHOW_LICENSE_MIT, ANYHOW_LICENSE_APACHE]),
+        ),
+        ThirdPartyLib::new(
+            "tempfile",
+            "https://github.com/Stebalien/tempfile",
+            "MIT OR Apache-2.0",
+            merge_license(&[TEMPFILE_LICENSE_MIT, TEMPFILE_LICENSE_APACHE]),
+        ),
+        ThirdPartyLib::new(
+            "thiserror",
+            "https://github.com/dtolnay/thiserror",
+            "MIT OR Apache-2.0",
+            merge_license(&[THISERROR_LICENSE_MIT, THISERROR_LICENSE_APACHE]),
         ),
         ThirdPartyLib::new(
             "uuid",
