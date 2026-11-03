@@ -152,6 +152,7 @@ fn render_boolean_entry(
         .cursor_pointer()
         .on_click(cx.listener(move |this, _ev, _win, cx| {
             on_toggle_row(this, cx);
+            cx.notify();
         }))
         .child(settings_label(label, cx))
         .child(
@@ -160,7 +161,10 @@ fn render_boolean_entry(
                 .large()
                 .on_click(move |_, _, cx| {
                     cx.stop_propagation();
-                    home.update(cx, |this, cx| on_toggle_switch(this, cx));
+                    home.update(cx, |this, cx| {
+                        on_toggle_switch(this, cx);
+                        cx.notify();
+                    });
                 }),
         )
         .into_any_element()
