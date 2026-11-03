@@ -85,7 +85,11 @@ impl HomePage {
                 device_type: info.device_type,
                 token: info.token,
                 port: self.receive_state.server_port,
-                protocol: ProtocolType::Http,
+                protocol: if self.settings_state.encryption {
+                    ProtocolType::Https
+                } else {
+                    ProtocolType::Http
+                },
                 has_web_interface: false,
             }
         } else {
@@ -328,16 +332,28 @@ impl HomePage {
             let mut v2_last_err: Option<String> = None;
             let mut v2_no_upload_success = false;
             let mut remembered_peer: Option<crate::core::discovery::DiscoveredDevice> = None;
-            let v2_http_client = match reqwest::Client::builder()
-                .use_rustls_tls()
-                .danger_accept_invalid_certs(true)
-                .build()
-            {
+            let client_result = cert
+                .as_ref()
+                .ok_or_else(|| "device identity is unavailable".to_string())
+                .and_then(|cert| cert.http_client().map_err(|error| error.to_string()));
+            let v2_http_client = match client_result {
                 Ok(client) => client,
-                Err(e) => {
-                    log::warn!("failed to create v2 compatibility client: {}", e);
-                    // fall through to legacy logic
-                    reqwest::Client::new()
+                Err(error) => {
+                    log::error!("failed to create authenticated transfer client: {error}");
+                    let _ = notify_tx.send(SendUiMessage::UpdateStatus {
+                        status: SendSessionStatus::Failed,
+                        message: Some("发送失败（本端设备身份不可用）".to_string()),
+                    });
+                    let _ = notify_tx.send(SendUiMessage::Notice(
+                        "发送失败：无法初始化本端设备身份。".to_string(),
+                    ));
+                    if let Some(id) = transfer_id.as_ref() {
+                        transfer_state
+                            .update_transfer_status(id, TransferStatus::Failed)
+                            .await;
+                        let _ = notify_tx.send(SendUiMessage::RefreshProgress);
+                    }
+                    return;
                 }
             };
 
@@ -346,11 +362,13 @@ impl HomePage {
                 version: our_info.version.clone(),
                 device_model: our_info.device_model.clone(),
                 device_type: to_v2_device_type(&our_info.device_type),
-                // Official LocalSend v2 expects fingerprint field.
-                // Reuse token as a stable unique sender identifier.
+                // Match discovery metadata and the persisted TLS client certificate.
                 fingerprint: our_info.token.clone(),
                 port: our_info.port,
-                protocol: V2Protocol::Http,
+                protocol: match &our_info.protocol {
+                    ProtocolType::Https => V2Protocol::Https,
+                    ProtocolType::Http => V2Protocol::Http,
+                },
                 download: false,
             };
 
@@ -962,43 +980,7 @@ impl HomePage {
             let mut selected_protocol: Option<ProtocolType> = None;
             let mut response: Option<localsend::http::dto::PrepareUploadResponseDto> = None;
             let mut last_err: Option<String> = None;
-            let legacy_http_client = {
-                let identity = {
-                    let pem = &[
-                        cert.cert_pem.as_bytes(),
-                        "\n".as_bytes(),
-                        cert.private_key_pem.as_bytes(),
-                    ]
-                    .concat();
-                    reqwest::Identity::from_pem(pem)
-                };
-                match identity.and_then(|id| {
-                    reqwest::Client::builder()
-                        .use_rustls_tls()
-                        .danger_accept_invalid_certs(true)
-                        .identity(id)
-                        .build()
-                }) {
-                    Ok(c) => c,
-                    Err(e) => {
-                        log::error!("failed to create legacy reqwest client: {}", e);
-                        let _ = notify_tx.send(SendUiMessage::Notice(
-                            "发送失败：无法初始化网络客户端。".to_string(),
-                        ));
-                        let _ = notify_tx.send(SendUiMessage::UpdateStatus {
-                            status: SendSessionStatus::Failed,
-                            message: Some("发送失败（客户端初始化失败）".to_string()),
-                        });
-                        if let Some(active_transfer_id) = transfer_id.clone() {
-                            transfer_state
-                                .update_transfer_status(&active_transfer_id, TransferStatus::Failed)
-                                .await;
-                            let _ = notify_tx.send(SendUiMessage::RefreshProgress);
-                        }
-                        return;
-                    }
-                }
-            };
+            let legacy_http_client = v2_http_client;
 
             for protocol in protocols {
                 log::info!("Trying protocol={} for {}:{}", protocol.as_str(), ip, port);
@@ -1590,6 +1572,7 @@ impl HomePage {
         }
 
         if let Some(context) = self.send_state.active_send_context.clone() {
+            let cert = self.app_state.read(cx).cert.clone();
             self.app_state.read(cx).tokio_handle.spawn(async move {
                 let snapshot = {
                     let Ok(guard) = context.lock() else {
@@ -1602,7 +1585,16 @@ impl HomePage {
                 } else {
                     vec!["http".to_string(), "https".to_string()]
                 };
-                let client = reqwest::Client::new();
+                let Some(cert) = cert else {
+                    return;
+                };
+                let client = match cert.http_client() {
+                    Ok(client) => client,
+                    Err(error) => {
+                        log::warn!("cannot initialize transfer cancellation client: {error}");
+                        return;
+                    }
+                };
                 for scheme in schemes {
                     let mut req = client.post(format!(
                         "{}://{}:{}/api/localsend/v2/cancel",
